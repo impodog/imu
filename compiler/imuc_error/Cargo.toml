@@ -1,0 +1,9 @@
+[package]
+name = "imuc_error"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.92"
+thiserror = "1.0.66"
+imuc_lexer = { path = "../imuc_lexer" }

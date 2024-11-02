@@ -9,3 +9,4 @@ members = ["compiler/*"]
 
 [dependencies]
 imuc_lexer = { path = "compiler/imuc_lexer", optional = true }
+imuc_error = { path = "compiler/imuc_error", optional = true }

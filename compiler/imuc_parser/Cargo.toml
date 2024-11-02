@@ -1,0 +1,8 @@
+[package]
+name = "imuc_parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+imuc_error = { path = "../imuc_error" }
+imuc_lexer = { path = "../imuc_lexer" }

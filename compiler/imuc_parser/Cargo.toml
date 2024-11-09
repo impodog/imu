@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 imuc_error = { path = "../imuc_error" }
 imuc_lexer = { path = "../imuc_lexer" }
+imuc_ast = { path = "../imuc_ast" }
+lazy_static = "1.5.0"
+unescape = "0.1.0"

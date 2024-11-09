@@ -56,8 +56,11 @@ dependencies = [
 name = "imuc_parser"
 version = "0.1.0"
 dependencies = [
+ "imuc_ast",
  "imuc_error",
  "imuc_lexer",
+ "lazy_static",
+ "unescape",
 ]
 
 [[package]]
@@ -177,6 +180,12 @@ dependencies = [
  "toml_datetime",
  "winnow",
 ]
+
+[[package]]
+name = "unescape"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccb97dac3243214f8d8507998906ca3e2e0b900bf9bf4870477f125b82e68f6e"
 
 [[package]]
 name = "unicode-ident"

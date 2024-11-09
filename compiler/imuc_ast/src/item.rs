@@ -7,6 +7,7 @@ use crate::prim::Prim;
 pub struct Item {
     pub public: Public,
     pub name: String,
+    pub template: Vec<String>,
     pub kind: ItemKind,
 }
 

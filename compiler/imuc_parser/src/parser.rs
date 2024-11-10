@@ -28,7 +28,7 @@ where
     /// Returns the next pending result of [`Self::next_token`] without consuming the token
     ///
     /// Errors are only caused by lexer errors
-    pub(crate) fn peek(&mut self) -> Result<Option<ParserInput<'s>>> {
+    pub fn peek(&mut self) -> Result<Option<ParserInput<'s>>> {
         if let Some(ref input) = self.stack {
             Ok(Some(*input))
         } else {
@@ -41,12 +41,13 @@ where
     /// Returns the next pending result of [`Self::next_token`] if its matches the given kinds, or [`Ok(None)`] is returned
     ///
     /// Errors are only caused by lexer errors
-    pub(crate) fn next_if(
+    pub fn next_if(
         &mut self,
         kind: &impl for<'a> TokenKindSet<'a>,
     ) -> Result<Option<ParserInput<'s>>> {
         let input = self.peek()?;
         if input.is_some_and(|input| kind.contains(&input.kind)) {
+            self.stack = None;
             Ok(input)
         } else {
             Ok(None)
@@ -55,7 +56,7 @@ where
 
     /// Gets the next token, if any, while mapping the possible errors
     /// If the token is an error, an [`Err`] result is returned
-    pub(crate) fn next_token(&mut self) -> Result<Option<ParserInput<'s>>> {
+    pub fn next_token(&mut self) -> Result<Option<ParserInput<'s>>> {
         if let Some(input) = std::mem::take(&mut self.stack) {
             return Ok(Some(input));
         }
@@ -73,13 +74,15 @@ where
     }
 
     /// Gets the next token, mapping the errors, while regarding EOF as an error
-    pub(crate) fn next_some(&mut self) -> Result<ParserInput<'s>> {
+    pub fn next_some(&mut self) -> Result<ParserInput<'s>> {
         self.next_token()
             .and_then(|input| input.ok_or_else(|| self.map_error(errors::SyntaxError::ExpectedAny)))
     }
 
     /// Gets the next token, mapping the errors, and takes any token other than the required kind as errors
-    pub(crate) fn next_expected_token(
+    ///
+    /// You should use this when you are sure to consume one token of the desired token kind
+    pub fn next_expected(
         &mut self,
         kind: &impl for<'a> TokenKindSet<'a>,
     ) -> Result<ParserInput<'s>> {
@@ -94,7 +97,7 @@ where
                     });
                     expect
                 };
-                self.error(errors::SyntaxError::Expected {
+                self.error(imuc_error::errors::SyntaxError::Expected {
                     expect,
                     found: input.kind,
                 })
@@ -112,5 +115,14 @@ where
     /// Maps the error then output a [`Result`] of [`Err`]
     pub fn error<R>(&self, err: impl Into<Error>) -> Result<R> {
         Err(self.map_error(err))
+    }
+
+    /// Returns an error if the lexer raises one, or return whether the lexer is exhausted
+    pub fn is_empty(&mut self) -> Result<bool> {
+        if self.stack.is_none() {
+            Ok(self.peek()?.is_none())
+        } else {
+            Ok(false)
+        }
     }
 }

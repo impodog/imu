@@ -4,11 +4,16 @@ use std::collections::BTreeMap;
 /// Syntax tree of different types of expressions
 pub enum Expr {
     Prim(crate::prim::Prim),
+    Value(Value),
     UnExpr(UnExpr),
     BinExpr(BinExpr),
     Flow(crate::flow::Flow),
     Tuple(Tuple),
     Struct(Struct),
+}
+
+pub struct Value {
+    pub names: Vec<String>,
 }
 
 /// An expression with a unary operator

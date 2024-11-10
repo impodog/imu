@@ -1,0 +1,21 @@
+[package]
+name = "imuc_rules"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+imuc_error = { path = "../imuc_error" }
+imuc_lexer = { path = "../imuc_lexer" }
+imuc_ast = { path = "../imuc_ast" }
+imuc_parser = { path = "../imuc_parser" }
+
+lexical = { version = "7.0.2", default-features = false, features = [
+    "std",
+    "parse-floats",
+    "parse-integers",
+    "power-of-two",
+    "format",
+] }
+lazy_static = "1.5.0"
+unescape = "0.1.0"
+unquote = "0.0.7"

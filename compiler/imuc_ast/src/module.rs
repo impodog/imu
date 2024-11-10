@@ -9,6 +9,7 @@ pub struct Module {
 /// The level of publicity in item definitions and items
 pub enum Public {
     Pub,
+    // TODO: Add keywords corresponding to this, if necessary
     Module,
     Priv,
 }
@@ -17,4 +18,5 @@ pub enum Public {
 pub struct Import {
     pub public: Public,
     pub name: Vec<String>,
+    pub alias: Option<String>,
 }

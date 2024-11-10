@@ -7,8 +7,8 @@ pub enum Pat {
 
 /// The basic pattern, matching value to a certain type
 pub struct IdentPat {
-    pub ident: String,
-    pub ty: Option<Ty>,
+    pub ident: IdentKind,
+    pub ty: Option<Type>,
 }
 
 /// A linear group of patterns
@@ -16,6 +16,12 @@ pub struct TuplePat(pub Vec<Pat>);
 
 /// A tree-like group of patterns, matching one of them
 pub struct AnyPat(pub Vec<Pat>);
+
+/// An enumeration used in [`IdentPat`] for an unused or normal name
+pub enum IdentKind {
+    Unused,
+    Value(String),
+}
 
 /// The flags of type pattern
 pub enum PatFlags {
@@ -31,6 +37,8 @@ pub struct Type {
 
 /// A part of [`Type`] storing only its name and template args
 pub enum TypeKind {
+    Wildcard,
+    Res(imuc_lexer::token::ResTy),
     Single(String),
     Template(String, Vec<TypeKind>),
 }

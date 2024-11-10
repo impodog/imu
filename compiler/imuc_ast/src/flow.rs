@@ -3,7 +3,7 @@ use crate::expr::{Body, Expr};
 /// Syntax tree of flow controls
 pub enum Flow {
     If(If),
-    While(While),
+    Loop(Loop),
 }
 
 /// An "if" statement stored in [`Flow`]
@@ -12,8 +12,8 @@ pub struct If {
     pub body: Body,
 }
 
-/// A "while" statement stored in [`Flow`]
-pub struct While {
+/// A "loop" statement stored in [`Flow`]
+pub struct Loop {
     pub cond: Box<Expr>,
     pub body: Body,
 }

@@ -8,9 +8,10 @@ pub enum TokenKind {
     Keyword(Keyword),
     ResTy(ResTy),
     ResVal(ResVal),
-    Bracket(Pair),
+    Pair(Pair),
     BinOp(BinOp),
     UnOp(UnOp),
+    Symbol(Symbol),
     LexError(LexError),
 
     // Special file structure tokens
@@ -57,12 +58,12 @@ pub enum Keyword {
     Mut,
     Fun,
     Cus,
-    Add,
+    Val,
     For,
-    New,
-    Rep,
+    As,
     If,
     Else,
+    Loop,
 }
 
 /// A part of [`TokenKind`] for values using reserved names
@@ -103,7 +104,6 @@ pub enum Pair {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BinOp {
     Dot,
-    Colon,
     Add,
     Sub,
     Mul,
@@ -115,6 +115,13 @@ pub enum BinOp {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnOp {
     Neg,
+}
+
+/// A part of [`TokenKind`] for parser structure symbol
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Symbol {
+    Colon,
+    Comma,
 }
 
 /// A part of [`TokenKind`] for errors that may happen in lexer

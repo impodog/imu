@@ -9,12 +9,12 @@ lazy_static::lazy_static! {
         ac.insert("mut", TokenKind::Keyword(Keyword::Mut));
         ac.insert("fun", TokenKind::Keyword(Keyword::Fun));
         ac.insert("cus", TokenKind::Keyword(Keyword::Cus));
-        ac.insert("add", TokenKind::Keyword(Keyword::Add));
+        ac.insert("val", TokenKind::Keyword(Keyword::Val));
         ac.insert("for", TokenKind::Keyword(Keyword::For));
-        ac.insert("new", TokenKind::Keyword(Keyword::New));
-        ac.insert("rep", TokenKind::Keyword(Keyword::Rep));
+        ac.insert("as", TokenKind::Keyword(Keyword::As));
         ac.insert("if", TokenKind::Keyword(Keyword::If));
         ac.insert("else", TokenKind::Keyword(Keyword::Else));
+        ac.insert("loop", TokenKind::Keyword(Keyword::Loop));
         ac.insert("true", TokenKind::ResVal(ResVal::True));
         ac.insert("false", TokenKind::ResVal(ResVal::False));
         ac.insert("self", TokenKind::ResVal(ResVal::SelfValue));
@@ -28,6 +28,7 @@ lazy_static::lazy_static! {
         ac.insert("F64", TokenKind::ResTy(ResTy::F64));
         ac.insert("Str", TokenKind::ResTy(ResTy::Str));
         ac.insert("I128", TokenKind::ResTy(ResTy::I128));
+        ac.insert("inf", TokenKind::Literal(Literal::Float));
         ac.build()
     };
 }
@@ -78,15 +79,14 @@ where
                 '_' => Token::new(self.next_unused(), self.diff(begin)),
                 '\"' => Token::new(self.next_string(), self.diff(begin)),
 
-                '(' => Token::new(TokenKind::Bracket(Pair::LeftParen), self.diff(begin)),
-                ')' => Token::new(TokenKind::Bracket(Pair::RightParen), self.diff(begin)),
-                '[' => Token::new(TokenKind::Bracket(Pair::LeftBracket), self.diff(begin)),
-                ']' => Token::new(TokenKind::Bracket(Pair::RightBracket), self.diff(begin)),
-                '{' => Token::new(TokenKind::Bracket(Pair::LeftBrace), self.diff(begin)),
-                '}' => Token::new(TokenKind::Bracket(Pair::RightBrace), self.diff(begin)),
+                '(' => Token::new(TokenKind::Pair(Pair::LeftParen), self.diff(begin)),
+                ')' => Token::new(TokenKind::Pair(Pair::RightParen), self.diff(begin)),
+                '[' => Token::new(TokenKind::Pair(Pair::LeftBracket), self.diff(begin)),
+                ']' => Token::new(TokenKind::Pair(Pair::RightBracket), self.diff(begin)),
+                '{' => Token::new(TokenKind::Pair(Pair::LeftBrace), self.diff(begin)),
+                '}' => Token::new(TokenKind::Pair(Pair::RightBrace), self.diff(begin)),
 
                 '.' => Token::new(TokenKind::BinOp(BinOp::Dot), self.diff(begin)),
-                ':' => Token::new(TokenKind::BinOp(BinOp::Colon), self.diff(begin)),
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
                     if self.first().is_ascii_digit() {
@@ -103,6 +103,8 @@ where
                     _ => Token::new(TokenKind::BinOp(BinOp::Div), self.diff(begin)),
                 },
                 '=' => Token::new(TokenKind::BinOp(BinOp::Assign), self.diff(begin)),
+                ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
+                ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }
@@ -200,7 +202,11 @@ where
             self.advance();
             self.advance_while(|reader| {
                 if accum == 3 {
-                    return false;
+                    if reader.first() == '\"' {
+                        accum -= 1;
+                    } else {
+                        return false;
+                    }
                 }
                 let ch = reader.first();
                 if ch == EOF {

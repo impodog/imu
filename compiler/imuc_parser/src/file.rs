@@ -35,13 +35,13 @@ where
     /// You should ensure that the reader is corresponding to the content, or the behavior may be
     /// unexpected
     pub fn new(
-        file: String,
+        file: impl Into<String>,
         content: &'s str,
         reader: impl IntoIterator<Item = Token, IntoIter = I>,
     ) -> Self {
         Self {
             info: FileInfo {
-                file: Self::into_arc_str(file),
+                file: Self::into_arc_str(file.into()),
                 line: 1,
                 column: 1,
             },
@@ -83,7 +83,14 @@ where
     type Item = crate::ParserInput<'s>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.advance()
+        while let Some(item) = self.advance() {
+            // This filters the unneeded elements for parsing
+            if let TokenKind::Comment(_) | TokenKind::Spacing(_) | TokenKind::Stray = item.kind {
+            } else {
+                return Some(item);
+            }
+        }
+        None
     }
 }
 

@@ -1,8 +1,6 @@
 mod file;
 mod parser;
-mod prelude;
 mod rule;
-pub mod rules;
 mod seq;
 
 pub use file::FileReader;

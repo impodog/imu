@@ -18,5 +18,5 @@ pub enum Public {
 pub struct Import {
     pub public: Public,
     pub name: Vec<String>,
-    pub alias: Option<String>,
+    pub alias: Option<crate::StrRef>,
 }

@@ -9,6 +9,7 @@ where
 {
     seq: I,
     stack: Option<ParserInput<'s>>,
+    look_up: imuc_ast::name::LookUp,
     _phantom: std::marker::PhantomData<&'s str>,
 }
 
@@ -21,6 +22,7 @@ where
         Self {
             seq: seq.into_iter(),
             stack: None,
+            look_up: Default::default(),
             _phantom: Default::default(),
         }
     }
@@ -76,7 +78,7 @@ where
     /// Gets the next token, mapping the errors, while regarding EOF as an error
     pub fn next_some(&mut self) -> Result<ParserInput<'s>> {
         self.next_token()
-            .and_then(|input| input.ok_or_else(|| self.map_error(errors::SyntaxError::ExpectedAny)))
+            .and_then(|input| input.ok_or_else(|| self.map_err(errors::SyntaxError::ExpectedAny)))
     }
 
     /// Gets the next token, mapping the errors, and takes any token other than the required kind as errors
@@ -108,13 +110,13 @@ where
     }
 
     /// Maps the error with appropriate context, outputting the new error
-    pub fn map_error(&self, err: impl Into<Error>) -> Error {
+    pub fn map_err(&self, err: impl Into<Error>) -> Error {
         self.seq.map_error(err.into())
     }
 
     /// Maps the error then output a [`Result`] of [`Err`]
     pub fn error<R>(&self, err: impl Into<Error>) -> Result<R> {
-        Err(self.map_error(err))
+        Err(self.map_err(err))
     }
 
     /// Returns an error if the lexer raises one, or return whether the lexer is exhausted
@@ -124,5 +126,10 @@ where
         } else {
             Ok(false)
         }
+    }
+
+    /// Inserts the str reference to [`LookUp`](`imuc_ast::LookUp`), returning its handle
+    pub fn look_up(&mut self, s: &str) -> imuc_ast::StrRef {
+        self.look_up.insert(s)
     }
 }

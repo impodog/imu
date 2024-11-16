@@ -6,20 +6,20 @@ pub struct TemplRule;
 impl Rule for TemplRule {
     type Output = Vec<item::Templ>;
 
-    fn parse<'s, I>(&self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
+    fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {
-        let input = parser.next_if(&TokenKind::Pair(Pair::LeftParen))?;
+        let input = parser.next_if(&TokenKind::Pair(Pair::LeftBracket))?;
         if input.is_some() {
             let mut templ = Vec::new();
             loop {
-                let next = parser.next_if(&TokenKind::Pair(Pair::RightParen))?;
+                let next = parser.next_if(&TokenKind::Pair(Pair::RightBracket))?;
                 if next.is_some() {
                     break;
                 } else {
                     let item = TemplItemRule.parse(parser)?.ok_or_else(|| {
-                        parser.map_error(errors::SyntaxError::ExpectedIn {
+                        parser.map_err(errors::SyntaxError::ExpectedIn {
                             expect: "Type".to_owned(),
                             context: "template definition".to_owned(),
                         })
@@ -41,7 +41,7 @@ pub struct TemplItemRule;
 impl Rule for TemplItemRule {
     type Output = item::Templ;
 
-    fn parse<'s, I>(&self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
+    fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {
@@ -49,7 +49,7 @@ impl Rule for TemplItemRule {
         if let Some(input) = input {
             let name = match input.kind {
                 TokenKind::Ident(ident) => match ident {
-                    Ident::Type => input.value.to_name(),
+                    Ident::Type => parser.look_up(input.value),
                     Ident::Unused => return Ok(Some(item::Templ::Unused)),
                     _ => filtered!(),
                 },
@@ -61,7 +61,7 @@ impl Rule for TemplItemRule {
                 // When requirements are present for the type
                 loop {
                     let ty = rules::TypeRule.parse(parser)?.ok_or_else(|| {
-                        parser.map_error(errors::SyntaxError::ExpectedIn {
+                        parser.map_err(errors::SyntaxError::ExpectedIn {
                             expect: "Type".to_owned(),
                             context: "template requirements".to_owned(),
                         })

@@ -47,38 +47,39 @@ impl PrimRule {
 impl Rule for PrimRule {
     type Output = prim::Prim;
 
-    fn parse<'s, I>(&self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
+    fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {
         let input = parser.next_if(&PrimTokens)?;
         if let Some(input) = input {
-            let prim = match input.kind {
-                TokenKind::Literal(literal) => match literal {
-                    Literal::Integer => Self::parse_int(input.value).map(prim::Prim::Integer),
-                    Literal::Float => Self::parse_float(input.value).map(prim::Prim::Float),
-                    Literal::String => {
-                        let len = input.value.len();
-                        let value =
-                            unescape::unescape(&input.value.get(1..len - 1).ok_or_else(|| {
-                                parser.map_error(errors::ParserError::QuoteError)
-                            })?)
-                            .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());
-                        value.map(prim::Prim::String)
-                    }
-                    Literal::MultiString => {
-                        let len = input.value.len();
-                        let value =
-                            unescape::unescape(&input.value.get(3..len - 3).ok_or_else(|| {
-                                parser.map_error(errors::ParserError::QuoteError)
-                            })?)
-                            .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());
-                        value.map(prim::Prim::String)
-                    }
-                },
-                _ => unreachable!("the tokens should be filtered"),
-            };
-            prim.map_err(|err| parser.map_error(err)).map(Some)
+            let prim =
+                match input.kind {
+                    TokenKind::Literal(literal) => match literal {
+                        Literal::Integer => Self::parse_int(input.value).map(prim::Prim::Integer),
+                        Literal::Float => Self::parse_float(input.value).map(prim::Prim::Float),
+                        Literal::String => {
+                            let len = input.value.len();
+                            let value =
+                                unescape::unescape(&input.value.get(1..len - 1).ok_or_else(
+                                    || parser.map_err(errors::ParserError::QuoteError),
+                                )?)
+                                .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());
+                            value.map(prim::Prim::String)
+                        }
+                        Literal::MultiString => {
+                            let len = input.value.len();
+                            let value =
+                                unescape::unescape(&input.value.get(3..len - 3).ok_or_else(
+                                    || parser.map_err(errors::ParserError::QuoteError),
+                                )?)
+                                .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());
+                            value.map(prim::Prim::String)
+                        }
+                    },
+                    _ => unreachable!("the tokens should be filtered"),
+                };
+            prim.map_err(|err| parser.map_err(err)).map(Some)
         } else {
             Ok(None)
         }

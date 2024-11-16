@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 /// A pattern to be matched against values
 pub enum Pat {
     Ident(IdentPat),
@@ -20,7 +22,7 @@ pub struct AnyPat(pub Vec<Pat>);
 /// An enumeration used in [`IdentPat`] for an unused or normal name
 pub enum IdentKind {
     Unused,
-    Value(String),
+    Value(crate::StrRef),
 }
 
 /// The flags of type pattern
@@ -39,6 +41,6 @@ pub struct Type {
 pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),
-    Single(String),
+    Single(crate::StrRef),
     Template(String, Vec<TypeKind>),
 }

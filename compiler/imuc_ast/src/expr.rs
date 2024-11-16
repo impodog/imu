@@ -13,7 +13,7 @@ pub enum Expr {
 }
 
 pub struct Value {
-    pub names: Vec<String>,
+    pub names: Vec<crate::StrRef>,
 }
 
 /// An expression with a unary operator

@@ -6,8 +6,8 @@ use crate::prim::Prim;
 /// An item definition directly used in modules, containing different kinds
 pub struct Item {
     pub public: Public,
-    pub templ: Vec<TemplItem>,
-    pub name: String,
+    pub templ: Vec<Templ>,
+    pub name: crate::StrRef,
     pub kind: ItemKind,
 }
 
@@ -17,7 +17,7 @@ pub enum Templ {
 }
 
 pub struct TemplItem {
-    pub name: String,
+    pub name: crate::StrRef,
     pub req: Vec<crate::pat::Type>,
 }
 

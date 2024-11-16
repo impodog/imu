@@ -8,7 +8,7 @@ pub struct PublicRule;
 impl Rule for PublicRule {
     type Output = module::Public;
 
-    fn parse<'s, I>(&self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
+    fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {

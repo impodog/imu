@@ -7,3 +7,4 @@ edition = "2021"
 imuc_error = { path = "../imuc_error" }
 imuc_lexer = { path = "../imuc_lexer" }
 imuc_ast = { path = "../imuc_ast" }
+imuc_path = { path = "../imuc_path" }

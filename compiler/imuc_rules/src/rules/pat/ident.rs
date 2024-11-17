@@ -28,7 +28,7 @@ impl Rule for IdentPatRule {
             let ident = if let TokenKind::Ident(Ident::Unused) = input.kind {
                 pat::IdentKind::Unused
             } else {
-                pat::IdentKind::Value(parser.look_up(input.value))
+                pat::IdentKind::Value(parser.look_up.insert(input.value))
             };
             Ok(Some(pat::IdentPat { ident, ty }))
         } else {

@@ -40,7 +40,7 @@ impl Rule for ItemRule {
                         Ok(Some(item::Item {
                             public,
                             templ,
-                            name: parser.look_up(&name.value),
+                            name: parser.look_up.insert(&name.value),
                             kind: item::ItemKind::Fun(fun),
                         }))
                     }
@@ -55,7 +55,7 @@ impl Rule for ItemRule {
                         Ok(Some(item::Item {
                             public,
                             templ,
-                            name: parser.look_up(name.value),
+                            name: parser.look_up.insert(name.value),
                             kind: item::ItemKind::Cus(cus),
                         }))
                     }

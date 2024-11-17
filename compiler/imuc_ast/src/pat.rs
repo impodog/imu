@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 /// A pattern to be matched against values
 pub enum Pat {
     Ident(IdentPat),

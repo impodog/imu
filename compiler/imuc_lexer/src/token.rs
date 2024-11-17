@@ -60,6 +60,7 @@ pub enum Keyword {
     Cus,
     Val,
     For,
+    Use,
     As,
     If,
     Else,
@@ -103,7 +104,6 @@ pub enum Pair {
 /// A part of [`TokenKind`] for binary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BinOp {
-    Dot,
     Add,
     Sub,
     Mul,
@@ -125,6 +125,7 @@ pub enum UnOp {
 pub enum Symbol {
     Colon,
     Comma,
+    Dot,
 }
 
 /// A part of [`TokenKind`] for errors that may happen in lexer

@@ -9,7 +9,8 @@ where
 {
     seq: I,
     stack: Option<ParserInput<'s>>,
-    look_up: imuc_ast::name::LookUp,
+    pub look_up: imuc_ast::name::LookUp,
+    pub resolver: imuc_path::Resolver,
     _phantom: std::marker::PhantomData<&'s str>,
 }
 
@@ -23,6 +24,7 @@ where
             seq: seq.into_iter(),
             stack: None,
             look_up: Default::default(),
+            resolver: Default::default(),
             _phantom: Default::default(),
         }
     }
@@ -94,7 +96,7 @@ where
                     use std::fmt::Write;
                     let mut expect = String::new();
                     kind.to_iter().for_each(|token| {
-                        write!(&mut expect, "{:?}", token)
+                        write!(&mut expect, "{:?},", token)
                             .expect("formatting error message should not fail");
                     });
                     expect
@@ -126,10 +128,5 @@ where
         } else {
             Ok(false)
         }
-    }
-
-    /// Inserts the str reference to [`LookUp`](`imuc_ast::LookUp`), returning its handle
-    pub fn look_up(&mut self, s: &str) -> imuc_ast::StrRef {
-        self.look_up.insert(s)
     }
 }

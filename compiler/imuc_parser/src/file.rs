@@ -87,6 +87,8 @@ where
             // This filters the unneeded elements for parsing
             if let TokenKind::Comment(_) | TokenKind::Spacing(_) | TokenKind::Stray = item.kind {
             } else {
+                #[cfg(debug_assertions)]
+                println!("EMIT: {} of kind {:?}", item.value, item.kind);
                 return Some(item);
             }
         }

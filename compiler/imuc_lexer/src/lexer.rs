@@ -11,6 +11,7 @@ lazy_static::lazy_static! {
         ac.insert("cus", TokenKind::Keyword(Keyword::Cus));
         ac.insert("val", TokenKind::Keyword(Keyword::Val));
         ac.insert("for", TokenKind::Keyword(Keyword::For));
+        ac.insert("use", TokenKind::Keyword(Keyword::Use));
         ac.insert("as", TokenKind::Keyword(Keyword::As));
         ac.insert("if", TokenKind::Keyword(Keyword::If));
         ac.insert("else", TokenKind::Keyword(Keyword::Else));
@@ -86,7 +87,6 @@ where
                 '{' => Token::new(TokenKind::Pair(Pair::LeftBrace), self.diff(begin)),
                 '}' => Token::new(TokenKind::Pair(Pair::RightBrace), self.diff(begin)),
 
-                '.' => Token::new(TokenKind::BinOp(BinOp::Dot), self.diff(begin)),
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
                     if self.first().is_ascii_digit() {
@@ -108,6 +108,7 @@ where
                 '=' => Token::new(TokenKind::BinOp(BinOp::Assign), self.diff(begin)),
                 ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
                 ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
+                '.' => Token::new(TokenKind::Symbol(Symbol::Dot), self.diff(begin)),
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }

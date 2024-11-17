@@ -49,7 +49,7 @@ impl Rule for TemplItemRule {
         if let Some(input) = input {
             let name = match input.kind {
                 TokenKind::Ident(ident) => match ident {
-                    Ident::Type => parser.look_up(input.value),
+                    Ident::Type => parser.look_up.insert(input.value),
                     Ident::Unused => return Ok(Some(item::Templ::Unused)),
                     _ => filtered!(),
                 },

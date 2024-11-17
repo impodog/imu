@@ -9,8 +9,12 @@ pub enum SyntaxError {
     ExpectedAfter { expect: String, after: TokenKind },
     #[error("expected {expect} in {context}")]
     ExpectedIn { expect: String, context: String },
+    #[error("expected {expect:?}")]
+    ExpectedToken { expect: TokenKind },
     #[error("expected a token, found EOF")]
     ExpectedAny,
+    #[error("item type {item:?} does not match with alias type {alias:?}")]
+    AliasMismatch { item: TokenKind, alias: TokenKind },
     #[error("unknown escape sequence")]
     UnknownEscape,
 }

@@ -8,6 +8,7 @@ imuc_error = { path = "../imuc_error" }
 imuc_lexer = { path = "../imuc_lexer" }
 imuc_ast = { path = "../imuc_ast" }
 imuc_parser = { path = "../imuc_parser" }
+imuc_path = { path = "../imuc_path" }
 
 lexical = { version = "7.0.2", default-features = false, features = [
     "std",

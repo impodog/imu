@@ -8,4 +8,4 @@ pub use any::AnyPatRule;
 pub use ident::IdentPatRule;
 pub use pat::PatRule;
 pub use tuple::TuplePatRule;
-pub use types::TypeRule;
+pub use types::{TemplArgsRule, TypeRule};

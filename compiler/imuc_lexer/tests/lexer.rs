@@ -51,7 +51,7 @@ pub mod tests {
             [
                 (TokenKind::Ident(Ident::Value), "a"),
                 (TokenKind::Spacing(Spacing::Indent), " "),
-                (TokenKind::BinOp(BinOp::Assign), "="),
+                (TokenKind::Symbol(Symbol::Assign), "="),
                 (TokenKind::Literal(Literal::Integer), "0x1b0F"),
                 (TokenKind::Semicolon, ";"),
                 (TokenKind::Spacing(Spacing::LineBreak), "\n"),

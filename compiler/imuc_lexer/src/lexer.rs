@@ -87,13 +87,15 @@ where
                 '{' => Token::new(TokenKind::Pair(Pair::LeftBrace), self.diff(begin)),
                 '}' => Token::new(TokenKind::Pair(Pair::RightBrace), self.diff(begin)),
 
+                '@' => Token::new(TokenKind::UnOp(UnOp::Ref), self.diff(begin)),
+
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
                     if self.first().is_ascii_digit() {
                         let ch = self.next_char();
                         Token::new(self.next_number(ch), self.diff(begin))
                     } else {
-                        Token::new(TokenKind::UnOp(UnOp::Neg), self.diff(begin))
+                        Token::new(TokenKind::BinOp(BinOp::Sub), self.diff(begin))
                     }
                 }
                 '*' => Token::new(TokenKind::BinOp(BinOp::Mul), self.diff(begin)),
@@ -102,13 +104,14 @@ where
                     '*' => Token::new(self.next_multi_comment(), self.diff(begin)),
                     _ => Token::new(TokenKind::BinOp(BinOp::Div), self.diff(begin)),
                 },
+                '%' => Token::new(TokenKind::BinOp(BinOp::Mod), self.diff(begin)),
                 '|' => Token::new(TokenKind::BinOp(BinOp::Or), self.diff(begin)),
                 '&' => Token::new(TokenKind::BinOp(BinOp::And), self.diff(begin)),
                 '^' => Token::new(TokenKind::BinOp(BinOp::Xor), self.diff(begin)),
-                '=' => Token::new(TokenKind::BinOp(BinOp::Assign), self.diff(begin)),
                 ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
                 ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
                 '.' => Token::new(TokenKind::Symbol(Symbol::Dot), self.diff(begin)),
+                '=' => Token::new(TokenKind::Symbol(Symbol::Assign), self.diff(begin)),
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }

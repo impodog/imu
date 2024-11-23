@@ -14,6 +14,5 @@ pub struct If {
 
 /// A "loop" statement stored in [`Flow`]
 pub struct Loop {
-    pub cond: Box<Expr>,
     pub body: Body,
 }

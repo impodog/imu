@@ -1,5 +1,4 @@
 use crate::item::Item;
-use std::path::PathBuf;
 
 /// The syntax tree entry point for modules
 pub struct Module {

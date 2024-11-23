@@ -7,13 +7,16 @@ pub enum Expr {
     Value(Value),
     UnExpr(UnExpr),
     BinExpr(BinExpr),
+    Body(Body),
     Flow(crate::flow::Flow),
     Tuple(Tuple),
     Struct(Struct),
 }
 
-pub struct Value {
-    pub names: Vec<crate::StrRef>,
+pub enum Value {
+    Unused,
+    Name(crate::StrRef),
+    Res(imuc_lexer::token::ResVal),
 }
 
 /// An expression with a unary operator
@@ -31,13 +34,9 @@ pub struct BinExpr {
 
 /// A group of expressions and/or bindings wrapped in braces as a body
 pub struct Body {
-    pub body: Vec<BodyElem>,
+    pub bind: Vec<crate::bind::Bind>,
+    pub body: Vec<Expr>,
     pub unit: bool,
-}
-
-pub enum BodyElem {
-    Expr(Expr),
-    Bind(crate::bind::Bind),
 }
 
 pub struct Tuple {
@@ -45,5 +44,6 @@ pub struct Tuple {
 }
 
 pub struct Struct {
-    pub elem: BTreeMap<String, Expr>,
+    pub ty: crate::pat::Type,
+    pub elem: BTreeMap<crate::StrRef, Expr>,
 }

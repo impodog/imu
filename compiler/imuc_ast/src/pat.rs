@@ -40,5 +40,5 @@ pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),
     Single(crate::StrRef),
-    Template(String, Vec<TypeKind>),
+    Template(crate::StrRef, Vec<Type>),
 }

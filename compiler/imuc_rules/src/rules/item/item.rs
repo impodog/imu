@@ -26,7 +26,7 @@ impl Rule for ItemRule {
             .expect("publicity rule should not return None");
         let input = parser.next_if(&ItemTokens)?;
         if let Some(input) = input {
-            let templ = rules::TemplRule.parse(parser)?.unwrap_or_default();
+            let templ = rules::TemplDefRule.parse(parser)?.unwrap_or_default();
             match input.kind {
                 TokenKind::Keyword(keyword) => match keyword {
                     Keyword::Fun => {

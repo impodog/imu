@@ -46,3 +46,32 @@ impl<'a> TokenKindSet<'a> for TokenKind {
         std::iter::once(self)
     }
 }
+
+/// Marks an empty token set
+impl<'a> TokenKindSet<'a> for () {
+    type Iter = std::iter::Empty<&'a TokenKind>;
+
+    fn contains(&'a self, _token: &TokenKind) -> bool {
+        false
+    }
+
+    fn to_iter(&'a self) -> Self::Iter {
+        std::iter::empty()
+    }
+}
+
+impl<'a, T1, T2> TokenKindSet<'a> for (T1, T2)
+where
+    T1: TokenKindSet<'a>,
+    T2: TokenKindSet<'a>,
+{
+    type Iter = std::iter::Chain<T1::Iter, T2::Iter>;
+
+    fn contains(&'a self, token: &TokenKind) -> bool {
+        self.0.contains(token) || self.1.contains(token)
+    }
+
+    fn to_iter(&'a self) -> Self::Iter {
+        self.0.to_iter().chain(self.1.to_iter())
+    }
+}

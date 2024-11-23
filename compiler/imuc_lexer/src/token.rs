@@ -108,16 +108,21 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
+    Mod,
     Or,
     And,
     Xor,
-    Assign,
+    Eq,
+    Lt,
+    Le,
+    Gt,
+    Ge,
 }
 
 /// A part of [`TokenKind`] for unary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnOp {
-    Neg,
+    Ref,
 }
 
 /// A part of [`TokenKind`] for parser structure symbol
@@ -126,6 +131,7 @@ pub enum Symbol {
     Colon,
     Comma,
     Dot,
+    Assign,
 }
 
 /// A part of [`TokenKind`] for errors that may happen in lexer

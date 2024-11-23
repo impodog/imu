@@ -8,4 +8,4 @@ pub(crate) use cus::CusRule;
 pub(crate) use fun::FunRule;
 pub use item::ItemRule;
 pub use public::PublicRule;
-pub use templ::{TemplItemRule, TemplRule};
+pub use templ::{TemplDefRule, TemplItemRule};

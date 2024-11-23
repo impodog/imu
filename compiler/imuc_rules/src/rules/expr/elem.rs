@@ -9,6 +9,20 @@ impl Rule for ElemExprRule {
     where
         I: ParserSequence<'s>,
     {
-        todo!()
+        if let Some(prim) = rules::PrimRule.parse(parser)? {
+            Ok(Some(expr::Expr::Prim(prim)))
+        } else if let Some(value) = rules::ValueRule.parse(parser)? {
+            Ok(Some(expr::Expr::Value(value)))
+        } else if let Some(body) = rules::BodyRule.parse(parser)? {
+            Ok(Some(expr::Expr::Body(body)))
+        } else if let Some(flow) = rules::FlowRule.parse(parser)? {
+            Ok(Some(expr::Expr::Flow(flow)))
+        } else if let Some(tuple) = rules::TupleExprRule.parse(parser)? {
+            Ok(Some(expr::Expr::Tuple(tuple)))
+        } else if let Some(struct_stmt) = rules::StructExprRule.parse(parser)? {
+            Ok(Some(expr::Expr::Struct(struct_stmt)))
+        } else {
+            Ok(None)
+        }
     }
 }

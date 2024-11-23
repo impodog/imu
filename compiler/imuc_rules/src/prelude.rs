@@ -22,7 +22,7 @@ macro_rules! lazy_tokens {
             }
         }
     };
-    ($name: ident, $($var:ident::$sub:ident),+) => {
+    ($name: ident,  $($var:ident::$sub:ident),+) => {
         struct $name;
         impl<'a> imuc_parser::TokenKindSet<'a> for $name {
             type Iter = std::slice::Iter<'a, TokenKind>;
@@ -31,6 +31,18 @@ macro_rules! lazy_tokens {
             }
             fn to_iter(&'a self) -> Self::Iter {
                 [$(TokenKind::$var($var::$sub)),+].iter()
+            }
+        }
+    };
+    ($name: ident, $($var:ident::$sub:ident),+ and $($pre: ident),+) => {
+        struct $name;
+        impl<'a> imuc_parser::TokenKindSet<'a> for $name {
+            type Iter = std::slice::Iter<'a, TokenKind>;
+            fn contains(&'a self, token: &TokenKind) -> bool {
+                matches!(token, $(TokenKind::$pre)|+ | $(TokenKind::$var($var::$sub))|+)
+            }
+            fn to_iter(&'a self) -> Self::Iter {
+                [$(TokenKind::$pre),+ , $(TokenKind::$var($var::$sub)),+].iter()
             }
         }
     };

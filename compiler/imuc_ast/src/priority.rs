@@ -5,6 +5,8 @@ use imuc_lexer::token::{BinOp, TokenKind, UnOp};
 /// The smaller the priority unmber is, the earlier it will bind operands
 pub trait Priority {
     fn priority(&self) -> u8;
+
+    fn is_right(&self) -> bool;
 }
 
 impl Priority for UnOp {
@@ -12,6 +14,10 @@ impl Priority for UnOp {
         match self {
             Self::Ref => 5,
         }
+    }
+
+    fn is_right(&self) -> bool {
+        true
     }
 }
 
@@ -26,6 +32,10 @@ impl Priority for BinOp {
             Self::Eq | Self::Lt | Self::Le | Self::Gt | Self::Ge => 13,
         }
     }
+
+    fn is_right(&self) -> bool {
+        false
+    }
 }
 
 impl Priority for TokenKind {
@@ -34,6 +44,14 @@ impl Priority for TokenKind {
             Self::BinOp(op) => op.priority(),
             Self::UnOp(op) => op.priority(),
             _ => u8::MAX,
+        }
+    }
+
+    fn is_right(&self) -> bool {
+        match self {
+            Self::BinOp(op) => op.is_right(),
+            Self::UnOp(op) => op.is_right(),
+            _ => false,
         }
     }
 }

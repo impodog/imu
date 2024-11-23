@@ -17,4 +17,8 @@ pub enum SyntaxError {
     AliasMismatch { item: TokenKind, alias: TokenKind },
     #[error("unknown escape sequence")]
     UnknownEscape,
+    #[error("too many operators in an expression")]
+    TooManyOp,
+    #[error("too few operators in an expression")]
+    TooFewOp,
 }

@@ -7,6 +7,7 @@ lazy_static::lazy_static! {
         let mut ac = AhoCorasickBuilder::default();
         ac.insert("pub", TokenKind::Keyword(Keyword::Pub));
         ac.insert("mut", TokenKind::Keyword(Keyword::Mut));
+        ac.insert("let", TokenKind::Keyword(Keyword::Let));
         ac.insert("fun", TokenKind::Keyword(Keyword::Fun));
         ac.insert("cus", TokenKind::Keyword(Keyword::Cus));
         ac.insert("val", TokenKind::Keyword(Keyword::Val));

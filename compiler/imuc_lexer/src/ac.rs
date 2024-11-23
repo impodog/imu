@@ -87,7 +87,7 @@ impl<T> AhoCorasickBuilder<T> {
     /// Insert a string into the automaton trie, assigning a value
     ///
     /// The return value is the end position of the inserted string
-    /// If the same string is inserted for many times, the value will be overridden each insertion
+    /// If the same string is inserted for many times, the value will be overridden on each insertion
     pub fn insert(&mut self, s: &str, value: T) -> usize {
         let mut pos = 0;
         for ch in s.chars() {

@@ -56,6 +56,7 @@ pub enum Ident {
 pub enum Keyword {
     Pub,
     Mut,
+    Let,
     Fun,
     Cus,
     Val,

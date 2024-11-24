@@ -47,18 +47,18 @@ impl Rule for ImportItemRule {
     where
         I: ParserSequence<'s>,
     {
-        if parser.next_if(&TokenKind::Pair(Pair::LeftBrace))?.is_some() {
+        if parser.next_if(&TokenKind::Pair(Pair::LeftParen))?.is_some() {
             let mut list = Self::Output::new();
             let mut comma = true;
             loop {
                 if parser
-                    .next_if(&TokenKind::Pair(Pair::RightBrace))?
+                    .next_if(&TokenKind::Pair(Pair::RightParen))?
                     .is_some()
                 {
                     break;
                 } else if !comma {
                     return Err(parser.map_err(errors::SyntaxError::ExpectedToken {
-                        expect: TokenKind::Pair(Pair::RightBrace),
+                        expect: TokenKind::Pair(Pair::RightParen),
                     }));
                 }
 

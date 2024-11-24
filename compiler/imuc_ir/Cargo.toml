@@ -1,0 +1,9 @@
+[package]
+name = "imuc_ir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+imuc_lexer = { path = "../imuc_lexer" }
+imuc_ast = { path = "../imuc_ast" }
+imuc_path = { path = "../imuc_path" }

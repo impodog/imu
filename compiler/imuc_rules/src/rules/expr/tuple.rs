@@ -1,10 +1,11 @@
 use crate::prelude::*;
 use imuc_lexer::token::{Pair, Symbol};
 
+/// This rule may output a unit value, a single expression, or a tuple expression
 pub struct TupleExprRule;
 
 impl Rule for TupleExprRule {
-    type Output = expr::Tuple;
+    type Output = expr::Expr;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
@@ -40,7 +41,11 @@ impl Rule for TupleExprRule {
 
                 elem.push(expr);
             }
-            Ok(Some(expr::Tuple { elem }))
+            match elem.len() {
+                0 => Ok(Some(expr::Expr::Prim(prim::Prim::Unit))),
+                1 if !comma => Ok(Some(elem.into_iter().next().unwrap())),
+                _ => Ok(Some(expr::Expr::Tuple(expr::Tuple { elem }))),
+            }
         } else {
             Ok(None)
         }

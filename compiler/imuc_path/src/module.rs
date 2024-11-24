@@ -33,7 +33,12 @@ impl Module {
                 self.sub.insert(name, SubModule::Module(module));
             } else if entry.path().is_file() {
                 let name = String::from_utf8_lossy(entry.file_name().as_bytes()).into_owned();
-                let file = crate::File::new(entry.into_path());
+                let file = crate::File::new(
+                    entry
+                        .into_path()
+                        .canonicalize()
+                        .expect("existing path should not fail to canonicalize"),
+                );
                 self.sub.insert(name, SubModule::File(file));
             }
         }

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::Priority;
 use imuc_lexer::token::Pair;
 use imuc_parser::TokenKindSet;
 

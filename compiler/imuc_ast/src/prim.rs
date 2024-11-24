@@ -3,6 +3,7 @@ pub enum Prim {
     Integer(Integer),
     Float(Float),
     String(String),
+    Unit,
 }
 
 /// Different sizes of an integer stored in [`Prim`]

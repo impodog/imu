@@ -18,7 +18,7 @@ impl Rule for ElemExprRule {
         } else if let Some(flow) = rules::FlowRule.parse(parser)? {
             Ok(Some(expr::Expr::Flow(flow)))
         } else if let Some(tuple) = rules::TupleExprRule.parse(parser)? {
-            Ok(Some(expr::Expr::Tuple(tuple)))
+            Ok(Some(tuple))
         } else if let Some(struct_stmt) = rules::StructExprRule.parse(parser)? {
             Ok(Some(expr::Expr::Struct(struct_stmt)))
         } else {

@@ -1,10 +1,10 @@
+use crate::mem::*;
 use crate::prelude::*;
 use std::ops::Deref;
 
 pub struct CmdBody {
     list: Vec<Cmd>,
 }
-
 impl Deref for CmdBody {
     type Target = [Cmd];
     fn deref(&self) -> &Self::Target {
@@ -18,6 +18,6 @@ impl CmdBody {
     }
 }
 
-pub struct Cmd {
-    // TODO
+pub enum Cmd {
+    Alloc(Bytes),
 }

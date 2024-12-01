@@ -6,6 +6,11 @@ use std::sync::Arc;
 /// A slightly cheaper clonable reference handle to a string
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StrRef(Arc<String>);
+impl ToString for StrRef {
+    fn to_string(&self) -> String {
+        self.0.as_ref().to_owned()
+    }
+}
 
 impl Borrow<str> for StrRef {
     fn borrow(&self) -> &str {

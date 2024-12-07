@@ -1,4 +1,4 @@
-use crate::io::StrReader;
+use crate::io::LineReader;
 use crate::prelude::*;
 use imuc_lexer::token::ResTy;
 use std::collections::BTreeMap;
@@ -121,10 +121,10 @@ impl Rw for Ty {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = StrRef::from(input.read_until(' ')?);
         let external = input.external();
-        let content = input.read_until('\n')?;
+        let content = input.read_line()?;
         match content.chars().next().ok_or_else(|| errors::IrError::Eof)? {
             '&' => {
-                let item = TyItem::read(StrReader::new(&content[1..], external))?;
+                let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
                     name,
                     kind: TyKind::Ref(item),
@@ -132,7 +132,7 @@ impl Rw for Ty {
                 }))
             }
             '@' => {
-                let item = TyItem::read(StrReader::new(&content[1..], external))?;
+                let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
                     name,
                     kind: TyKind::Ptr(item),
@@ -146,7 +146,7 @@ impl Rw for Ty {
                 let values = content[1..content.len() - 1].split(',');
                 let mut tuple = Vec::new();
                 for value in values {
-                    let item = TyItem::read(StrReader::new(value, external))?;
+                    let item = TyItem::read(LineReader::new(value, external))?;
                     tuple.push(item);
                 }
                 Ok(Ty::new(TyInner {
@@ -165,7 +165,8 @@ impl Rw for Ty {
                     let ok = if let Some(colon) = value.find(':') {
                         if colon + 1 != value.len() {
                             let name = StrRef::from(&value[..colon]);
-                            let item = TyItem::read(StrReader::new(&value[colon + 1..], external))?;
+                            let item =
+                                TyItem::read(LineReader::new(&value[colon + 1..], external))?;
                             map.insert(name, item);
                             true
                         } else {
@@ -185,7 +186,7 @@ impl Rw for Ty {
                 }))
             }
             _ => {
-                let res = ResTy::read(StrReader::new(content, external))?;
+                let res = ResTy::read(LineReader::new(content, external))?;
                 // TODO: Reuse reserved type definitions to save space
                 Ok(Ty::new(TyInner {
                     name,
@@ -212,18 +213,32 @@ impl Rw for Ty {
             }
             TyKind::Tuple(tuple) => {
                 write!(output, "(")?;
-                for ty in tuple.0.iter() {
+                for (is_last, ty) in tuple
+                    .0
+                    .iter()
+                    .enumerate()
+                    .map(|(i, ty)| (i + 1 == tuple.0.len(), ty))
+                {
                     ty.write(&mut output)?;
-                    write!(output, ",")?;
+                    if !is_last {
+                        write!(output, ",")?;
+                    }
                 }
                 write!(output, ")")?;
             }
             TyKind::Struct(cus) => {
                 write!(output, "{{")?;
-                for (name, ty) in cus.0.iter() {
+                for (is_last, (name, ty)) in cus
+                    .0
+                    .iter()
+                    .enumerate()
+                    .map(|(i, value)| (i + 1 == cus.0.len(), value))
+                {
                     write!(output, "{}=", &**name)?;
                     ty.write(&mut output)?;
-                    write!(output, ",")?;
+                    if !is_last {
+                        write!(output, ",")?;
+                    }
                 }
                 write!(output, "}}")?;
             }

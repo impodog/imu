@@ -7,6 +7,10 @@ pub trait IrRead {
     fn read_char(&mut self) -> Result<char>;
     /// Reads until the reader hits [`ch`] or reaches the end of a line, consuming the "until" character
     fn read_until(&mut self, ch: char) -> Result<&str>;
+    /// Reads until the reader reaches the end of a line, consuming the rest of the line
+    fn read_line(&mut self) -> Result<&str>;
+    /// Peeks the current line without consuming any characters
+    fn peek_line(&mut self) -> Result<&str>;
     /// Returns whether the reading is outside the current compiled module
     fn external(&self) -> bool;
 }
@@ -20,6 +24,12 @@ where
     }
     fn read_until(&mut self, ch: char) -> Result<&str> {
         (**self).read_until(ch)
+    }
+    fn read_line(&mut self) -> Result<&str> {
+        (**self).read_line()
+    }
+    fn peek_line(&mut self) -> Result<&str> {
+        (**self).peek_line()
     }
     fn external(&self) -> bool {
         (**self).external()
@@ -113,18 +123,43 @@ where
         }
     }
 
+    fn read_line(&mut self) -> Result<&str> {
+        if !self.update()? {
+            return Err(errors::IrError::Eof.into());
+        }
+        if let Some(line) = &self.line {
+            let result = &line[self.cursor..];
+            // Setting cursor to usize::MAX effectively forces [`Self::update`] on next read
+            self.cursor = usize::MAX;
+            Ok(result)
+        } else {
+            unreachable!()
+        }
+    }
+
+    fn peek_line(&mut self) -> Result<&str> {
+        if !self.update()? {
+            return Err(errors::IrError::Eof.into());
+        }
+        self.line
+            .as_ref()
+            .map(|value| value.as_str())
+            .ok_or_else(|| errors::IrError::Eof.into())
+    }
+
     fn external(&self) -> bool {
         self.external
     }
 }
 
-pub struct StrReader<'s> {
+/// Wrapper around a string reference without '\n' character
+pub struct LineReader<'s> {
     value: &'s str,
     cursor: usize,
     external: bool,
 }
 
-impl<'s> StrReader<'s> {
+impl<'s> LineReader<'s> {
     pub fn new(value: &'s str, external: bool) -> Self {
         Self {
             value,
@@ -134,7 +169,7 @@ impl<'s> StrReader<'s> {
     }
 }
 
-impl<'s> IrRead for StrReader<'s> {
+impl<'s> IrRead for LineReader<'s> {
     fn read_char(&mut self) -> Result<char> {
         if self.cursor < self.value.len() {
             let ch = self.value[self.cursor..]
@@ -165,6 +200,21 @@ impl<'s> IrRead for StrReader<'s> {
         } else {
             Ok(&self.value[begin..self.cursor])
         }
+    }
+
+    fn read_line(&mut self) -> Result<&str> {
+        if self.cursor < self.value.len() {
+            let result = &self.value[self.cursor..];
+            // The line is totally consumed
+            self.cursor = usize::MAX;
+            Ok(result)
+        } else {
+            Err(errors::IrError::Eof.into())
+        }
+    }
+
+    fn peek_line(&mut self) -> Result<&str> {
+        Ok(self.value)
     }
 
     fn external(&self) -> bool {

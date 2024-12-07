@@ -62,12 +62,11 @@ dependencies = [
  "imuc_ast",
  "imuc_error",
  "imuc_lexer",
- "imuc_path",
 ]
 
 [[package]]
 name = "imuc_lexer"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "lazy_static",
  "num_enum",

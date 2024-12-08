@@ -14,7 +14,7 @@ impl Rw for Header {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let mut ty = Vec::new();
         loop {
-            if input.peek_line()? == "%" {
+            if input.peek_line_or_else()? == "%" {
                 break;
             }
             ty.push(Ty::read(&mut input)?);
@@ -23,7 +23,7 @@ impl Rw for Header {
 
         let mut fun = Vec::new();
         loop {
-            if input.peek_line()? == "%" {
+            if input.peek_line_or_else()? == "%" {
                 break;
             }
             let name = StrRef::from(input.read_until(' ')?);

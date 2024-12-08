@@ -70,8 +70,10 @@ impl Rw for CmdBody {
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         for cmd in self.iter() {
             cmd.write(&mut output)?;
+            write!(output, "\n")?;
         }
         Cmd::End.write(&mut output)?;
+        write!(output, "\n")?;
         Ok(())
     }
 }

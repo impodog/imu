@@ -9,8 +9,14 @@ pub trait IrRead {
     fn read_until(&mut self, ch: char) -> Result<&str>;
     /// Reads until the reader reaches the end of a line, consuming the rest of the line
     fn read_line(&mut self) -> Result<&str>;
-    /// Peeks the current line without consuming any characters
-    fn peek_line(&mut self) -> Result<&str>;
+    /// Peeks the current line without consuming any characters, returns None when EOF is reached
+    fn peek_line(&mut self) -> Option<&str>;
+    /// Peeks the current line, returning Err on EOF
+    ///
+    /// The default implementation uses [`Self::peek_line`]
+    fn peek_line_or_else(&mut self) -> Result<&str> {
+        self.peek_line().ok_or_else(|| errors::IrError::Eof.into())
+    }
     /// Returns whether the reading is outside the current compiled module
     fn external(&self) -> bool;
 }
@@ -28,7 +34,7 @@ where
     fn read_line(&mut self) -> Result<&str> {
         (**self).read_line()
     }
-    fn peek_line(&mut self) -> Result<&str> {
+    fn peek_line(&mut self) -> Option<&str> {
         (**self).peek_line()
     }
     fn external(&self) -> bool {
@@ -137,14 +143,11 @@ where
         }
     }
 
-    fn peek_line(&mut self) -> Result<&str> {
-        if !self.update()? {
-            return Err(errors::IrError::Eof.into());
+    fn peek_line(&mut self) -> Option<&str> {
+        if !self.update().ok()? {
+            return None;
         }
-        self.line
-            .as_ref()
-            .map(|value| value.as_str())
-            .ok_or_else(|| errors::IrError::Eof.into())
+        self.line.as_ref().map(|value| value.as_str())
     }
 
     fn external(&self) -> bool {
@@ -213,8 +216,12 @@ impl<'s> IrRead for LineReader<'s> {
         }
     }
 
-    fn peek_line(&mut self) -> Result<&str> {
-        Ok(self.value)
+    fn peek_line(&mut self) -> Option<&str> {
+        if self.cursor < self.value.len() {
+            Some(self.value)
+        } else {
+            None
+        }
     }
 
     fn external(&self) -> bool {

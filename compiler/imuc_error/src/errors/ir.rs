@@ -12,6 +12,10 @@ pub enum IrError {
     NoSuchType(String),
     #[error("no such value: {0}")]
     NoSuchValue(String),
+    #[error("missing function signature: {0}")]
+    MissingSignature(String),
+    #[error("unimplemented function signature: {0}")]
+    UnimplementedSignature(String),
     #[error("unexpected eof hit")]
     Eof,
     #[error("internal type required for IR generation")]

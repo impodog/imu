@@ -1,1 +1,1 @@
-pub type TemplId = u8;
+pub type TemplId = u32;

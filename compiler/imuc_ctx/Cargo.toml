@@ -1,0 +1,9 @@
+[package]
+name = "imuc_cxt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+imuc_ir = { path = "../imuc_ir" }
+imuc_error = { path = "../imuc_error" }
+imuc_ast = { path = "../imuc_ast" }

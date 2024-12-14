@@ -47,6 +47,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "imuc_cxt"
+version = "0.1.0"
+dependencies = [
+ "imuc_ast",
+ "imuc_error",
+ "imuc_ir",
+]
+
+[[package]]
 name = "imuc_error"
 version = "0.1.0"
 dependencies = [

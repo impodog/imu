@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 /// A clonable immutable handle to [`TyInner`], representing a type
 ///
-/// This does not cause looped reference(hopefully) as the type is immutable
+/// This should not cause looped reference when creating
 #[derive(Clone)]
 pub struct Ty(Arc<TyInner>);
 impl Deref for Ty {

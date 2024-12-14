@@ -6,7 +6,6 @@ use crate::prim::Prim;
 /// An item definition directly used in modules, containing different kinds
 pub struct Item {
     pub public: Public,
-    pub templ: Vec<Templ>,
     pub name: crate::StrRef,
     pub kind: ItemKind,
 }

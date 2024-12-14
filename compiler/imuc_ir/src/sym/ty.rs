@@ -47,7 +47,6 @@ pub enum TyKind {
 pub enum TyItem {
     Solid(Ty),
     Pending(StrRef),
-    Templ(crate::sym::TemplId),
 }
 
 /// A tuple type, which is an array of inner types
@@ -94,12 +93,7 @@ impl Rw for ResTy {
 impl Rw for TyItem {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = input.read_until(' ')?;
-        if name.chars().all(|ch| ch.is_ascii_digit()) {
-            let val = name.parse::<super::TemplId>()?;
-            Ok(Self::Templ(val))
-        } else {
-            Ok(Self::Pending(name.into()))
-        }
+        Ok(Self::Pending(name.into()))
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         match self {
@@ -108,9 +102,6 @@ impl Rw for TyItem {
             }
             Self::Pending(name) => {
                 write!(output, "{}", &**name)?;
-            }
-            Self::Templ(id) => {
-                write!(output, "{}", id)?;
             }
         }
         Ok(())

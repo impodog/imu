@@ -1,4 +1,3 @@
-use crate::prelude::*;
 use std::collections::VecDeque;
 
 struct Node<T> {
@@ -66,15 +65,12 @@ impl<T> Dag<T> {
             }
         }
         if result.len() == self.nodes.len() {
-            let mut output = self
-                .nodes
+            let mut output = result
                 .into_iter()
-                .map(|node| node.data)
+                .zip(self.nodes.into_iter().map(|node| node.data))
                 .collect::<Vec<_>>();
-            for (prev, next) in result.into_iter().enumerate() {
-                output.swap(prev, next);
-            }
-            Some(output)
+            output.sort_unstable_by(|&(lhs, _), &(rhs, _)| lhs.cmp(&rhs));
+            Some(output.into_iter().map(|(_, data)| data).collect())
         } else {
             None
         }

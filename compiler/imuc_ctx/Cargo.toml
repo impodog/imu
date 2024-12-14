@@ -1,5 +1,5 @@
 [package]
-name = "imuc_cxt"
+name = "imuc_ctx"
 version = "0.1.0"
 edition = "2021"
 

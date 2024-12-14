@@ -22,4 +22,6 @@ pub enum IrError {
     InternalRequired,
     #[error("character {0:?} and its surrounding values are required")]
     CharRequired(char),
+    #[error("looped reference of types")]
+    LoopedReference,
 }

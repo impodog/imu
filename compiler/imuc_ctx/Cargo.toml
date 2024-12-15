@@ -7,3 +7,4 @@ edition = "2021"
 imuc_ir = { path = "../imuc_ir" }
 imuc_error = { path = "../imuc_error" }
 imuc_ast = { path = "../imuc_ast" }
+nonempty = "0.10.0"

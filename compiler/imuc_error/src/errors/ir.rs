@@ -6,12 +6,18 @@ pub enum IrError {
     Unmatched(char, char),
     #[error("type {0} is not allowed in IR")]
     TypeNotAllowed(String),
+    #[error("no such command modifier: {0}")]
+    NoSuchCommandMod(String),
     #[error("no such command: {0}")]
     NoSuchCommand(String),
+    #[error("no such primitive: {0}")]
+    NoSuchPrimitive(char),
     #[error("no such type: {0}")]
     NoSuchType(String),
     #[error("no such value: {0}")]
     NoSuchValue(String),
+    #[error("unknown escape sequence")]
+    UnknownEscape(String),
     #[error("missing function signature: {0}")]
     MissingSignature(String),
     #[error("unimplemented function signature: {0}")]

@@ -1,3 +1,4 @@
+use crate::graph::Dag;
 use crate::prelude::*;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
@@ -6,18 +7,18 @@ use sym::{ty, Ty};
 type TyMap = HashMap<StrRef, Ty>;
 
 #[derive(Default)]
-pub struct TyCtx {
+pub struct Types {
     map: TyMap,
 }
 
-impl Deref for TyCtx {
+impl Deref for Types {
     type Target = TyMap;
     fn deref(&self) -> &Self::Target {
         &self.map
     }
 }
 
-impl TyCtx {
+impl Types {
     pub fn get(&self, key: &str) -> Option<&Ty> {
         self.map.get(key)
     }
@@ -30,8 +31,8 @@ impl TyCtx {
         I: IntoIterator<Item = (&'a StrRef, &'a Ty)>,
     {
         let mut map = HashMap::<StrRef, (usize, Option<Ty>)>::new();
-        let mut graph = crate::Dag::new();
-        let add_edge = |graph: &mut crate::Dag<StrRef>,
+        let mut graph = Dag::new();
+        let add_edge = |graph: &mut Dag<StrRef>,
                         map: &mut HashMap<StrRef, (usize, Option<Ty>)>,
                         node: usize,
                         item: &ty::TyItem| {
@@ -71,8 +72,8 @@ impl TyCtx {
                 index
             };
             match &ty.kind {
-                ty::TyKind::Res(_) => {}
-                ty::TyKind::Ref(item) | ty::TyKind::Ptr(item) => {
+                ty::TyKind::Res(_) | ty::TyKind::Ptr(_) => {}
+                ty::TyKind::Ref(item) => {
                     add_edge(&mut graph, &mut map, node, item);
                 }
                 ty::TyKind::Tuple(tuple) => {
@@ -98,8 +99,9 @@ impl TyCtx {
                 .and_then(|(_, ty)| ty)
                 .ok_or_else(|| errors::IrError::NoSuchType(name.to_string()))?;
             let kind = match &ty.kind {
+                // pointers does not resolve recursively
+                ty::TyKind::Ptr(item) => ty::TyKind::Ptr(item.clone()),
                 ty::TyKind::Ref(item) => ty::TyKind::Ref(modify_item(&self.map, item)?),
-                ty::TyKind::Ptr(item) => ty::TyKind::Ptr(modify_item(&self.map, item)?),
                 ty::TyKind::Res(res) => ty::TyKind::Res(res.clone()),
                 ty::TyKind::Tuple(tuple) => {
                     let mut value = Vec::new();
@@ -124,5 +126,9 @@ impl TyCtx {
             self.map.insert(ty.name.clone(), ty);
         }
         Ok(())
+    }
+
+    pub fn insert(&mut self, name: StrRef, ty: Ty) {
+        self.map.insert(name, ty);
     }
 }

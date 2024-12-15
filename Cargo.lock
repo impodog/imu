@@ -53,6 +53,7 @@ dependencies = [
  "imuc_ast",
  "imuc_error",
  "imuc_ir",
+ "nonempty",
 ]
 
 [[package]]
@@ -65,12 +66,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "imuc_gen"
+version = "0.1.0"
+dependencies = [
+ "imuc_ast",
+ "imuc_ctx",
+ "imuc_error",
+ "imuc_ir",
+]
+
+[[package]]
 name = "imuc_ir"
 version = "0.1.0"
 dependencies = [
  "imuc_ast",
  "imuc_error",
  "imuc_lexer",
+ "unescape",
 ]
 
 [[package]]
@@ -208,6 +220,12 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+
+[[package]]
+name = "nonempty"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "303e8749c804ccd6ca3b428de7fe0d86cb86bc7606bc15291f100fd487960bb8"
 
 [[package]]
 name = "num_enum"

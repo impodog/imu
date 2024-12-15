@@ -1,4 +1,5 @@
 /// Syntax node of a primitive: integer, float, or string
+#[derive(Clone)]
 pub enum Prim {
     Integer(Integer),
     Float(Float),
@@ -7,6 +8,7 @@ pub enum Prim {
 }
 
 /// Different sizes of an integer stored in [`Prim`]
+#[derive(Clone)]
 pub enum Integer {
     I8(i8),
     I16(i16),
@@ -15,6 +17,7 @@ pub enum Integer {
 }
 
 /// Different sizes of a float stored in [`Prim`]
+#[derive(Clone)]
 pub enum Float {
     F32(f32),
     F64(f64),

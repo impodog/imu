@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use imuc_ctx::Dag;
+    use imuc_ctx::graph::Dag;
 
     #[test]
     fn test_linear() {

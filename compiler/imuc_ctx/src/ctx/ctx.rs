@@ -5,7 +5,9 @@ use nonempty::NonEmpty;
 #[derive(Default)]
 pub struct Ctx {
     pub ty: super::Types,
-    pub locals: NonEmpty<super::Locals>,
+    locals: NonEmpty<super::Locals>,
+    /// The pointer to the top of current stack
+    stack: cmd::Ptr,
 }
 
 impl Ctx {
@@ -42,6 +44,26 @@ impl Ctx {
 
     /// Deletes the last group of locals of the stack
     pub fn pop(&mut self) -> Option<super::Locals> {
-        self.locals.pop()
+        self.locals
+            .pop()
+            .inspect(|locals| self.stack -= locals.stack)
+    }
+
+    /// Gets the reference to the current locals
+    pub fn locals(&self) -> &super::Locals {
+        self.locals.last()
+    }
+
+    /// Gets the reference to the current locals
+    pub fn locals_mut(&mut self) -> &mut super::Locals {
+        self.locals.last_mut()
+    }
+
+    /// Pushes bytes into the stack pointer, returning the stack pointer before pushing
+    pub fn push_stack(&mut self, bytes: cmd::Bytes) -> cmd::Ptr {
+        let result = self.stack;
+        self.stack += bytes;
+        self.locals.last_mut().stack += bytes;
+        result
     }
 }

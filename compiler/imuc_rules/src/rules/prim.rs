@@ -61,7 +61,7 @@ impl Rule for PrimRule {
                         Literal::String => {
                             let len = input.value.len();
                             let value =
-                                unescape::unescape(&input.value.get(1..len - 1).ok_or_else(
+                                unescape::unescape(input.value.get(1..len - 1).ok_or_else(
                                     || parser.map_err(errors::ParserError::QuoteError),
                                 )?)
                                 .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());
@@ -70,7 +70,7 @@ impl Rule for PrimRule {
                         Literal::MultiString => {
                             let len = input.value.len();
                             let value =
-                                unescape::unescape(&input.value.get(3..len - 3).ok_or_else(
+                                unescape::unescape(input.value.get(3..len - 3).ok_or_else(
                                     || parser.map_err(errors::ParserError::QuoteError),
                                 )?)
                                 .ok_or_else(|| errors::SyntaxError::UnknownEscape.into());

@@ -1,3 +1,3 @@
-mod graph;
+mod dag;
 
-pub use graph::Dag;
+pub use dag::Dag;

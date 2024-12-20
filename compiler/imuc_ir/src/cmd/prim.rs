@@ -50,8 +50,8 @@ impl Rw for Prim {
                         value.push(ch);
                     }
                 }
-                let value = unescape::unescape(&value)
-                    .ok_or_else(|| errors::IrError::UnknownEscape(value))?;
+                let value =
+                    unescape::unescape(&value).ok_or(errors::IrError::UnknownEscape(value))?;
                 Self::String(value)
             }
             _ => {

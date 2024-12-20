@@ -38,7 +38,7 @@ impl Rule for ItemRule {
                         })?;
                         Ok(Some(item::Item {
                             public,
-                            name: parser.look_up.insert(&name.value),
+                            name: parser.look_up.insert(name.value),
                             kind: item::ItemKind::Fun(fun),
                         }))
                     }

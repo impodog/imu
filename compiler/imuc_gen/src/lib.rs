@@ -2,4 +2,4 @@ mod conv;
 pub mod convs;
 mod prelude;
 
-pub use conv::Conv;
+pub use conv::{Convert, Converter};

@@ -108,15 +108,13 @@ impl Rule for TypeRule {
                 flags,
                 kind: pat::TypeKind::Res(res),
             }))
+        } else if let pat::PatFlags::Shared = flags {
+            Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
+                expect: "Type".to_owned(),
+                after: TokenKind::UnOp(UnOp::Ref),
+            }))
         } else {
-            if let pat::PatFlags::Shared = flags {
-                Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
-                    expect: "Type".to_owned(),
-                    after: TokenKind::UnOp(UnOp::Ref),
-                }))
-            } else {
-                Ok(None)
-            }
+            Ok(None)
         }
     }
 }

@@ -76,3 +76,9 @@ impl<T> Dag<T> {
         }
     }
 }
+
+impl<T> Default for Dag<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

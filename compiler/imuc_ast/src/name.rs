@@ -1,20 +1,21 @@
 use std::borrow::Borrow;
 use std::collections::HashSet;
+use std::fmt;
 use std::ops::Deref;
 use std::sync::Arc;
 
 /// A slightly cheaper clonable reference handle to a string
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StrRef(Arc<String>);
-impl ToString for StrRef {
-    fn to_string(&self) -> String {
-        self.0.as_ref().to_owned()
+impl fmt::Display for StrRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.as_ref().fmt(f)
     }
 }
 
 impl Borrow<str> for StrRef {
     fn borrow(&self) -> &str {
-        &*self
+        self
     }
 }
 

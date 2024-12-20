@@ -113,7 +113,7 @@ impl Rw for Ty {
         let name = StrRef::from(input.read_until(' ')?);
         let external = input.external();
         let content = input.read_line()?;
-        match content.chars().next().ok_or_else(|| errors::IrError::Eof)? {
+        match content.chars().next().ok_or(errors::IrError::Eof)? {
             '&' => {
                 let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
@@ -131,7 +131,7 @@ impl Rw for Ty {
                 }))
             }
             '(' => {
-                if content.chars().rev().next().is_none_or(|ch| ch != ')') {
+                if content.chars().next_back().is_none_or(|ch| ch != ')') {
                     return Err(errors::IrError::Unmatched('(', ')').into());
                 }
                 let values = content[1..content.len() - 1].split(',');
@@ -147,7 +147,7 @@ impl Rw for Ty {
                 }))
             }
             '{' => {
-                if content.chars().rev().next().is_none_or(|ch| ch != '}') {
+                if content.chars().next_back().is_none_or(|ch| ch != '}') {
                     return Err(errors::IrError::Unmatched('{', '}').into());
                 }
                 let values = content[1..content.len() - 1].split(',');

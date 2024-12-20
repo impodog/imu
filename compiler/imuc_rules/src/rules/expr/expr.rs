@@ -18,15 +18,15 @@ where
 fn merge_symbols(op: TokenKind, stack: &mut Vec<expr::Expr>) -> Result<()> {
     match op {
         TokenKind::UnOp(op) => {
-            let val = stack.pop().ok_or_else(|| errors::SyntaxError::TooManyOp)?;
+            let val = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
             stack.push(expr::Expr::UnExpr(expr::UnExpr {
                 op,
                 val: Box::new(val),
             }));
         }
         TokenKind::BinOp(op) => {
-            let lhs = stack.pop().ok_or_else(|| errors::SyntaxError::TooManyOp)?;
-            let rhs = stack.pop().ok_or_else(|| errors::SyntaxError::TooManyOp)?;
+            let lhs = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            let rhs = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
             stack.push(expr::Expr::BinExpr(expr::BinExpr {
                 op,
                 lhs: Box::new(lhs),

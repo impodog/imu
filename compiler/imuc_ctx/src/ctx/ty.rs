@@ -39,7 +39,7 @@ impl Types {
             match item {
                 ty::TyItem::Solid(_) => {}
                 ty::TyItem::Pending(dep) => {
-                    if self.get(&dep).is_some() {
+                    if self.get(dep).is_some() {
                     } else if let Some(dep) = map.get_mut(dep) {
                         graph.add(dep.0, node);
                     } else {
@@ -90,9 +90,7 @@ impl Types {
         }
 
         // Extract values using the topo sort order
-        let order = graph
-            .topo_sort()
-            .ok_or_else(|| errors::IrError::LoopedReference)?;
+        let order = graph.topo_sort().ok_or(errors::IrError::LoopedReference)?;
         for name in order.into_iter() {
             let ty = map
                 .remove(&name)
@@ -102,7 +100,7 @@ impl Types {
                 // pointers does not resolve recursively
                 ty::TyKind::Ptr(item) => ty::TyKind::Ptr(item.clone()),
                 ty::TyKind::Ref(item) => ty::TyKind::Ref(modify_item(&self.map, item)?),
-                ty::TyKind::Res(res) => ty::TyKind::Res(res.clone()),
+                ty::TyKind::Res(res) => ty::TyKind::Res(*res),
                 ty::TyKind::Tuple(tuple) => {
                     let mut value = Vec::new();
                     for item in tuple.0.iter() {

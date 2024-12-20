@@ -89,7 +89,7 @@ pub struct ImportRule<'a> {
     pub import: &'a mut Vec<module::Import>,
 }
 
-impl<'a> Rule for ImportRule<'a> {
+impl Rule for ImportRule<'_> {
     type Output = ();
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>

@@ -1,7 +1,14 @@
 use crate::prelude::*;
 
-pub trait Conv<Output> {
+/// Defines the input AST type of the converter
+pub trait Converter {
     type Input;
+}
 
+/// Defines a specific conversion option of the converter
+pub trait Convert<Output>
+where
+    Self: Converter,
+{
     fn convert(self, ctx: &mut Ctx, input: Self::Input) -> Result<Output>;
 }

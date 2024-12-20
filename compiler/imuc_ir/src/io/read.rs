@@ -147,7 +147,7 @@ where
         if !self.update().ok()? {
             return None;
         }
-        self.line.as_ref().map(|value| value.as_str())
+        self.line.as_deref()
     }
 
     fn external(&self) -> bool {
@@ -172,7 +172,7 @@ impl<'s> LineReader<'s> {
     }
 }
 
-impl<'s> IrRead for LineReader<'s> {
+impl IrRead for LineReader<'_> {
     fn read_char(&mut self) -> Result<char> {
         if self.cursor < self.value.len() {
             let ch = self.value[self.cursor..]

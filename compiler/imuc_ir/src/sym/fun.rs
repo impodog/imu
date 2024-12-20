@@ -40,7 +40,7 @@ impl Rw for Fun {
         Ok(Self { name, sig, body })
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        write!(output, "{}\n", &*self.name)?;
+        writeln!(output, "{}", &*self.name)?;
         self.sig.write(&mut output)?;
         self.body.write(&mut output)?;
         Ok(())
@@ -54,7 +54,7 @@ impl Rw for SiglessFun {
         Ok(Self { name, body })
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        write!(output, "{}\n", &*self.name)?;
+        writeln!(output, "{}", &*self.name)?;
         self.body.write(&mut output)?;
         Ok(())
     }
@@ -68,7 +68,7 @@ impl Rw for FunSig {
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         self.param.write(&mut output)?;
-        write!(output, "\n")?;
+        writeln!(output)?;
         self.ret.write(&mut output)?;
         Ok(())
     }

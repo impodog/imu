@@ -10,5 +10,5 @@ pub trait Convert<Output>
 where
     Self: Converter,
 {
-    fn convert(self, ctx: &mut Ctx, input: Self::Input) -> Result<Output>;
+    fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Output>;
 }

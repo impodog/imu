@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use imuc_lexer::token::{Ident, ResVal};
 
-lazy_tokens!(ResValTokens, ResVal::True, ResVal::False, ResVal::SelfValue);
+lazy_tokens!(ResValTokens, ResVal::True, ResVal::False);
 
 pub struct ValueRule;
 

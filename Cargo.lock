@@ -73,6 +73,7 @@ dependencies = [
  "imuc_ctx",
  "imuc_error",
  "imuc_ir",
+ "imuc_lexer",
 ]
 
 [[package]]

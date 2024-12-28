@@ -6,10 +6,6 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 pub struct Bytes(u32);
 pub type Ptr = Bytes;
 
-/// New type wrapper around [`Ptr`] indicating a creation of new pointers, instead of querying
-#[derive(Default, Clone, Copy, Debug)]
-pub struct Alloc(pub Ptr);
-
 impl Add<Bytes> for Bytes {
     type Output = Bytes;
     fn add(self, rhs: Bytes) -> Self::Output {
@@ -57,5 +53,11 @@ impl Rw for Bytes {
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         write!(output, "{}", self.0)?;
         Ok(())
+    }
+}
+
+impl Bytes {
+    pub const fn new(value: u32) -> Self {
+        Self(value)
     }
 }

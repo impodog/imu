@@ -19,7 +19,6 @@ lazy_static::lazy_static! {
         ac.insert("loop", TokenKind::Keyword(Keyword::Loop));
         ac.insert("true", TokenKind::ResVal(ResVal::True));
         ac.insert("false", TokenKind::ResVal(ResVal::False));
-        ac.insert("self", TokenKind::ResVal(ResVal::SelfValue));
         ac.insert("Self", TokenKind::ResTy(ResTy::SelfType));
         ac.insert("I8", TokenKind::ResTy(ResTy::I8));
         ac.insert("I16", TokenKind::ResTy(ResTy::I16));

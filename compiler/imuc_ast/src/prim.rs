@@ -1,6 +1,7 @@
 /// Syntax node of a primitive: integer, float, or string
 #[derive(Clone)]
 pub enum Prim {
+    Bool(bool),
     Integer(Integer),
     Float(Float),
     String(String),

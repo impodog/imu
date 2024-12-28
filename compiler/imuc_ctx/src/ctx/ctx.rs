@@ -5,6 +5,7 @@ use nonempty::NonEmpty;
 #[derive(Default)]
 pub struct Ctx {
     pub ty: super::Types,
+    body: Vec<Vec<cmd::Cmd>>,
     locals: NonEmpty<super::Locals>,
     /// The pointer to the top of current stack
     stack: cmd::Ptr,
@@ -37,13 +38,13 @@ impl Ctx {
     }
 
     /// Creates a new group of locals at the back of the stack
-    pub fn push(&mut self) -> &mut super::Locals {
+    pub fn push_locals(&mut self) -> &mut super::Locals {
         self.locals.push(Default::default());
         self.locals.last_mut()
     }
 
     /// Deletes the last group of locals of the stack
-    pub fn pop(&mut self) -> Option<super::Locals> {
+    pub fn pop_locals(&mut self) -> Option<super::Locals> {
         self.locals
             .pop()
             .inspect(|locals| self.stack -= locals.stack)
@@ -65,5 +66,26 @@ impl Ctx {
         self.stack += bytes;
         self.locals.last_mut().stack += bytes;
         result
+    }
+
+    /// Gets the reference to the current function body
+    pub fn body_mut(&mut self) -> Option<&mut Vec<cmd::Cmd>> {
+        self.body.last_mut()
+    }
+
+    /// Gets the reference to the current function body, or generates an error
+    pub fn body_mut_or(&mut self) -> Result<&mut Vec<cmd::Cmd>> {
+        self.body_mut()
+            .ok_or(errors::ConvError::FunctionRequired.into())
+    }
+
+    /// Pushes a new body of function when entering inner functions
+    pub fn push_body(&mut self) {
+        self.body.push(Default::default())
+    }
+
+    /// Gets the last body of functions being pushed
+    pub fn pop_body(&mut self) -> Option<Vec<cmd::Cmd>> {
+        self.body.pop()
     }
 }

@@ -6,6 +6,8 @@ impl Rw for Prim {
         let begin = input.read_char()?;
         let prim = match begin {
             'u' => Self::Unit,
+            'T' => Self::Bool(true),
+            'F' => Self::Bool(false),
             'b' => {
                 let value = input.read_until(' ')?.parse()?;
                 Self::Integer(Integer::I8(value))
@@ -64,6 +66,13 @@ impl Rw for Prim {
         match self {
             Prim::Unit => {
                 write!(output, "u")?;
+            }
+            Prim::Bool(value) => {
+                if *value {
+                    write!(output, "T")?;
+                } else {
+                    write!(output, "F")?;
+                }
             }
             Prim::Integer(integer) => match integer {
                 Integer::I8(value) => {

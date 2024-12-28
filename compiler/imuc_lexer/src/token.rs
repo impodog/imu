@@ -73,7 +73,6 @@ pub enum Keyword {
 pub enum ResVal {
     True,
     False,
-    SelfValue,
 }
 
 /// A part of [`TokenKind`] for types, such as primitives, using reserved names

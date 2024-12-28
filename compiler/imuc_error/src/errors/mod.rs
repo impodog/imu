@@ -1,3 +1,4 @@
+mod conv;
 mod ir;
 mod lexer;
 mod memory;
@@ -5,6 +6,7 @@ mod parser;
 mod path;
 mod syntax;
 
+pub use conv::ConvError;
 pub use ir::IrError;
 pub use lexer::LexerError;
 pub use memory::MemoryError;

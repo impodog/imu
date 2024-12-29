@@ -34,8 +34,15 @@ checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
 name = "imu"
 version = "0.1.0"
 dependencies = [
+ "imuc_ast",
+ "imuc_ctx",
  "imuc_error",
+ "imuc_gen",
+ "imuc_ir",
  "imuc_lexer",
+ "imuc_parser",
+ "imuc_path",
+ "imuc_rules",
 ]
 
 [[package]]

@@ -10,3 +10,23 @@ members = ["compiler/*"]
 [dependencies]
 imuc_lexer = { path = "compiler/imuc_lexer", optional = true }
 imuc_error = { path = "compiler/imuc_error", optional = true }
+imuc_ast = { path = "compiler/imuc_ast", optional = true }
+imuc_ctx = { path = "compiler/imuc_ctx", optional = true }
+imuc_gen = { path = "compiler/imuc_gen", optional = true }
+imuc_ir = { path = "compiler/imuc_ir", optional = true }
+imuc_parser = { path = "compiler/imuc_parser", optional = true }
+imuc_path = { path = "compiler/imuc_path", optional = true }
+imuc_rules = { path = "compiler/imuc_rules", optional = true }
+
+[features]
+compiler = [
+    "imuc_lexer",
+    "imuc_error",
+    "imuc_ast",
+    "imuc_ctx",
+    "imuc_gen",
+    "imuc_ir",
+    "imuc_parser",
+    "imuc_path",
+    "imuc_rules",
+]

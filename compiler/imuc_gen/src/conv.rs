@@ -6,7 +6,7 @@ pub trait Converter {
 }
 
 /// Defines a specific conversion option of the converter
-pub trait Convert<Output>
+pub trait Convert<Output = ()>
 where
     Self: Converter,
 {

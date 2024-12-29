@@ -88,17 +88,10 @@ impl Rule for TypeRule {
             };
             let name = parser.look_up.insert(name);
 
-            if let Some(templ) = TemplArgsRule.parse(parser)? {
-                Ok(Some(pat::Type {
-                    flags,
-                    kind: pat::TypeKind::Template(name, templ),
-                }))
-            } else {
-                Ok(Some(pat::Type {
-                    flags,
-                    kind: pat::TypeKind::Single(name),
-                }))
-            }
+            Ok(Some(pat::Type {
+                flags,
+                kind: pat::TypeKind::Single(name),
+            }))
         } else if let Some(res) = parser.next_if(&ResTyTokens)? {
             let res = match res.kind {
                 TokenKind::ResTy(res) => res,

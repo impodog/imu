@@ -79,6 +79,8 @@ pub enum ResVal {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResTy {
     SelfType,
+    Unit,
+    Bool,
     I8,
     I16,
     I32,
@@ -108,7 +110,6 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
-    Mod,
     Or,
     And,
     Xor,
@@ -123,6 +124,7 @@ pub enum BinOp {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnOp {
     Ref,
+    Not,
 }
 
 /// A part of [`TokenKind`] for parser structure symbol

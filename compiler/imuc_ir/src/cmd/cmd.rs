@@ -1,4 +1,4 @@
-use super::{Bytes, Ptr};
+use super::{Bytes, NumBytes, Ptr};
 use crate::prelude::*;
 use std::ops::Deref;
 
@@ -20,58 +20,35 @@ impl Deref for CmdBody {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum NumBytes {
-    I8,
-    I16,
-    I32,
-    I64,
-}
-
-impl TryFrom<char> for NumBytes {
-    type Error = Error;
-    fn try_from(value: char) -> std::result::Result<Self, Self::Error> {
-        use NumBytes::*;
-        let value = match value {
-            'b' => I8,
-            'd' => I16,
-            'q' => I32,
-            'o' => I64,
-            _ => return Err(errors::IrError::NoSuchCommandMod(value.to_string()).into()),
-        };
-        Ok(value)
-    }
-}
-
-impl TryFrom<&str> for NumBytes {
-    type Error = Error;
-    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
-        if let Some(ch) = value.chars().next() {
-            if value.len() == 1 {
-                return ch.try_into();
-            }
-        }
-        Err(errors::IrError::NoSuchCommandMod(value.to_owned()).into())
-    }
-}
-
-impl From<NumBytes> for char {
-    fn from(value: NumBytes) -> Self {
-        use NumBytes::*;
-        match value {
-            I8 => 'b',
-            I16 => 'd',
-            I32 => 'q',
-            I64 => 'o',
-        }
-    }
+macro_rules! arithmetic {
+    (read $name: ident, $bytes: ident, $input: ident) => {{
+        let bytes = $bytes.try_into()?;
+        let lhs = Ptr::read(&mut $input)?;
+        let rhs = Ptr::read(&mut $input)?;
+        Ok(Self::Add(bytes, lhs, rhs))
+    }};
+    (write $name: literal, $bytes: ident, $lhs: ident, $rhs: ident, $output: ident) => {{
+        write!($output, concat!($name, "{} "), char::from(*$bytes))?;
+        $lhs.write(&mut $output)?;
+        write!($output, " ")?;
+        $rhs.write(&mut $output)?;
+    }};
 }
 
 #[derive(Clone)]
 pub enum Cmd {
     Dupli(Bytes, Ptr),
-    Add(NumBytes, Ptr, Ptr),
     Store(crate::sym::Prim),
+    Wrap(Bytes, Ptr),
+    Add(NumBytes, Ptr, Ptr),
+    Sub(NumBytes, Ptr, Ptr),
+    Mul(NumBytes, Ptr, Ptr),
+    Div(NumBytes, Ptr, Ptr),
+    Or(NumBytes, Ptr, Ptr),
+    And(NumBytes, Ptr, Ptr),
+    Xor(NumBytes, Ptr, Ptr),
+    Eq(NumBytes, Ptr, Ptr),
+    Test(NumBytes, Ptr, Ptr),
     /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files
     End,
 }
@@ -88,16 +65,24 @@ impl Rw for Cmd {
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::Dupli(bytes, ptr))
             }
-            "add" => {
-                let bytes = bytes.try_into()?;
-                let lhs = Ptr::read(&mut input)?;
-                let rhs = Ptr::read(&mut input)?;
-                Ok(Self::Add(bytes, lhs, rhs))
-            }
             "str" => {
                 let prim = crate::sym::Prim::read(&mut input)?;
                 Ok(Self::Store(prim))
             }
+            "wrp" => {
+                let bytes = Bytes::read(&mut input)?;
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::Wrap(bytes, ptr))
+            }
+            "add" => arithmetic!(read Add, bytes, input),
+            "sub" => arithmetic!(read Sub, bytes, input),
+            "mul" => arithmetic!(read Mul, bytes, input),
+            "div" => arithmetic!(read Div, bytes, input),
+            "bor" => arithmetic!(read Or, bytes, input),
+            "and" => arithmetic!(read And, bytes, input),
+            "xor" => arithmetic!(read Xor, bytes, input),
+            "eql" => arithmetic!(read Eq, bytes, input),
+            "tst" => arithmetic!(read Test, bytes, input),
             "end" => Ok(Self::End),
             _ => Err(errors::IrError::NoSuchCommand(cmd.to_owned()).into()),
         }
@@ -110,16 +95,24 @@ impl Rw for Cmd {
                 write!(output, " ")?;
                 ptr.write(&mut output)?;
             }
-            Self::Add(bytes, lhs, rhs) => {
-                write!(output, "add{} ", char::from(*bytes))?;
-                write!(output, " ")?;
-                lhs.write(&mut output)?;
-                write!(output, " ")?;
-                rhs.write(&mut output)?;
-            }
             Self::Store(prim) => {
                 write!(output, "str ")?;
                 prim.write(&mut output)?;
+            }
+            Self::Add(bytes, lhs, rhs) => arithmetic!(write "add", bytes, lhs, rhs, output),
+            Self::Sub(bytes, lhs, rhs) => arithmetic!(write "sub", bytes, lhs, rhs, output),
+            Self::Mul(bytes, lhs, rhs) => arithmetic!(write "mul", bytes, lhs, rhs, output),
+            Self::Div(bytes, lhs, rhs) => arithmetic!(write "div", bytes, lhs, rhs, output),
+            Self::Or(bytes, lhs, rhs) => arithmetic!(write "bor", bytes, lhs, rhs, output),
+            Self::And(bytes, lhs, rhs) => arithmetic!(write "and", bytes, lhs, rhs, output),
+            Self::Xor(bytes, lhs, rhs) => arithmetic!(write "xor", bytes, lhs, rhs, output),
+            Self::Eq(bytes, lhs, rhs) => arithmetic!(write "eql", bytes, lhs, rhs, output),
+            Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
+            Self::Wrap(bytes, ptr) => {
+                write!(output, "wrp ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                ptr.write(&mut output)?;
             }
             Self::End => {
                 write!(output, "end")?;

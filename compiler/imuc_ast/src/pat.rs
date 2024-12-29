@@ -27,6 +27,7 @@ pub enum IdentKind {
 pub enum PatFlags {
     Unique,
     Shared,
+    Stack,
 }
 
 /// Used in pattern matching, indicating the specific type to match against
@@ -40,5 +41,4 @@ pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),
     Single(crate::StrRef),
-    Template(crate::StrRef, Vec<Type>),
 }

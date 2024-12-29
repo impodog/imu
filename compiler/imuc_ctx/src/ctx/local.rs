@@ -2,9 +2,19 @@ use crate::prelude::*;
 use std::collections::BTreeMap;
 
 /// Information required to compile a value object
+#[derive(Clone)]
 pub struct Value {
     pub ty: sym::Ty,
     pub ptr: cmd::Ptr,
+}
+
+impl Default for Value {
+    fn default() -> Self {
+        Value {
+            ty: sym::Ty::unit(),
+            ptr: cmd::Ptr::default(),
+        }
+    }
 }
 
 /// Local names references in an AST body
@@ -12,7 +22,6 @@ pub struct Value {
 pub struct Locals {
     pub ty: super::Types,
     pub value: BTreeMap<StrRef, Value>,
-    pub(crate) stack: cmd::Ptr,
 }
 
 impl Value {

@@ -20,6 +20,8 @@ lazy_static::lazy_static! {
         ac.insert("true", TokenKind::ResVal(ResVal::True));
         ac.insert("false", TokenKind::ResVal(ResVal::False));
         ac.insert("Self", TokenKind::ResTy(ResTy::SelfType));
+        ac.insert("Unit", TokenKind::ResTy(ResTy::Unit));
+        ac.insert("Bool", TokenKind::ResTy(ResTy::Bool));
         ac.insert("I8", TokenKind::ResTy(ResTy::I8));
         ac.insert("I16", TokenKind::ResTy(ResTy::I16));
         ac.insert("I32", TokenKind::ResTy(ResTy::I32));
@@ -88,6 +90,7 @@ where
                 '}' => Token::new(TokenKind::Pair(Pair::RightBrace), self.diff(begin)),
 
                 '@' => Token::new(TokenKind::UnOp(UnOp::Ref), self.diff(begin)),
+                '!' => Token::new(TokenKind::UnOp(UnOp::Not), self.diff(begin)),
 
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
@@ -104,7 +107,6 @@ where
                     '*' => Token::new(self.next_multi_comment(), self.diff(begin)),
                     _ => Token::new(TokenKind::BinOp(BinOp::Div), self.diff(begin)),
                 },
-                '%' => Token::new(TokenKind::BinOp(BinOp::Mod), self.diff(begin)),
                 '|' => Token::new(TokenKind::BinOp(BinOp::Or), self.diff(begin)),
                 '&' => Token::new(TokenKind::BinOp(BinOp::And), self.diff(begin)),
                 '^' => Token::new(TokenKind::BinOp(BinOp::Xor), self.diff(begin)),

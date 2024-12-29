@@ -5,10 +5,8 @@ use nonempty::NonEmpty;
 #[derive(Default)]
 pub struct Ctx {
     pub ty: super::Types,
-    body: Vec<Vec<cmd::Cmd>>,
+    body: Vec<super::Body>,
     locals: NonEmpty<super::Locals>,
-    /// The pointer to the top of current stack
-    stack: cmd::Ptr,
 }
 
 impl Ctx {
@@ -45,9 +43,7 @@ impl Ctx {
 
     /// Deletes the last group of locals of the stack
     pub fn pop_locals(&mut self) -> Option<super::Locals> {
-        self.locals
-            .pop()
-            .inspect(|locals| self.stack -= locals.stack)
+        self.locals.pop()
     }
 
     /// Gets the reference to the current locals
@@ -60,21 +56,13 @@ impl Ctx {
         self.locals.last_mut()
     }
 
-    /// Pushes bytes into the stack pointer, returning the stack pointer before pushing
-    pub fn push_stack(&mut self, bytes: cmd::Bytes) -> cmd::Ptr {
-        let result = self.stack;
-        self.stack += bytes;
-        self.locals.last_mut().stack += bytes;
-        result
-    }
-
     /// Gets the reference to the current function body
-    pub fn body_mut(&mut self) -> Option<&mut Vec<cmd::Cmd>> {
+    pub fn body_mut(&mut self) -> Option<&mut super::Body> {
         self.body.last_mut()
     }
 
     /// Gets the reference to the current function body, or generates an error
-    pub fn body_mut_or(&mut self) -> Result<&mut Vec<cmd::Cmd>> {
+    pub fn body_mut_or(&mut self) -> Result<&mut super::Body> {
         self.body_mut()
             .ok_or(errors::ConvError::FunctionRequired.into())
     }
@@ -85,7 +73,12 @@ impl Ctx {
     }
 
     /// Gets the last body of functions being pushed
-    pub fn pop_body(&mut self) -> Option<Vec<cmd::Cmd>> {
+    pub fn pop_body(&mut self) -> Option<super::Body> {
         self.body.pop()
+    }
+
+    pub fn map_err(&self, err: impl Into<Error>) -> Error {
+        // TODO: Add additional information for conversion
+        err.into()
     }
 }

@@ -129,4 +129,11 @@ impl Types {
     pub fn insert(&mut self, name: StrRef, ty: Ty) {
         self.map.insert(name, ty);
     }
+
+    pub fn or_insert_with<F>(&mut self, name: StrRef, f: F) -> &mut Ty
+    where
+        F: FnOnce() -> Ty,
+    {
+        self.map.entry(name).or_insert_with(f)
+    }
 }

@@ -1,27 +1,101 @@
+use crate::cmd::Bytes;
 use crate::io::LineReader;
 use crate::prelude::*;
 use imuc_lexer::token::ResTy;
 use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 /// A clonable immutable handle to [`TyInner`], representing a type
 ///
 /// This should not cause looped reference when creating
 #[derive(Clone)]
-pub struct Ty(Arc<TyInner>);
+pub struct Ty(Arc<(TyInner, OnceLock<Option<Bytes>>)>);
 impl Deref for Ty {
     type Target = TyInner;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.0 .0
     }
+}
+
+macro_rules! generate_reserved {
+    ($func: ident, $name: literal, $ty: ident) => {
+        pub fn $func() -> Self {
+            static VALUE: OnceLock<Ty> = OnceLock::new();
+
+            VALUE
+                .get_or_init(|| {
+                    Ty::new(TyInner {
+                        name: $name.into(),
+                        kind: TyKind::Res(ResTy::$ty),
+                        external: true,
+                    })
+                })
+                .clone()
+        }
+    };
 }
 
 impl Ty {
     /// Creates an initial handle to the inner type
     pub fn new(inner: TyInner) -> Self {
-        Self(Arc::new(inner))
+        Self(Arc::new((inner, OnceLock::new())))
     }
+
+    /// Calculates the size of the type in bytes, and store it for future use
+    ///
+    /// If the type contains unresolved types or ResTy::SelfType, [`None`] is returned
+    pub fn size(&self) -> Option<Bytes> {
+        self.0
+             .1
+            .get_or_init(|| {
+                let len = match &self.0 .0.kind {
+                    TyKind::Res(res) => {
+                        let len = match res {
+                            ResTy::SelfType => return None,
+                            ResTy::Unit => 0,
+                            ResTy::I8 | ResTy::Bool => 1,
+                            ResTy::I16 => 2,
+                            ResTy::I32 | ResTy::F32 => 4,
+                            ResTy::I64 | ResTy::F64 => 8,
+                            ResTy::I128 => 16,
+                            ResTy::Str | ResTy::Ptr => crate::cmd::PTR_SIZE,
+                        };
+                        Bytes::new(len)
+                    }
+                    TyKind::Ptr(_) | TyKind::Ref(_) => Bytes::ptr(),
+                    TyKind::Tuple(tuple) => {
+                        let mut accum = Bytes::default();
+                        for value in tuple.0.iter() {
+                            accum += value.size()?;
+                        }
+                        accum
+                    }
+                    TyKind::Struct(cus) => {
+                        let mut accum = Bytes::default();
+                        for value in cus.0.values() {
+                            accum += value.size()?;
+                        }
+                        accum
+                    }
+                };
+                Some(len)
+            })
+            .as_ref()
+            .copied()
+    }
+
+    generate_reserved!(unit, "Unit", Unit);
+    generate_reserved!(bool, "Bool", Bool);
+    generate_reserved!(i8, "I8", I8);
+    generate_reserved!(i16, "I16", I16);
+    generate_reserved!(i32, "I32", I32);
+    generate_reserved!(i64, "I64", I64);
+    generate_reserved!(f32, "F32", F32);
+    generate_reserved!(f64, "F64", F64);
+    generate_reserved!(ptr, "Ptr", Ptr);
+    generate_reserved!(str, "Str", Str);
 }
 
 /// The inner contents of a type, containing name, sources, and memory info
@@ -47,6 +121,16 @@ pub enum TyKind {
 pub enum TyItem {
     Solid(Ty),
     Pending(StrRef),
+}
+
+impl TyItem {
+    /// Gets the size of the type in bytes, or None if the type is uninitialized
+    pub fn size(&self) -> Option<Bytes> {
+        match self {
+            Self::Solid(ty) => ty.size(),
+            _ => None,
+        }
+    }
 }
 
 /// A tuple type, which is an array of inner types

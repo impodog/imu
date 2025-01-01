@@ -2,6 +2,13 @@ use crate::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 pub const PTR_SIZE: u32 = std::mem::size_of::<u32>() as u32;
+pub const PTR_BYTES: NumBytes = match PTR_SIZE {
+    8 => NumBytes::I8,
+    16 => NumBytes::I16,
+    32 => NumBytes::I32,
+    64 => NumBytes::I64,
+    _ => NumBytes::I8,
+};
 
 /// Represent the number of bytes, or a pointer to the stack
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -101,6 +108,21 @@ impl TryFrom<&str> for NumBytes {
             }
         }
         Err(errors::IrError::NoSuchCommandMod(value.to_owned()).into())
+    }
+}
+
+use imuc_lexer::token::ResTy;
+impl TryFrom<ResTy> for NumBytes {
+    type Error = Error;
+    fn try_from(value: ResTy) -> Result<NumBytes> {
+        match value {
+            ResTy::Bool | ResTy::I8 => Ok(NumBytes::I8),
+            ResTy::I16 => Ok(NumBytes::I16),
+            ResTy::I32 | ResTy::F32 => Ok(NumBytes::I32),
+            ResTy::I64 | ResTy::F64 => Ok(NumBytes::I64),
+            ResTy::Ptr | ResTy::Str => Ok(PTR_BYTES),
+            _ => Err(errors::IrError::NotSized(format!("{:?}", value)).into()),
+        }
     }
 }
 

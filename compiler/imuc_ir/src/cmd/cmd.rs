@@ -25,7 +25,7 @@ macro_rules! arithmetic {
         let bytes = $bytes.try_into()?;
         let lhs = Ptr::read(&mut $input)?;
         let rhs = Ptr::read(&mut $input)?;
-        Ok(Self::Add(bytes, lhs, rhs))
+        Ok(Self::$name(bytes, lhs, rhs))
     }};
     (write $name: literal, $bytes: ident, $lhs: ident, $rhs: ident, $output: ident) => {{
         write!($output, concat!($name, "{} "), char::from(*$bytes))?;
@@ -40,6 +40,7 @@ pub enum Cmd {
     Dupli(Bytes, Ptr),
     Store(crate::sym::Prim),
     Wrap(Bytes, Ptr),
+    Not(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),
     Sub(NumBytes, Ptr, Ptr),
     Mul(NumBytes, Ptr, Ptr),
@@ -47,9 +48,15 @@ pub enum Cmd {
     Or(NumBytes, Ptr, Ptr),
     And(NumBytes, Ptr, Ptr),
     Xor(NumBytes, Ptr, Ptr),
-    Eq(NumBytes, Ptr, Ptr),
+    EqI8(Ptr, i8),
     Test(NumBytes, Ptr, Ptr),
-    /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files
+    Addf(NumBytes, Ptr, Ptr),
+    Subf(NumBytes, Ptr, Ptr),
+    Mulf(NumBytes, Ptr, Ptr),
+    Divf(NumBytes, Ptr, Ptr),
+    Testf(NumBytes, Ptr, Ptr),
+    /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,
+    /// or to act as a placeholder for optional commands
     End,
 }
 
@@ -74,6 +81,11 @@ impl Rw for Cmd {
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::Wrap(bytes, ptr))
             }
+            "not" => {
+                let bytes = bytes.try_into()?;
+                let opd = Ptr::read(&mut input)?;
+                Ok(Self::Not(bytes, opd))
+            }
             "add" => arithmetic!(read Add, bytes, input),
             "sub" => arithmetic!(read Sub, bytes, input),
             "mul" => arithmetic!(read Mul, bytes, input),
@@ -81,8 +93,17 @@ impl Rw for Cmd {
             "bor" => arithmetic!(read Or, bytes, input),
             "and" => arithmetic!(read And, bytes, input),
             "xor" => arithmetic!(read Xor, bytes, input),
-            "eql" => arithmetic!(read Eq, bytes, input),
             "tst" => arithmetic!(read Test, bytes, input),
+            "eql" => {
+                let bytes = Bytes::read(&mut input)?;
+                let value = input.read_until(' ')?.parse::<i8>()?;
+                Ok(Self::EqI8(bytes, value))
+            }
+            "adf" => arithmetic!(read Addf, bytes, input),
+            "sbf" => arithmetic!(read Subf, bytes, input),
+            "mlf" => arithmetic!(read Mulf, bytes, input),
+            "dvf" => arithmetic!(read Divf, bytes, input),
+            "tsf" => arithmetic!(read Testf, bytes, input),
             "end" => Ok(Self::End),
             _ => Err(errors::IrError::NoSuchCommand(cmd.to_owned()).into()),
         }
@@ -99,6 +120,17 @@ impl Rw for Cmd {
                 write!(output, "str ")?;
                 prim.write(&mut output)?;
             }
+            Self::Wrap(bytes, ptr) => {
+                write!(output, "wrp ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                ptr.write(&mut output)?;
+            }
+            Self::Not(bytes, opd) => {
+                write!(output, "not{} ", char::from(*bytes))?;
+                write!(output, " ")?;
+                opd.write(&mut output)?;
+            }
             Self::Add(bytes, lhs, rhs) => arithmetic!(write "add", bytes, lhs, rhs, output),
             Self::Sub(bytes, lhs, rhs) => arithmetic!(write "sub", bytes, lhs, rhs, output),
             Self::Mul(bytes, lhs, rhs) => arithmetic!(write "mul", bytes, lhs, rhs, output),
@@ -106,14 +138,17 @@ impl Rw for Cmd {
             Self::Or(bytes, lhs, rhs) => arithmetic!(write "bor", bytes, lhs, rhs, output),
             Self::And(bytes, lhs, rhs) => arithmetic!(write "and", bytes, lhs, rhs, output),
             Self::Xor(bytes, lhs, rhs) => arithmetic!(write "xor", bytes, lhs, rhs, output),
-            Self::Eq(bytes, lhs, rhs) => arithmetic!(write "eql", bytes, lhs, rhs, output),
-            Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
-            Self::Wrap(bytes, ptr) => {
-                write!(output, "wrp ")?;
-                bytes.write(&mut output)?;
-                write!(output, " ")?;
-                ptr.write(&mut output)?;
+            Self::EqI8(opd, value) => {
+                write!(output, "eql ")?;
+                opd.write(&mut output)?;
+                write!(output, " {}", value)?;
             }
+            Self::Addf(bytes, lhs, rhs) => arithmetic!(write "adf", bytes, lhs, rhs, output),
+            Self::Subf(bytes, lhs, rhs) => arithmetic!(write "sbf", bytes, lhs, rhs, output),
+            Self::Mulf(bytes, lhs, rhs) => arithmetic!(write "mlf", bytes, lhs, rhs, output),
+            Self::Divf(bytes, lhs, rhs) => arithmetic!(write "dvf", bytes, lhs, rhs, output),
+            Self::Testf(bytes, lhs, rhs) => arithmetic!(write "tsf", bytes, lhs, rhs, output),
+            Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
             Self::End => {
                 write!(output, "end")?;
             }

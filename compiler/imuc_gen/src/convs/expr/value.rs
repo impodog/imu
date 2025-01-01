@@ -15,7 +15,7 @@ impl Convert<Option<Value>> for ValueConv {
         match input {
             AstValue::Unused => Ok(None),
             AstValue::Name(name) => {
-                let value = ctx
+                let value = body
                     .get_value(name)
                     .ok_or_else(|| errors::ConvError::UndefinedValue(name.to_string()))?;
                 Ok(Some(value.to_owned()))

@@ -16,6 +16,8 @@ pub enum IrError {
     NoSuchType(String),
     #[error("no such value: {0}")]
     NoSuchValue(String),
+    #[error("attempted to acquire unsized primitive: {0}")]
+    NotSized(String),
     #[error("unknown escape sequence")]
     UnknownEscape(String),
     #[error("missing function signature: {0}")]

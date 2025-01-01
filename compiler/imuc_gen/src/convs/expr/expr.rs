@@ -16,6 +16,8 @@ impl Convert<Option<Value>> for ExprConv {
                 Ok(Some(value))
             }
             Expr::Value(value) => convs::ValueConv.convert(ctx, value),
+            Expr::UnExpr(un_expr) => convs::UnExprConv.convert(ctx, un_expr),
+            Expr::BinExpr(bin_expr) => convs::BinExprConv.convert(ctx, bin_expr),
             _ => {
                 todo!("expression conversion")
             }

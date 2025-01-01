@@ -8,8 +8,12 @@ pub enum ConvError {
     UndefinedType(String),
     #[error("uninitialized type: {0}")]
     UninitializedType(String),
+    #[error("types mismatch: {0}")]
+    TypesMismatch(String),
     #[error("a function is required by this operation")]
     FunctionRequired,
     #[error("a value is required in {0}")]
     ValueRequired(String),
+    #[error("a primitive is required in {0}")]
+    PrimitiveRequired(String),
 }

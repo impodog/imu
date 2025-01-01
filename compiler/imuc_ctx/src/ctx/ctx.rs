@@ -1,59 +1,20 @@
 use crate::prelude::*;
-use nonempty::NonEmpty;
 
 /// All context info used when converting AST to IR
-#[derive(Default)]
 pub struct Ctx {
     pub ty: super::Types,
+    base_name: String,
     body: Vec<super::Body>,
-    locals: NonEmpty<super::Locals>,
 }
 
 impl Ctx {
     /// Creates a new empty context of IR conversion
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Gets reference to the nearest type of given name
-    pub fn get_type(&self, name: &str) -> Option<&sym::Ty> {
-        for locals in self.locals.iter().rev() {
-            if let Some(ty) = locals.ty.get(name) {
-                return Some(ty);
-            }
+    pub fn new(base_name: String) -> Self {
+        Self {
+            ty: Default::default(),
+            base_name,
+            body: Default::default(),
         }
-        self.ty.get(name)
-    }
-
-    /// Gets reference to the nearest value of given name
-    pub fn get_value(&self, name: &str) -> Option<&super::Value> {
-        for locals in self.locals.iter().rev() {
-            if let Some(value) = locals.value.get(name) {
-                return Some(value);
-            }
-        }
-        None
-    }
-
-    /// Creates a new group of locals at the back of the stack
-    pub fn push_locals(&mut self) -> &mut super::Locals {
-        self.locals.push(Default::default());
-        self.locals.last_mut()
-    }
-
-    /// Deletes the last group of locals of the stack
-    pub fn pop_locals(&mut self) -> Option<super::Locals> {
-        self.locals.pop()
-    }
-
-    /// Gets the reference to the current locals
-    pub fn locals(&self) -> &super::Locals {
-        self.locals.last()
-    }
-
-    /// Gets the reference to the current locals
-    pub fn locals_mut(&mut self) -> &mut super::Locals {
-        self.locals.last_mut()
     }
 
     /// Gets the reference to the current function body
@@ -68,8 +29,9 @@ impl Ctx {
     }
 
     /// Pushes a new body of function when entering inner functions
-    pub fn push_body(&mut self) {
-        self.body.push(Default::default())
+    pub fn push_body(&mut self) -> &mut super::Body {
+        self.body.push(Default::default());
+        self.body.last_mut().unwrap()
     }
 
     /// Gets the last body of functions being pushed
@@ -77,8 +39,15 @@ impl Ctx {
         self.body.pop()
     }
 
-    pub fn map_err(&self, err: impl Into<Error>) -> Error {
-        // TODO: Add additional information for conversion
-        err.into()
+    /// Gets reference to the nearest type of given name
+    pub fn get_type(&self, name: &str) -> Option<&sym::Ty> {
+        if let Some(body) = self.body.last() {
+            for locals in body.locals_iter_rev() {
+                if let Some(ty) = locals.ty.get(name) {
+                    return Some(ty);
+                }
+            }
+        }
+        self.ty.get(name)
     }
 }

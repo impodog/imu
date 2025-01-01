@@ -13,7 +13,7 @@ impl Convert<Option<Value>> for UnExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
         let value: Value = convs::ExprConv
             .convert(ctx, input.val.as_ref())?
-            .ok_or_else(|| ctx.map_err(errors::ConvError::ValueRequired("UnExpr".to_owned())))?;
+            .ok_or_else(|| errors::ConvError::ValueRequired("UnExpr".to_owned()))?;
         match input.op {
             UnOp::Ref => {
                 let body = ctx.body_mut_or()?;
@@ -42,7 +42,17 @@ impl Convert<Option<Value>> for UnExprConv {
             }
             UnOp::Not => {
                 let body = ctx.body_mut_or()?;
-                let ptr = body.push_stack(value.ty.size())
+                let bytes = value
+                    .ty
+                    .to_res_ty()
+                    .ok_or_else(|| errors::ConvError::PrimitiveRequired("Not".to_owned()))?
+                    .try_into()?;
+                let ptr = body.push_stack(value.ty.size_or()?);
+                body.push(Cmd::Not(bytes, value.ptr));
+                Ok(Some(Value {
+                    ty: value.ty.clone(),
+                    ptr,
+                }))
             }
         }
     }

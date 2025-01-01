@@ -43,6 +43,14 @@ impl Ty {
         Self(Arc::new((inner, OnceLock::new())))
     }
 
+    /// Converts the type to [`ResTy`], if possible
+    pub fn to_res_ty(&self) -> Option<ResTy> {
+        match &self.0 .0.kind {
+            TyKind::Res(res_ty) => Some(*res_ty),
+            _ => None,
+        }
+    }
+
     /// Calculates the size of the type in bytes, and store it for future use
     ///
     /// If the type contains unresolved types or ResTy::SelfType, [`None`] is returned
@@ -59,7 +67,6 @@ impl Ty {
                             ResTy::I16 => 2,
                             ResTy::I32 | ResTy::F32 => 4,
                             ResTy::I64 | ResTy::F64 => 8,
-                            ResTy::I128 => 16,
                             ResTy::Str | ResTy::Ptr => crate::cmd::PTR_SIZE,
                         };
                         Bytes::new(len)
@@ -84,6 +91,11 @@ impl Ty {
             })
             .as_ref()
             .copied()
+    }
+
+    pub fn size_or(&self) -> Result<Bytes> {
+        self.size()
+            .ok_or_else(|| errors::ConvError::UninitializedType(self.name.to_string()).into())
     }
 
     generate_reserved!(unit, "Unit", Unit);

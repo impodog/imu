@@ -85,7 +85,6 @@ pub enum ResTy {
     I16,
     I32,
     I64,
-    I128,
     Ptr,
     F32,
     F64,

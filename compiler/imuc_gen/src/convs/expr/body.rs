@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use ast::expr::Body;
-use ctx::Value;
 
 pub struct BodyConv;
 
@@ -10,7 +9,7 @@ impl Converter for BodyConv {
 
 impl Convert<Value> for BodyConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
-        ctx.push_body();
+        ctx.body_mut().push_locals();
         for bind in input.bind.iter() {
             convs::BindConv.convert(ctx, bind)?;
         }
@@ -23,7 +22,9 @@ impl Convert<Value> for BodyConv {
         } else {
             result.unwrap_or_default()
         };
-        ctx.pop_body();
+        ctx.body_mut()
+            .pop_locals()
+            .expect("context should contain a set of locals after expression body");
         Ok(result)
     }
 }

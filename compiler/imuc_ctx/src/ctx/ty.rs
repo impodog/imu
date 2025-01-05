@@ -81,7 +81,7 @@ impl Types {
                         add_edge(&mut graph, &mut map, node, item);
                     }
                 }
-                ty::TyKind::Struct(cus) => {
+                ty::TyKind::Cus(cus) => {
                     for item in cus.0.values() {
                         add_edge(&mut graph, &mut map, node, item);
                     }
@@ -108,12 +108,12 @@ impl Types {
                     }
                     ty::TyKind::Tuple(ty::Tuple(value))
                 }
-                ty::TyKind::Struct(cus) => {
+                ty::TyKind::Cus(cus) => {
                     let mut value = BTreeMap::new();
                     for (name, item) in cus.0.iter() {
                         value.insert(name.clone(), modify_item(&self.map, item)?);
                     }
-                    ty::TyKind::Struct(ty::Struct(value))
+                    ty::TyKind::Cus(ty::Cus(value))
                 }
             };
             let ty = ty::Ty::new(ty::TyInner {

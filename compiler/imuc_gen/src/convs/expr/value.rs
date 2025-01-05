@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ast::expr::Value as AstValue;
-use ctx::Value;
+
 use imuc_lexer::token::ResVal;
 
 pub struct ValueConv;
@@ -11,7 +11,7 @@ impl Converter for ValueConv {
 
 impl Convert<Option<Value>> for ValueConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
-        let body = ctx.body_mut_or()?;
+        let body = ctx.body_mut();
         match input {
             AstValue::Unused => Ok(None),
             AstValue::Name(name) => {

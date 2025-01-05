@@ -1,16 +1,23 @@
 use crate::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-pub const PTR_SIZE: u32 = std::mem::size_of::<u32>() as u32;
-pub const PTR_BYTES: NumBytes = match PTR_SIZE {
-    8 => NumBytes::I8,
-    16 => NumBytes::I16,
-    32 => NumBytes::I32,
-    64 => NumBytes::I64,
-    _ => NumBytes::I8,
-};
+/// Returns the representation of the number as [`NumBytes`], if available
+const fn number_to_bytes(value: u32) -> Option<NumBytes> {
+    match value {
+        1 => Some(NumBytes::I8),
+        2 => Some(NumBytes::I16),
+        4 => Some(NumBytes::I32),
+        8 => Some(NumBytes::I64),
+        _ => None,
+    }
+}
 
-/// Represent the number of bytes, or a pointer to the stack
+pub const PTR_SIZE: u32 = std::mem::size_of::<Ptr>() as u32;
+pub const GLOBAL_PTR_SIZE: u32 = std::mem::size_of::<GlobalPtr>() as u32;
+pub const PTR_BYTES: NumBytes = number_to_bytes(PTR_SIZE).unwrap();
+pub const GLOBAL_PTR_BYTES: NumBytes = number_to_bytes(GLOBAL_PTR_SIZE).unwrap();
+
+/// Represent the number of bytes, or a pointer to the local function stack
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Bytes(u32);
 pub type Ptr = Bytes;
@@ -135,5 +142,52 @@ impl From<NumBytes> for char {
             I32 => 'q',
             I64 => 'o',
         }
+    }
+}
+
+/// Represents a pointer to a stack of current or previous functions
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GlobalPtr(u64);
+
+impl GlobalPtr {
+    /// Creates a new global ptr to a specific stack(starting from the bottom) and a pointer to a
+    /// value in the stack
+    pub fn new(stack: u32, ptr: Bytes) -> Self {
+        let stack = (stack as u64) << 32;
+        Self(stack + ptr.0 as u64)
+    }
+
+    /// Extracts the stack position
+    pub fn stack(&self) -> u32 {
+        (self.0 >> 32) as u32
+    }
+
+    /// Extracts the pointer in the stack
+    pub fn ptr(&self) -> u32 {
+        (self.0 & 0xFFFFFFFF) as u32
+    }
+}
+
+use std::fmt::{Display, Formatter, Result as FmtResult};
+impl Display for GlobalPtr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(
+            f,
+            "GlobalPtr {{ stack: {}, ptr: {} }}",
+            self.stack(),
+            self.ptr()
+        )
+    }
+}
+
+impl Rw for GlobalPtr {
+    fn read(mut input: impl IrRead) -> Result<Self> {
+        let value = input.read_until(' ')?;
+        let value = value.parse::<u64>()?;
+        Ok(Self(value))
+    }
+    fn write(&self, mut output: impl std::io::Write) -> Result<()> {
+        write!(output, "{}", self.0)?;
+        Ok(())
     }
 }

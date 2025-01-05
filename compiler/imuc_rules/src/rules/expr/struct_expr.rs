@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 pub struct StructExprRule;
 
 impl Rule for StructExprRule {
-    type Output = expr::Struct;
+    type Output = expr::Cus;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
@@ -46,7 +46,7 @@ impl Rule for StructExprRule {
 
                 elem.insert(parser.look_up.insert(name.value), expr);
             }
-            Ok(Some(expr::Struct { ty, elem }))
+            Ok(Some(expr::Cus { ty, elem }))
         } else {
             Ok(None)
         }

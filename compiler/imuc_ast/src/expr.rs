@@ -10,7 +10,7 @@ pub enum Expr {
     Body(Body),
     Flow(crate::flow::Flow),
     Tuple(Tuple),
-    Struct(Struct),
+    Cus(Cus),
 }
 
 pub enum Value {
@@ -43,7 +43,7 @@ pub struct Tuple {
     pub elem: Vec<Expr>,
 }
 
-pub struct Struct {
+pub struct Cus {
     pub ty: crate::pat::Type,
     pub elem: BTreeMap<crate::StrRef, Expr>,
 }

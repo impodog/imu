@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ast::prim::{Float, Integer, Prim};
-use ctx::Value;
+
 
 pub struct PrimConv;
 
@@ -10,7 +10,7 @@ impl Converter for PrimConv {
 
 impl Convert<Value> for PrimConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
-        let body = ctx.body_mut_or()?;
+        let body = ctx.body_mut();
         body.push(Cmd::Store(input.clone()));
         match input {
             Prim::Unit => Ok(Value {

@@ -24,6 +24,7 @@ pub enum IdentKind {
 }
 
 /// The flags of type pattern
+#[derive(PartialEq, Eq)]
 pub enum PatFlags {
     Unique,
     Shared,

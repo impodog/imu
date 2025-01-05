@@ -3,7 +3,7 @@ pub(crate) use crate::{
     convs,
 };
 pub(crate) use ast::StrRef;
-pub(crate) use ctx::Ctx;
+pub(crate) use ctx::{Ctx, Value};
 pub(crate) use imuc_ast as ast;
 pub(crate) use imuc_ctx::ctx;
 pub(crate) use imuc_error::*;

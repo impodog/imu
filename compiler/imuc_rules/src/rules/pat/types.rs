@@ -67,6 +67,8 @@ impl Rule for TypeRule {
     {
         let flags = if parser.next_if(&TokenKind::UnOp(UnOp::Ref))?.is_some() {
             pat::PatFlags::Shared
+        } else if parser.next_if(&TokenKind::UnOp(UnOp::Ptr))?.is_some() {
+            pat::PatFlags::Stack
         } else {
             pat::PatFlags::Unique
         };
@@ -101,7 +103,7 @@ impl Rule for TypeRule {
                 flags,
                 kind: pat::TypeKind::Res(res),
             }))
-        } else if let pat::PatFlags::Shared = flags {
+        } else if flags != pat::PatFlags::Unique {
             Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
                 expect: "Type".to_owned(),
                 after: TokenKind::UnOp(UnOp::Ref),

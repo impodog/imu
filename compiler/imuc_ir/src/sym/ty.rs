@@ -43,6 +43,10 @@ impl Ty {
         Self(Arc::new((inner, OnceLock::new())))
     }
 
+    pub fn test_eq(&self, ty: &Ty) -> bool {
+        self.size() == ty.size() && self.name == ty.name
+    }
+
     /// Converts the type to [`ResTy`], if possible
     pub fn to_res_ty(&self) -> Option<ResTy> {
         match &self.0 .0.kind {
@@ -79,7 +83,7 @@ impl Ty {
                         }
                         accum
                     }
-                    TyKind::Struct(cus) => {
+                    TyKind::Cus(cus) => {
                         let mut accum = Bytes::default();
                         for value in cus.0.values() {
                             accum += value.size()?;
@@ -123,7 +127,7 @@ pub struct TyInner {
 pub enum TyKind {
     Res(ResTy),
     Tuple(Tuple),
-    Struct(Struct),
+    Cus(Cus),
     Ref(TyItem),
     Ptr(TyItem),
 }
@@ -151,7 +155,7 @@ pub struct Tuple(pub Vec<TyItem>);
 
 /// A struct type, which is a map from names to field types
 #[derive(Clone)]
-pub struct Struct(pub BTreeMap<StrRef, TyItem>);
+pub struct Cus(pub BTreeMap<StrRef, TyItem>);
 
 impl Rw for ResTy {
     fn read(mut input: impl IrRead) -> Result<Self> {
@@ -268,7 +272,7 @@ impl Rw for Ty {
                 }
                 Ok(Ty::new(TyInner {
                     name,
-                    kind: TyKind::Struct(Struct(map)),
+                    kind: TyKind::Cus(Cus(map)),
                     external: input.external(),
                 }))
             }
@@ -313,7 +317,7 @@ impl Rw for Ty {
                 }
                 write!(output, ")")?;
             }
-            TyKind::Struct(cus) => {
+            TyKind::Cus(cus) => {
                 write!(output, "{{")?;
                 for (is_last, (name, ty)) in cus
                     .0

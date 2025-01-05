@@ -8,12 +8,20 @@ pub enum ConvError {
     UndefinedType(String),
     #[error("uninitialized type: {0}")]
     UninitializedType(String),
+    #[error("missing field: {0}")]
+    MissingField(String),
+    #[error("unknown field: {0}")]
+    UnknownField(String),
     #[error("types mismatch: {0}")]
     TypesMismatch(String),
-    #[error("a function is required by this operation")]
-    FunctionRequired,
+    #[error("'Self' type context if required")]
+    SelfRequired,
     #[error("a value is required in {0}")]
     ValueRequired(String),
     #[error("a primitive is required in {0}")]
     PrimitiveRequired(String),
+    #[error("a type is required in {0}")]
+    TypeRequired(String),
+    #[error("a structure is required in {0}")]
+    CusRequired(String),
 }

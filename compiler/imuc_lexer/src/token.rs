@@ -123,6 +123,7 @@ pub enum BinOp {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnOp {
     Ref,
+    Ptr,
     Not,
 }
 

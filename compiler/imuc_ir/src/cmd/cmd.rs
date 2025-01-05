@@ -39,6 +39,7 @@ macro_rules! arithmetic {
 pub enum Cmd {
     Dupli(Bytes, Ptr),
     Store(crate::sym::Prim),
+    StoreGlobalPtr(super::GlobalPtr),
     Wrap(Bytes, Ptr),
     Not(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),
@@ -75,6 +76,10 @@ impl Rw for Cmd {
             "str" => {
                 let prim = crate::sym::Prim::read(&mut input)?;
                 Ok(Self::Store(prim))
+            }
+            "sgp" => {
+                let ptr = super::GlobalPtr::read(&mut input)?;
+                Ok(Self::StoreGlobalPtr(ptr))
             }
             "wrp" => {
                 let bytes = Bytes::read(&mut input)?;
@@ -119,6 +124,10 @@ impl Rw for Cmd {
             Self::Store(prim) => {
                 write!(output, "str ")?;
                 prim.write(&mut output)?;
+            }
+            Self::StoreGlobalPtr(ptr) => {
+                write!(output, "sgp ")?;
+                ptr.write(&mut output)?;
             }
             Self::Wrap(bytes, ptr) => {
                 write!(output, "wrp ")?;

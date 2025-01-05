@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ast::expr::BinExpr;
-use ctx::Value;
+
 use imuc_lexer::token::{BinOp, ResTy};
 
 pub struct BinExprConv;
@@ -15,8 +15,8 @@ enum BinOpKind {
     CompareEq(i8),
 }
 
-impl Convert<Option<Value>> for BinExprConv {
-    fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
+impl Convert<Value> for BinExprConv {
+    fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         let lhs: Value = convs::ExprConv
             .convert(ctx, input.lhs.as_ref())?
             .ok_or_else(|| errors::ConvError::ValueRequired("BinExpr".to_owned()))?;
@@ -67,16 +67,16 @@ impl Convert<Option<Value>> for BinExprConv {
 
         match kind {
             BinOpKind::Arithmetic(func, size) => {
-                let body = ctx.body_mut_or()?;
+                let body = ctx.body_mut();
                 let ptr = body.push_stack(size);
                 body.push(func(bytes, lhs.ptr, rhs.ptr));
-                Ok(Some(Value {
+                Ok(Value {
                     ptr,
                     ty: lhs.ty.clone(),
-                }))
+                })
             }
             BinOpKind::Compare(target) => {
-                let body = ctx.body_mut_or()?;
+                let body = ctx.body_mut();
                 let compare_ptr = body.push_stack(Bytes::new(1));
                 let ptr = body.push_stack(Bytes::new(1));
                 if is_float {
@@ -85,13 +85,13 @@ impl Convert<Option<Value>> for BinExprConv {
                     body.push(Cmd::Test(bytes, lhs.ptr, rhs.ptr));
                 }
                 body.push(Cmd::EqI8(compare_ptr, target));
-                Ok(Some(Value {
+                Ok(Value {
                     ptr,
                     ty: Ty::bool(),
-                }))
+                })
             }
             BinOpKind::CompareEq(target) => {
-                let body = ctx.body_mut_or()?;
+                let body = ctx.body_mut();
                 let compare_ptr = body.push_stack(Bytes::new(1));
                 let compare_lhs = body.push_stack(Bytes::new(1));
                 let compare_rhs = body.push_stack(Bytes::new(1));
@@ -104,10 +104,10 @@ impl Convert<Option<Value>> for BinExprConv {
                 body.push(Cmd::EqI8(compare_ptr, target));
                 body.push(Cmd::EqI8(compare_ptr, 0));
                 body.push(Cmd::Or(NumBytes::I8, compare_lhs, compare_rhs));
-                Ok(Some(Value {
+                Ok(Value {
                     ptr,
                     ty: Ty::bool(),
-                }))
+                })
             }
         }
     }

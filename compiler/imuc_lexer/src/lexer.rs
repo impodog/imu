@@ -89,6 +89,7 @@ where
                 '}' => Token::new(TokenKind::Pair(Pair::RightBrace), self.diff(begin)),
 
                 '@' => Token::new(TokenKind::UnOp(UnOp::Ref), self.diff(begin)),
+                '$' => Token::new(TokenKind::UnOp(UnOp::Ptr), self.diff(begin)),
                 '!' => Token::new(TokenKind::UnOp(UnOp::Not), self.diff(begin)),
 
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),

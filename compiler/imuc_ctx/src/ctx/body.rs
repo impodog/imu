@@ -1,10 +1,12 @@
 use crate::prelude::*;
+use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Default)]
 pub struct Body {
     name: String,
+    self_ty: Option<Ty>,
     list: Vec<cmd::Cmd>,
     stack: cmd::Ptr,
     locals: NonEmpty<super::Locals>,
@@ -25,9 +27,10 @@ impl DerefMut for Body {
 
 impl Body {
     /// Creates an empty function body
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, self_ty: Option<Ty>) -> Self {
         Self {
             name,
+            self_ty,
             ..Default::default()
         }
     }
@@ -80,7 +83,17 @@ impl Body {
         None
     }
 
-    pub fn plus_name(&self, name: &str) -> StrRef {
+    /// Gets the self type context, if any
+    pub fn self_ty(&self) -> Option<&Ty> {
+        self.self_ty.as_ref()
+    }
+
+    /// Mangle the name of elements for types
+    pub fn mangle_name(&self, name: &str) -> StrRef {
         format!("{}.{}", self.name, name).into()
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

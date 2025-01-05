@@ -20,7 +20,7 @@ impl Rule for ElemExprRule {
         } else if let Some(tuple) = rules::TupleExprRule.parse(parser)? {
             Ok(Some(tuple))
         } else if let Some(struct_stmt) = rules::StructExprRule.parse(parser)? {
-            Ok(Some(expr::Expr::Struct(struct_stmt)))
+            Ok(Some(expr::Expr::Cus(struct_stmt)))
         } else {
             Ok(None)
         }

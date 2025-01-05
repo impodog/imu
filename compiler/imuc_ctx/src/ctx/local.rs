@@ -18,6 +18,8 @@ impl Default for Value {
 }
 
 /// Local names references in an AST body
+///
+/// Another map of types in present, allowing searching types without mangled names
 #[derive(Default)]
 pub struct Locals {
     pub ty: super::Types,

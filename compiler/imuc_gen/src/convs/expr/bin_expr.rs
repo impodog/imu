@@ -17,10 +17,11 @@ enum BinOpKind {
 
 impl Convert<Value> for BinExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
-        let lhs: Value = convs::ExprConv
+        // TODO: Hint the type with values solved
+        let lhs: Value = convs::ExprConv::default()
             .convert(ctx, input.lhs.as_ref())?
             .ok_or_else(|| errors::ConvError::ValueRequired("BinExpr".to_owned()))?;
-        let rhs: Value = convs::ExprConv
+        let rhs: Value = convs::ExprConv::default()
             .convert(ctx, input.rhs.as_ref())?
             .ok_or_else(|| errors::ConvError::ValueRequired("BinExpr".to_owned()))?;
         let lhs_ty = lhs

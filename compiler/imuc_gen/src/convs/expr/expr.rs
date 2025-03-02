@@ -1,7 +1,10 @@
 use crate::prelude::*;
 use ast::expr::Expr;
 
-pub struct ExprConv;
+#[derive(Default)]
+pub struct ExprConv {
+    pub hint: Option<Ty>,
+}
 
 impl Converter for ExprConv {
     type Input = Expr;

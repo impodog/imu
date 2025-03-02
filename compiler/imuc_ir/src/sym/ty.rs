@@ -43,6 +43,7 @@ impl Ty {
         Self(Arc::new((inner, OnceLock::new())))
     }
 
+    /// Tests if the types are same-by-name
     pub fn test_eq(&self, ty: &Ty) -> bool {
         self.size() == ty.size() && self.name == ty.name
     }
@@ -57,7 +58,7 @@ impl Ty {
 
     /// Calculates the size of the type in bytes, and store it for future use
     ///
-    /// If the type contains unresolved types or ResTy::SelfType, [`None`] is returned
+    /// If the type contains unresolved types or ResTy::SelfType or TyKind::Fun, [`None`] is returned
     pub fn size(&self) -> Option<Bytes> {
         self.0
              .1
@@ -76,6 +77,7 @@ impl Ty {
                         Bytes::new(len)
                     }
                     TyKind::Ptr(_) | TyKind::Ref(_) => Bytes::ptr(),
+                    TyKind::Fun { .. } => return None,
                     TyKind::Tuple(tuple) => {
                         let mut accum = Bytes::default();
                         for value in tuple.0.iter() {
@@ -126,6 +128,7 @@ pub struct TyInner {
 #[derive(Clone)]
 pub enum TyKind {
     Res(ResTy),
+    Fun { param: TyItem, ret: TyItem },
     Tuple(Tuple),
     Cus(Cus),
     Ref(TyItem),
@@ -214,6 +217,16 @@ impl Rw for Ty {
         let external = input.external();
         let content = input.read_line()?;
         match content.chars().next().ok_or(errors::IrError::Eof)? {
+            ',' => {
+                let mut reader = LineReader::new(&content[1..], external);
+                let param = TyItem::read(&mut reader)?;
+                let ret = TyItem::read(&mut reader)?;
+                Ok(Ty::new(TyInner {
+                    name,
+                    kind: TyKind::Fun { param, ret },
+                    external: input.external(),
+                }))
+            }
             '&' => {
                 let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
@@ -294,6 +307,12 @@ impl Rw for Ty {
         write!(output, "{} ", &*self.name)?;
         match &self.kind {
             TyKind::Res(res) => (*res).write(output)?,
+            TyKind::Fun { param, ret } => {
+                write!(output, "! ")?;
+                param.write(&mut output)?;
+                write!(output, " ")?;
+                ret.write(&mut output)?;
+            }
             TyKind::Ref(ty) => {
                 write!(output, "&")?;
                 ty.write(output)?;

@@ -4,7 +4,7 @@ use std::fs::{File, OpenOptions};
 use std::io::BufReader;
 use std::path::Path;
 
-/// A complete module with types, functions and the defintions
+/// A complete module with types, functions and the definitions
 pub struct Module {
     // header's function signatures are reused to in the new field, thus becoming useless
     pub ty: BTreeMap<StrRef, crate::sym::Ty>,
@@ -100,7 +100,7 @@ where
         if let Some((name, _)) = header.fun.pop_first() {
             Err(errors::IrError::UnimplementedSignature(name.to_string()).into())
         } else {
-            let fun = BTreeMap::from_iter(fun_arr.into_iter());
+            let fun = BTreeMap::from_iter(fun_arr);
             let super::Header { ty, fun: _fun } = header;
             Ok(Self { ty, fun })
         }

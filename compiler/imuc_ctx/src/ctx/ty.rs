@@ -6,6 +6,8 @@ use sym::{ty, Ty};
 
 type TyMap = HashMap<StrRef, Ty>;
 
+/// A direct representation of strings mapped to types,
+/// can be used to convert [`ty::TyItem`] into [`Ty`]
 #[derive(Default)]
 pub struct Types {
     map: TyMap,
@@ -21,6 +23,16 @@ impl Deref for Types {
 impl Types {
     pub fn get(&self, key: &str) -> Option<&Ty> {
         self.map.get(key)
+    }
+
+    pub fn resolve<'a, 'b>(&'a self, item: &'b ty::TyItem) -> Option<&'a Ty>
+    where
+        'b: 'a,
+    {
+        match item {
+            ty::TyItem::Solid(ty) => Some(ty),
+            ty::TyItem::Pending(key) => self.get(key),
+        }
     }
 
     /// Merge a resolvable list of types
@@ -72,7 +84,7 @@ impl Types {
                 index
             };
             match &ty.kind {
-                ty::TyKind::Res(_) | ty::TyKind::Ptr(_) => {}
+                ty::TyKind::Res(_) | ty::TyKind::Ptr(_) | ty::TyKind::Fun { .. } => {}
                 ty::TyKind::Ref(item) => {
                     add_edge(&mut graph, &mut map, node, item);
                 }
@@ -100,6 +112,10 @@ impl Types {
                 // pointers does not resolve recursively
                 ty::TyKind::Ptr(item) => ty::TyKind::Ptr(item.clone()),
                 ty::TyKind::Ref(item) => ty::TyKind::Ref(modify_item(&self.map, item)?),
+                ty::TyKind::Fun { param, ret } => ty::TyKind::Fun {
+                    param: param.clone(),
+                    ret: ret.clone(),
+                },
                 ty::TyKind::Res(res) => ty::TyKind::Res(*res),
                 ty::TyKind::Tuple(tuple) => {
                     let mut value = Vec::new();

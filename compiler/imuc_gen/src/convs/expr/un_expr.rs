@@ -3,6 +3,7 @@ use ast::expr::UnExpr;
 
 use imuc_lexer::token::UnOp;
 
+// TODO: Add hint field
 pub struct UnExprConv;
 
 impl Converter for UnExprConv {
@@ -11,7 +12,7 @@ impl Converter for UnExprConv {
 
 impl Convert<Value> for UnExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
-        let value: Value = convs::ExprConv
+        let value: Value = convs::ExprConv::default()
             .convert(ctx, input.val.as_ref())?
             .ok_or_else(|| errors::ConvError::ValueRequired("UnExpr".to_owned()))?;
         match input.op {

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use ast::expr::Tuple;
 
+// TODO: Add hint field
 pub struct TupleConv;
 
 impl Converter for TupleConv {
@@ -13,7 +14,7 @@ impl Convert<Value> for TupleConv {
         let mut size = Bytes::default();
         let mut name = String::from("(");
         for expr in input.elem.iter() {
-            let value = convs::ExprConv
+            let value = convs::ExprConv::default()
                 .convert(ctx, expr)?
                 .ok_or_else(|| errors::ConvError::ValueRequired("Tuple".to_string()))?;
 

@@ -6,6 +6,7 @@ struct Node<T> {
     deg: usize,
 }
 
+/// A directed, acyclic graph for type reference resolving
 pub struct Dag<T> {
     nodes: Vec<Node<T>>,
 }
@@ -42,6 +43,7 @@ impl<T> Dag<T> {
         }
     }
 
+    /// Topo-sorts the graph, returning one possible order, if the graph is acyclic
     pub fn topo_sort(mut self) -> Option<Vec<T>> {
         let mut result = Vec::new();
         let mut queue = VecDeque::new();

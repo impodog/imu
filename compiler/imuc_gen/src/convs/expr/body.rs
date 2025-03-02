@@ -15,16 +15,18 @@ impl Convert<Value> for BodyConv {
         }
         let mut result = None;
         for expr in input.body.iter() {
-            result = convs::ExprConv.convert(ctx, expr)?;
+            result = convs::ExprConv::default().convert(ctx, expr)?;
         }
         let result = if input.unit {
             Value::default()
         } else {
             result.unwrap_or_default()
         };
-        ctx.body_mut()
+        let locals = ctx
+            .body_mut()
             .pop_locals()
             .expect("context should contain a set of locals after expression body");
+        // TODO: Free locals
         Ok(result)
     }
 }

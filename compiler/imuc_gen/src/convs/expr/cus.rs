@@ -17,7 +17,8 @@ impl Convert<Value> for CusConv {
         if let ir::sym::ty::TyKind::Cus(cus) = &ty.kind {
             let mut map = BTreeMap::new();
             for (name, expr) in input.elem.iter() {
-                let value = convs::ExprConv
+                // TODO: Hint the type with cus item
+                let value = convs::ExprConv::default()
                     .convert(ctx, expr)?
                     .ok_or_else(|| errors::ConvError::ValueRequired("Cus field".to_owned()))?;
                 map.insert(name.to_owned(), value);

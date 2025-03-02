@@ -6,7 +6,7 @@ use nonempty::NonEmpty;
 /// All context info used when converting AST to IR
 ///
 /// An additional type map is present, containing all types with mangled names.
-/// Searching directly is impossible,
+/// Searching directly is impossible, thus a vector of bodies should be used
 pub struct Ctx {
     pub ty: super::Types,
     body: NonEmpty<super::Body>,

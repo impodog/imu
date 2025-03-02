@@ -21,6 +21,7 @@ pub trait IrRead {
     fn external(&self) -> bool;
 }
 
+/// All readable instances' mutable references are also readable
 impl<T> IrRead for &mut T
 where
     T: IrRead,

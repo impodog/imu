@@ -29,7 +29,7 @@ impl Rw for Header {
             let name = StrRef::from(input.read_until(' ')?);
             fun.push((name, FunSig::read(&mut input)?));
         }
-        let fun = BTreeMap::from_iter(fun.into_iter());
+        let fun = BTreeMap::from_iter(fun);
 
         Ok(Header { ty, fun })
     }
@@ -37,12 +37,12 @@ impl Rw for Header {
         for ty in self.ty.values() {
             ty.write(&mut output)?;
         }
-        write!(output, "%\n")?;
+        writeln!(output, "%")?;
         for (name, fun) in self.fun.iter() {
-            write!(output, "{}\n", &**name)?;
+            writeln!(output, "{}", &**name)?;
             fun.write(&mut output)?;
         }
-        write!(output, "%\n")?;
+        writeln!(output, "%")?;
         Ok(())
     }
 }

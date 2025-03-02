@@ -27,6 +27,7 @@ impl From<(FunSig, SiglessFun)> for Fun {
 }
 
 /// The signature of a function, containing the parameter and return type, and templates
+#[derive(Clone)]
 pub struct FunSig {
     pub param: super::Ty,
     pub ret: super::Ty,
@@ -68,7 +69,7 @@ impl Rw for FunSig {
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         self.param.write(&mut output)?;
-        writeln!(output)?;
+        write!(output, " ")?;
         self.ret.write(&mut output)?;
         Ok(())
     }

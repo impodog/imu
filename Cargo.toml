@@ -1,7 +1,7 @@
 [package]
 name = "imu"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [workspace]
 resolver = "2"
@@ -30,3 +30,6 @@ compiler = [
     "imuc_path",
     "imuc_rules",
 ]
+
+[lints.clippy]
+module_inception = "deny"

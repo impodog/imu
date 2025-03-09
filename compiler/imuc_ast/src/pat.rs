@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 /// A pattern to be matched against values
 pub enum Pat {
     Ident(IdentPat),
@@ -16,6 +18,8 @@ pub struct TuplePat(pub Vec<Pat>);
 
 /// A tree-like group of patterns, matching one of them
 pub struct AnyPat(pub Vec<Pat>);
+
+pub struct NamedPat(pub BTreeMap<crate::StrRef, Option<Type>>);
 
 /// An enumeration used in [`IdentPat`] for an unused or normal name
 pub enum IdentKind {

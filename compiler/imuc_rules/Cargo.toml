@@ -10,7 +10,7 @@ imuc_ast = { path = "../imuc_ast" }
 imuc_parser = { path = "../imuc_parser" }
 imuc_path = { path = "../imuc_path" }
 
-lexical = { version = "7.0.2", default-features = false, features = [
+lexical = { version = "7.0.4", default-features = false, features = [
     "std",
     "parse-floats",
     "parse-integers",

@@ -3,12 +3,15 @@ use imuc_ir::cmd::{GlobalPtr, Ptr};
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 
+use super::glob::Glob;
+
 /// All context info used when converting AST to IR
 ///
 /// An additional type map is present, containing all types with mangled names.
 /// Searching directly is impossible, thus a vector of bodies should be used
 pub struct Ctx {
     pub ty: super::Types,
+    pub glob: super::Globs,
     body: NonEmpty<super::Body>,
 }
 
@@ -17,8 +20,14 @@ impl Ctx {
     pub fn new(base_name: String) -> Self {
         Self {
             ty: Default::default(),
+            glob: Default::default(),
             body: NonEmpty::new(super::Body::new(base_name, None)),
         }
+    }
+
+    /// Gets the reference to the current function body
+    pub fn body(&self) -> &super::Body {
+        self.body.last()
     }
 
     /// Gets the reference to the current function body
@@ -54,5 +63,18 @@ impl Ctx {
     /// Gets a new [`GlobalPtr`] to a specified position in the current stack
     pub fn get_global_ptr(&self, ptr: Ptr) -> GlobalPtr {
         GlobalPtr::new(self.body.len() as u32, ptr)
+    }
+
+    pub fn get_glob(&self, name: &str) -> Option<&Glob> {
+        self.glob.get(name)
+    }
+
+    /// Merges the functions from an iterator, same as calling on [`Self::glob`],
+    /// but with the body parameter given, preventing reference errors
+    pub fn merge_fun<'a, I>(&mut self, funs: I)
+    where
+        I: IntoIterator<Item = (&'a StrRef, &'a sym::FunSig)>,
+    {
+        self.glob.merge_fun(self.body.last_mut(), funs);
     }
 }

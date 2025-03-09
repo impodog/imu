@@ -30,6 +30,7 @@ lazy_static::lazy_static! {
         ac.insert("F32", TokenKind::ResTy(ResTy::F32));
         ac.insert("F64", TokenKind::ResTy(ResTy::F64));
         ac.insert("Str", TokenKind::ResTy(ResTy::Str));
+        ac.insert("Drop", TokenKind::ResTy(ResTy::Drop));
         ac.insert("inf", TokenKind::Literal(Literal::Float));
         ac.build()
     };

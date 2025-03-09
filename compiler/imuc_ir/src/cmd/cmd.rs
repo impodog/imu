@@ -60,6 +60,9 @@ pub enum Cmd {
     JumpIf(Ptr, Ptr),
     /// Call the function with top bytes plus a function pointer at the bottom
     Call(Bytes),
+    /// Globally links to the function and puts its global handle (ptr) to the top of the global
+    /// stack(does not affect local stack)
+    Link(StrRef),
     /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,
     /// or to act as a placeholder for optional commands
     End,
@@ -122,6 +125,10 @@ impl Rw for Cmd {
                 let bytes = Bytes::read(&mut input)?;
                 Ok(Self::Call(bytes))
             }
+            "lnk" => {
+                let name = input.read_until(' ')?;
+                Ok(Self::Link(StrRef::from(name)))
+            }
             "end" => Ok(Self::End),
             _ => Err(errors::IrError::NoSuchCommand(cmd.to_owned()).into()),
         }
@@ -180,6 +187,9 @@ impl Rw for Cmd {
             Self::Call(bytes) => {
                 write!(output, "cal ")?;
                 bytes.write(&mut output)?;
+            }
+            Self::Link(name) => {
+                write!(output, "lnk {}", name)?;
             }
             Self::End => {
                 write!(output, "end")?;

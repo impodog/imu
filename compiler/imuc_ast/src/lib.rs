@@ -1,4 +1,5 @@
 pub mod bind;
+pub mod builtin;
 pub mod expr;
 pub mod flow;
 pub mod item;

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use imuc_lexer::token::ResTy;
 use std::collections::BTreeMap;
 
 /// Information required to compile a value object

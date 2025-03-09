@@ -20,7 +20,7 @@ impl Convert<()> for BindConv {
                         } else {
                             None
                         };
-                        let val = convs::ExprConv { hint: ty }.convert(ctx, val)?;
+                        let val = convs::ExprConv::default().with_hint(ty).convert(ctx, val)?;
                         match &ident.ident {
                             IdentKind::Unused => Ok(()),
                             IdentKind::Value(name) => {

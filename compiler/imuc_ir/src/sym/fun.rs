@@ -26,7 +26,7 @@ impl From<(FunSig, SiglessFun)> for Fun {
     }
 }
 
-/// The signature of a function, containing the parameter and return type, and templates
+/// The signature of a function, containing the parameter and return type
 #[derive(Clone)]
 pub struct FunSig {
     pub param: super::Ty,

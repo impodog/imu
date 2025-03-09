@@ -78,7 +78,9 @@ pub enum ResVal {
 /// A part of [`TokenKind`] for types, such as primitives, using reserved names
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResTy {
+    // Unique types
     SelfType,
+    // Literal types
     Unit,
     Bool,
     I8,
@@ -89,6 +91,8 @@ pub enum ResTy {
     F32,
     F64,
     Str,
+    // Trait-like types
+    Drop,
 }
 
 /// A part of [`TokenKind`] for left / right bracket

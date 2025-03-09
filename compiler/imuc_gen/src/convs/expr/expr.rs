@@ -1,9 +1,18 @@
+use super::ExprSolver;
 use crate::prelude::*;
 use ast::expr::Expr;
 
 #[derive(Default)]
 pub struct ExprConv {
-    pub hint: Option<Ty>,
+    // TODO: Add solver implementation
+    pub solver: ExprSolver,
+}
+
+impl ExprConv {
+    pub fn with_hint(mut self, hint: Option<Ty>) -> Self {
+        self.solver.hint = hint;
+        self
+    }
 }
 
 impl Converter for ExprConv {

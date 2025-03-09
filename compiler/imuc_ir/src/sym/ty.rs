@@ -55,6 +55,24 @@ impl Ty {
             _ => None,
         }
     }
+    /// Builds a ty from [`ResTy`], if possible
+    pub fn from_res(res_ty: ResTy) -> Option<Self> {
+        let ty = match res_ty {
+            ResTy::SelfType => return None,
+            ResTy::Unit => Self::unit(),
+            ResTy::Bool => Self::bool(),
+            ResTy::I8 => Self::i8(),
+            ResTy::I16 => Self::i16(),
+            ResTy::I32 => Self::i32(),
+            ResTy::I64 => Self::i64(),
+            ResTy::F32 => Self::f32(),
+            ResTy::F64 => Self::f64(),
+            ResTy::Ptr => Self::ptr(),
+            ResTy::Str => Self::str(),
+            ResTy::Drop => Self::drop(),
+        };
+        Some(ty)
+    }
 
     /// Calculates the size of the type in bytes, and store it for future use
     ///
@@ -73,6 +91,7 @@ impl Ty {
                             ResTy::I32 | ResTy::F32 => 4,
                             ResTy::I64 | ResTy::F64 => 8,
                             ResTy::Str | ResTy::Ptr => crate::cmd::PTR_SIZE,
+                            ResTy::Drop => 0,
                         };
                         Bytes::new(len)
                     }
@@ -114,6 +133,7 @@ impl Ty {
     generate_reserved!(f64, "F64", F64);
     generate_reserved!(ptr, "Ptr", Ptr);
     generate_reserved!(str, "Str", Str);
+    generate_reserved!(drop, "Drop", Drop);
 }
 
 /// The inner contents of a type, containing name, sources, and memory info
@@ -122,6 +142,17 @@ pub struct TyInner {
     pub name: StrRef,
     pub kind: TyKind,
     pub external: bool,
+}
+
+impl TyInner {
+    /// Creates a local type (possibly generated from user code)
+    pub fn new(name: StrRef, kind: TyKind) -> Self {
+        Self {
+            name,
+            kind,
+            external: false,
+        }
+    }
 }
 
 /// A part of [`TyInner`], holding the memory layout and features of the type
@@ -172,6 +203,7 @@ impl Rw for ResTy {
             "F64" => ResTy::F64,
             "Str" => ResTy::Str,
             "Ptr" => ResTy::Ptr,
+            "Drop" => ResTy::Drop,
             _ => return Err(errors::IrError::NoSuchType(name.to_owned()).into()),
         };
         Ok(res)
@@ -186,10 +218,17 @@ impl Rw for ResTy {
             ResTy::F64 => "F64",
             ResTy::Str => "Str",
             ResTy::Ptr => "Ptr",
+            ResTy::Drop => "Drop",
             _ => return Err(errors::IrError::TypeNotAllowed(format!("{:?}", self)).into()),
         };
         write!(output, "{}", str)?;
         Ok(())
+    }
+}
+
+impl From<Ty> for TyItem {
+    fn from(value: Ty) -> Self {
+        TyItem::Solid(value)
     }
 }
 

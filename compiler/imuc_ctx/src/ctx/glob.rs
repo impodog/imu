@@ -3,6 +3,7 @@ use crate::prelude::*;
 use cmd::{Bytes, Cmd, Ptr};
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::sync::{Arc, RwLock};
 use sym::{
     ty::{TyInner, TyKind},
     FunSig, Ty,
@@ -10,12 +11,17 @@ use sym::{
 
 type GlobMap = HashMap<StrRef, Glob>;
 
+/// A shared lock to the globals
+pub type GlobsHandle = Arc<RwLock<Globs>>;
+
 /// A global variable that can be accessed or created in the current module
 ///
 /// If [`Self::external`] is set to true, this will not be exported,
 /// otherwise the corresponding global will be written to the output file
 ///
 /// [`Self::ty`] is the bare type of the global. However most of the time a ptr wrapping this ty is required
+///
+/// You can omit the type checking when acquiring a global, because the name implies the type
 pub struct Glob {
     ptr: Ptr,
     ty: Ty,

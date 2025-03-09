@@ -39,7 +39,10 @@ macro_rules! arithmetic {
 pub enum Cmd {
     Dupli(Bytes, Ptr),
     Store(crate::sym::Prim),
+    StorePtr(Ptr),
     StoreGlobalPtr(super::GlobalPtr),
+    /// Allocates a heap location for bytes at stack position, putting the pointer on top of the
+    /// stack
     Wrap(Bytes, Ptr),
     Not(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),
@@ -83,6 +86,10 @@ impl Rw for Cmd {
             "str" => {
                 let prim = crate::sym::Prim::read(&mut input)?;
                 Ok(Self::Store(prim))
+            }
+            "spt" => {
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::StorePtr(ptr))
             }
             "sgp" => {
                 let ptr = super::GlobalPtr::read(&mut input)?;
@@ -144,6 +151,10 @@ impl Rw for Cmd {
             Self::Store(prim) => {
                 write!(output, "str ")?;
                 prim.write(&mut output)?;
+            }
+            Self::StorePtr(ptr) => {
+                write!(output, "spt ")?;
+                ptr.write(&mut output)?;
             }
             Self::StoreGlobalPtr(ptr) => {
                 write!(output, "sgp ")?;

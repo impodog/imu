@@ -3,8 +3,8 @@ use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 use std::ops::{Deref, DerefMut};
 
-#[derive(Default)]
 pub struct Body {
+    pub globs: super::GlobsHandle,
     name: String,
     self_ty: Option<Ty>,
     list: Vec<cmd::Cmd>,
@@ -27,11 +27,14 @@ impl DerefMut for Body {
 
 impl Body {
     /// Creates an empty function body
-    pub fn new(name: String, self_ty: Option<Ty>) -> Self {
+    pub fn new(globs: super::GlobsHandle, name: String, self_ty: Option<Ty>) -> Self {
         Self {
+            globs,
             name,
             self_ty,
-            ..Default::default()
+            list: Default::default(),
+            stack: Default::default(),
+            locals: Default::default(),
         }
     }
 
@@ -53,9 +56,16 @@ impl Body {
         self.locals.last_mut()
     }
 
-    /// Deletes the last group of locals of the stack
+    /// Deletes the last group of locals of the stack, also drops all assigned locals
     pub fn pop_locals(&mut self) -> Option<super::Locals> {
-        self.locals.pop()
+        if let Some(locals) = self.locals.pop() {
+            for (_, value) in locals.value.iter() {
+                self.drop_value(value).expect("The type should exist");
+            }
+            Some(locals)
+        } else {
+            None
+        }
     }
 
     /// Gets the reference to the current locals
@@ -71,6 +81,24 @@ impl Body {
     /// Gets an iterator over locals in top-first order
     pub fn locals_iter_rev(&self) -> impl Iterator<Item = &super::Locals> {
         self.locals.iter().rev()
+    }
+
+    pub fn with_globs<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self, &super::Globs) -> R,
+    {
+        let globs = self.globs.clone();
+        let lock = globs.read().unwrap();
+        f(self, &lock)
+    }
+
+    pub fn with_globs_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self, &mut super::Globs) -> R,
+    {
+        let globs = self.globs.clone();
+        let mut lock = globs.write().unwrap();
+        f(self, &mut lock)
     }
 
     /// Gets reference to the nearest value of given name

@@ -3,25 +3,24 @@ use imuc_ir::cmd::{GlobalPtr, Ptr};
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 
-use super::glob::Glob;
-
 /// All context info used when converting AST to IR
 ///
 /// An additional type map is present, containing all types with mangled names.
 /// Searching directly is impossible, thus a vector of bodies should be used
 pub struct Ctx {
     pub ty: super::Types,
-    pub glob: super::Globs,
+    pub globs: super::GlobsHandle,
     body: NonEmpty<super::Body>,
 }
 
 impl Ctx {
     /// Creates a new empty context of IR conversion
     pub fn new(base_name: String) -> Self {
+        let glob = super::GlobsHandle::default();
         Self {
             ty: Default::default(),
-            glob: Default::default(),
-            body: NonEmpty::new(super::Body::new(base_name, None)),
+            globs: glob.clone(),
+            body: NonEmpty::new(super::Body::new(glob, base_name, None)),
         }
     }
 
@@ -40,13 +39,19 @@ impl Ctx {
         let base_name = self.body.last().name();
         let name = format!("{base_name}.{name}");
 
-        self.body.push(super::Body::new(name, self_ty));
+        self.body
+            .push(super::Body::new(self.globs.clone(), name, self_ty));
         self.body.last_mut()
     }
 
-    /// Gets the last body of functions being pushed
+    /// Gets the last body of functions being pushed, dropping all locals
     pub fn pop_body(&mut self) -> Option<super::Body> {
-        self.body.pop()
+        if let Some(mut body) = self.body.pop() {
+            while body.pop_locals().is_some() {}
+            Some(body)
+        } else {
+            None
+        }
     }
 
     /// Gets reference to the nearest type of given name
@@ -65,16 +70,15 @@ impl Ctx {
         GlobalPtr::new(self.body.len() as u32, ptr)
     }
 
-    pub fn get_glob(&self, name: &str) -> Option<&Glob> {
-        self.glob.get(name)
-    }
-
     /// Merges the functions from an iterator, same as calling on [`Self::glob`],
     /// but with the body parameter given, preventing reference errors
     pub fn merge_fun<'a, I>(&mut self, funs: I)
     where
         I: IntoIterator<Item = (&'a StrRef, &'a sym::FunSig)>,
     {
-        self.glob.merge_fun(self.body.last_mut(), funs);
+        self.globs
+            .write()
+            .unwrap()
+            .merge_fun(self.body.last_mut(), funs);
     }
 }

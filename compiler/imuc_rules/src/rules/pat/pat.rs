@@ -10,25 +10,29 @@ impl Rule for PatRule {
     where
         I: ParserSequence<'s>,
     {
-        let first = if let Some(first) = rules::TuplePatRule.parse(parser)? {
-            pat::Pat::Tuple(first)
+        let first = if let Some(named) = rules::NamedPatRule.parse(parser)? {
+            pat::PatInner::Named(named)
+        } else if let Some(first) = rules::TuplePatRule.parse(parser)? {
+            pat::PatInner::Tuple(first)
         } else if let Some(first) = rules::IdentPatRule.parse(parser)? {
-            pat::Pat::Ident(first)
+            pat::PatInner::Ident(first)
         } else {
             return Ok(None);
         };
         if parser.next_if(&TokenKind::BinOp(BinOp::Or))?.is_some() {
-            let pat = rules::AnyPatRule { list: vec![first] }
-                .parse(parser)?
-                .ok_or_else(|| {
-                    parser.map_err(errors::SyntaxError::ExpectedAfter {
-                        expect: "Pat".to_owned(),
-                        after: TokenKind::BinOp(BinOp::Or),
-                    })
-                })?;
-            Ok(Some(pat::Pat::Any(pat)))
+            let pat = rules::AnyPatRule {
+                list: vec![pat::Pat::new(first)],
+            }
+            .parse(parser)?
+            .ok_or_else(|| {
+                parser.map_err(errors::SyntaxError::ExpectedAfter {
+                    expect: "Pat".to_owned(),
+                    after: TokenKind::BinOp(BinOp::Or),
+                })
+            })?;
+            Ok(Some(pat::Pat::new(pat::PatInner::Any(pat))))
         } else {
-            Ok(Some(first))
+            Ok(Some(pat::Pat::new(first)))
         }
     }
 }

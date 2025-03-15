@@ -25,6 +25,7 @@ impl Types {
         self.map.get(key)
     }
 
+    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible
     pub fn resolve<'a, 'b>(&'a self, item: &'b ty::TyItem) -> Option<&'a Ty>
     where
         'b: 'a,
@@ -33,6 +34,16 @@ impl Types {
             ty::TyItem::Solid(ty) => Some(ty),
             ty::TyItem::Pending(key) => self.get(key),
         }
+    }
+
+    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible,
+    /// returns an error otherwise
+    pub fn resolve_or<'a, 'b>(&'a self, item: &'b ty::TyItem) -> Result<&'a Ty>
+    where
+        'b: 'a,
+    {
+        self.resolve(item)
+            .ok_or_else(|| errors::ConvError::UninitializedType(item.name().to_string()).into())
     }
 
     /// Merge a resolvable list of types

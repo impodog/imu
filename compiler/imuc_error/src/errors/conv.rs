@@ -10,11 +10,13 @@ pub enum ConvError {
     UninitializedType(String),
     #[error("missing field: {0}")]
     MissingField(String),
+    #[error("unexpected field: {0}")]
+    UnexpectedField(String),
     #[error("unknown field: {0}")]
     UnknownField(String),
     #[error("types mismatch: {0}")]
     TypesMismatch(String),
-    #[error("'Self' type context if required")]
+    #[error("'Self' type context is required")]
     SelfRequired,
     #[error("a value is required in {0}")]
     ValueRequired(String),
@@ -24,4 +26,6 @@ pub enum ConvError {
     TypeRequired(String),
     #[error("a structure is required in {0}")]
     CusRequired(String),
+    #[error("such syntax is not implemented: {0}")]
+    SyntaxMaybeImplement(String),
 }

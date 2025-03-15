@@ -181,6 +181,14 @@ impl TyItem {
             _ => None,
         }
     }
+
+    /// Gets the name of this [`TyItem`]
+    pub fn name(&self) -> &StrRef {
+        match self {
+            Self::Solid(ty) => &ty.name,
+            Self::Pending(name) => name,
+        }
+    }
 }
 
 /// A tuple type, which is an array of inner types

@@ -22,11 +22,15 @@ impl Convert<Value> for BodyConv {
         } else {
             result.unwrap_or_default()
         };
+
         let locals = ctx
             .body_mut()
             .pop_locals()
             .expect("context should contain a set of locals after expression body");
-        // TODO: Free locals
+        let body = ctx.body_mut();
+        for value in locals.value.into_values() {
+            body.drop_value(&value)?;
+        }
         Ok(result)
     }
 }

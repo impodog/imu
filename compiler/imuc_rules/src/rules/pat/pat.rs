@@ -10,6 +10,7 @@ impl Rule for PatRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         let first = if let Some(named) = rules::NamedPatRule.parse(parser)? {
             pat::PatInner::Named(named)
         } else if let Some(first) = rules::TuplePatRule.parse(parser)? {
@@ -21,7 +22,12 @@ impl Rule for PatRule {
         };
         if parser.next_if(&TokenKind::BinOp(BinOp::Or))?.is_some() {
             let pat = rules::AnyPatRule {
-                list: vec![pat::Pat::new(first)],
+                list: vec![pat::Pat::new(
+                    first,
+                    parser
+                        .file_info()
+                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                )],
             }
             .parse(parser)?
             .ok_or_else(|| {
@@ -30,9 +36,19 @@ impl Rule for PatRule {
                     after: TokenKind::BinOp(BinOp::Or),
                 })
             })?;
-            Ok(Some(pat::Pat::new(pat::PatInner::Any(pat))))
+            Ok(Some(pat::Pat::new(
+                pat::PatInner::Any(pat),
+                parser
+                    .file_info()
+                    .into_span(parser.relative_cursor_to(cursor_begin)),
+            )))
         } else {
-            Ok(Some(pat::Pat::new(first)))
+            Ok(Some(pat::Pat::new(
+                first,
+                parser
+                    .file_info()
+                    .into_span(parser.relative_cursor_to(cursor_begin)),
+            )))
         }
     }
 }

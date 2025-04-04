@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[derive(Clone, Spanned)]
 pub struct Pat {
     inner: Arc<PatInner>,
-    span: crate::Span,
+    pub span: crate::Span,
 }
 
 impl Pat {

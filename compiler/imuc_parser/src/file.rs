@@ -1,12 +1,12 @@
+use imuc_ast::Span;
 use imuc_error::Error;
-use imuc_lexer::{Token, TokenKind};
+use imuc_lexer::{Filename, Token, TokenKind};
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::sync::Arc;
 
 /// Clonable information of [`FileReader`] holding the file string and cursor position
 #[derive(Debug, Clone)]
 pub struct FileInfo {
-    pub file: Arc<str>,
+    pub file: Filename,
     pub line: usize,
     pub column: usize,
 }
@@ -26,11 +26,6 @@ impl<'s, I> FileReader<'s, I>
 where
     I: Iterator<Item = Token> + Send + Sync,
 {
-    fn into_arc_str(s: String) -> Arc<str> {
-        let s = Box::into_raw(s.into_boxed_str());
-        unsafe { Arc::from_raw(s) }
-    }
-
     /// Creates a file reader with given file name, content, and reader over tokens
     /// You should ensure that the reader is corresponding to the content, or the behavior may be
     /// unexpected
@@ -41,7 +36,7 @@ where
     ) -> Self {
         Self {
             info: FileInfo {
-                file: Self::into_arc_str(file.into()),
+                file: Filename::new(file),
                 line: 1,
                 column: 1,
             },
@@ -118,9 +113,21 @@ impl Display for FileInfo {
         write!(
             f,
             "file {:?} line {} column {}",
-            self.file.as_ref(),
+            self.file.get(),
             self.line,
             self.column
         )
+    }
+}
+
+impl FileInfo {
+    pub fn into_span(self, len: usize) -> Span {
+        let Self { file, line, column } = self;
+        Span {
+            file,
+            line,
+            column,
+            len,
+        }
     }
 }

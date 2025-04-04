@@ -11,6 +11,7 @@ impl Rule for StructExprRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         if let Some(ty) = rules::TypeRule.parse(parser)? {
             parser.next_expected(&TokenKind::Pair(Pair::LeftParen))?;
             let mut elem = BTreeMap::new();
@@ -46,7 +47,13 @@ impl Rule for StructExprRule {
 
                 elem.insert(parser.look_up.insert(name.value), expr);
             }
-            Ok(Some(expr::Cus { ty, elem }))
+            Ok(Some(expr::Cus {
+                ty,
+                elem,
+                span: parser
+                    .file_info()
+                    .into_span(parser.relative_cursor_to(cursor_begin)),
+            }))
         } else {
             Ok(None)
         }

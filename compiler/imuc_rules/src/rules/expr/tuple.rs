@@ -11,6 +11,7 @@ impl Rule for TupleExprRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         if parser.next_if(&TokenKind::Pair(Pair::LeftParen))?.is_some() {
             let mut elem = Vec::new();
             let mut comma = false;
@@ -44,7 +45,12 @@ impl Rule for TupleExprRule {
             match elem.len() {
                 0 => Ok(Some(expr::Expr::Prim(prim::Prim::Unit))),
                 1 if !comma => Ok(Some(elem.into_iter().next().unwrap())),
-                _ => Ok(Some(expr::Expr::Tuple(expr::Tuple { elem }))),
+                _ => Ok(Some(expr::Expr::Tuple(expr::Tuple {
+                    elem,
+                    span: parser
+                        .file_info()
+                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                }))),
             }
         } else {
             Ok(None)

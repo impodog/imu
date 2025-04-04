@@ -10,12 +10,17 @@ struct BodyElem {
     unit: bool,
 }
 
-impl From<BodyElem> for expr::Expr {
-    fn from(value: BodyElem) -> Self {
-        Self::Body(expr::Body {
-            bind: value.bind,
-            body: value.body,
-            unit: value.unit,
+impl BodyElem {
+    fn convert<'s, I>(self, parser: &Parser<'s, I>, len: usize) -> expr::Expr
+    where
+        I: ParserSequence<'s>,
+    {
+        let Self { bind, body, unit } = self;
+        expr::Expr::Body(expr::Body {
+            bind,
+            body,
+            unit,
+            span: parser.file_info().into_span(len),
         })
     }
 }
@@ -27,6 +32,7 @@ impl Rule for BodyRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         if parser.next_if(&TokenKind::Pair(Pair::LeftBrace))?.is_some() {
             let mut stack = vec![BodyElem::default()];
             let mut bind_seq = true;
@@ -71,7 +77,7 @@ impl Rule for BodyRule {
                 if let Some(inner) = inner {
                     elem.body.push(inner);
                 }
-                Some(elem.into())
+                Some(elem.convert(parser, parser.relative_cursor_to(cursor_begin)))
             });
             if let expr::Expr::Body(body) = body.expect("the stack should not be empty") {
                 Ok(Some(body))

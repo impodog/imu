@@ -2,6 +2,7 @@ use std::borrow::Borrow;
 use std::fmt;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::sync::{LazyLock, RwLock};
 
 const SMALL_STRING_THRESHOLD: usize = 60;
 
@@ -75,5 +76,39 @@ where
 {
     fn from(value: T) -> Self {
         Self(StrRefInner::from(value))
+    }
+}
+
+impl StrRef {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// A cheaply copiable handle to a file name, however provides slower creation and querying.
+/// This defaults to a name in references
+pub struct Filename(usize);
+
+static FILES: LazyLock<RwLock<Vec<StrRef>>> =
+    LazyLock::new(|| RwLock::new(vec!["<reference>".into()]));
+
+impl Filename {
+    /// Creates a new file name handle
+    pub fn new(value: impl Into<StrRef>) -> Self {
+        // This blocks all other accesses
+        let mut files = FILES.write().unwrap();
+        files.push(value.into());
+        Self(files.len() - 1)
+    }
+
+    /// Gets the content of this file name handle
+    pub fn get(&self) -> StrRef {
+        FILES
+            .read()
+            .unwrap()
+            .get(self.0)
+            .expect("created file name handles should be valid")
+            .clone()
     }
 }

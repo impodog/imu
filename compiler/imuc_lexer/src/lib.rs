@@ -6,5 +6,5 @@ pub mod token;
 
 pub use ac::{AhoCorasick, AhoCorasickBuilder};
 pub use reader::{Reader, EOF};
-pub use str_ref::StrRef;
+pub use str_ref::{Filename, StrRef};
 pub use token::{Token, TokenKind};

@@ -62,24 +62,37 @@ impl Rule for ImportItemRule {
                     }));
                 }
 
+                let cursor_begin = parser.relative_cursor();
                 let item = parser.next_expected(&ImportTokens)?;
                 let kind = Self::into_item(item, parser.look_up.insert(item.value));
 
                 let alias = Self::next_alias(item.kind, parser)?;
 
-                comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
+                list.push(module::ImportItem {
+                    kind,
+                    alias,
+                    span: parser
+                        .file_info()
+                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                });
 
-                list.push(module::ImportItem { kind, alias });
+                comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
             }
             Ok(Some(list))
-        } else if let Some(item) = parser.next_if(&ImportTokens)? {
-            let alias = Self::next_alias(item.kind, parser)?;
-            Ok(Some(vec![module::ImportItem {
-                kind: Self::into_item(item, parser.look_up.insert(item.value)),
-                alias,
-            }]))
         } else {
-            Ok(None)
+            let cursor_begin = parser.relative_cursor();
+            if let Some(item) = parser.next_if(&ImportTokens)? {
+                let alias = Self::next_alias(item.kind, parser)?;
+                Ok(Some(vec![module::ImportItem {
+                    kind: Self::into_item(item, parser.look_up.insert(item.value)),
+                    alias,
+                    span: parser
+                        .file_info()
+                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                }]))
+            } else {
+                Ok(None)
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ lazy_tokens!(EndTokens, Pair::RightParen, Pair::RightBracket, Pair::RightBrace a
 
 /// [`Self::end`] defines the token to end the expression when meet
 ///
-/// The expression will end anyway if it meets open right brackets ')', ']', '}' or ';' (as a suffix)
+/// The expression will end anyway if it meets open right brackets ')', ']', '}' or ';' (as a suffix and will not be consumed)
 pub struct ExprRule<T>
 where
     T: for<'a> TokenKindSet<'a>,
@@ -15,23 +15,65 @@ where
     pub end: T,
 }
 
-fn merge_symbols(op: TokenKind, stack: &mut Vec<expr::Expr>) -> Result<()> {
-    match op {
+/// A local struct that holds both the expression kind and its beginning cursor
+struct ExprItem {
+    expr: expr::Expr,
+    cursor: usize,
+}
+
+/// A local struct that holds both the operator and its beginning cursor
+struct OpItem {
+    op: TokenKind,
+    cursor: usize,
+}
+
+fn merge_symbols<'s, I>(
+    parser: &mut Parser<'s, I>,
+    op_item: OpItem,
+    stack: &mut Vec<ExprItem>,
+) -> Result<()>
+where
+    I: ParserSequence<'s>,
+{
+    match op_item.op {
         TokenKind::UnOp(op) => {
-            let val = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
-            stack.push(expr::Expr::UnExpr(expr::UnExpr {
+            let ExprItem {
+                expr,
+                cursor: _cursor,
+            } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            let expr = expr::Expr::UnExpr(expr::UnExpr {
                 op,
-                val: Box::new(val),
-            }));
+                val: Box::new(expr),
+                span: parser
+                    .file_info()
+                    .into_span(parser.relative_cursor_to(op_item.cursor)),
+            });
+            stack.push(ExprItem {
+                expr,
+                cursor: op_item.cursor,
+            });
         }
         TokenKind::BinOp(op) => {
-            let lhs = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
-            let rhs = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
-            stack.push(expr::Expr::BinExpr(expr::BinExpr {
+            let ExprItem {
+                expr: lhs_expr,
+                cursor: lhs_cursor,
+            } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            let ExprItem {
+                expr: rhs_expr,
+                cursor: _rhs_cursor,
+            } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            let expr = expr::Expr::BinExpr(expr::BinExpr {
                 op,
-                lhs: Box::new(lhs),
-                rhs: Box::new(rhs),
-            }));
+                lhs: Box::new(lhs_expr),
+                rhs: Box::new(rhs_expr),
+                span: parser
+                    .file_info()
+                    .into_span(parser.relative_cursor_to(lhs_cursor)),
+            });
+            stack.push(ExprItem {
+                expr,
+                cursor: lhs_cursor,
+            });
         }
         _ => {
             unreachable!("input op should be an operator")
@@ -51,26 +93,34 @@ where
         I: ParserSequence<'s>,
     {
         let end = (self.end, EndTokens);
-        let mut stack = Vec::new();
-        let mut op: Vec<TokenKind> = Vec::new();
+        let mut stack: Vec<ExprItem> = Vec::new();
+        let mut op: Vec<OpItem> = Vec::new();
         loop {
-            if let Some(item) = rules::ElemExprRule.parse(parser)? {
-                stack.push(item);
+            let cursor_begin = parser.relative_cursor();
+            if let Some(expr) = rules::ElemExprRule.parse(parser)? {
+                stack.push(ExprItem {
+                    expr,
+                    cursor: cursor_begin,
+                });
             } else {
                 let input = parser.next_some()?;
                 match input.kind {
                     TokenKind::UnOp(_) | TokenKind::BinOp(_) => {
                         while op.last().is_some_and(|op| {
-                            if op.is_right() {
-                                op.priority() < input.kind.priority()
+                            if op.op.is_right() {
+                                op.op.priority() < input.kind.priority()
                             } else {
-                                op.priority() <= input.kind.priority()
+                                op.op.priority() <= input.kind.priority()
                             }
                         }) {
                             let op = op.pop().expect("op should not be empty after checking");
-                            merge_symbols(op, &mut stack).map_err(|err| parser.map_err(err))?;
+                            merge_symbols(parser, op, &mut stack)
+                                .map_err(|err| parser.map_err(err))?;
                         }
-                        op.push(input.kind);
+                        op.push(OpItem {
+                            op: input.kind,
+                            cursor: cursor_begin,
+                        });
                     }
                     _ => {
                         if end.contains(&input.kind) {
@@ -86,11 +136,11 @@ where
             }
         }
         for op in op.into_iter().rev() {
-            merge_symbols(op, &mut stack).map_err(|err| parser.map_err(err))?;
+            merge_symbols(parser, op, &mut stack).map_err(|err| parser.map_err(err))?;
         }
         match stack.len() {
             0 => unreachable!("stack should be empty at this point"),
-            1 => Ok(Some(stack.into_iter().next().unwrap())),
+            1 => Ok(Some(stack.into_iter().next().unwrap().expr)),
             _ => parser.error(errors::SyntaxError::TooFewOp),
         }
     }

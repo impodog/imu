@@ -1,5 +1,4 @@
 use super::Ctx;
-use imuc_ir::sym::FunSig;
 use imuc_lexer::token::ResTy;
 
 impl Ctx {

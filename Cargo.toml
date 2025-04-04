@@ -17,6 +17,7 @@ imuc_ir = { path = "compiler/imuc_ir", optional = true }
 imuc_parser = { path = "compiler/imuc_parser", optional = true }
 imuc_path = { path = "compiler/imuc_path", optional = true }
 imuc_rules = { path = "compiler/imuc_rules", optional = true }
+imuc_derive = { path = "compiler/imuc_derive", optional = true }
 
 [features]
 compiler = [
@@ -29,7 +30,5 @@ compiler = [
     "imuc_parser",
     "imuc_path",
     "imuc_rules",
+    "imuc_derive",
 ]
-
-[lints.clippy]
-module_inception = "deny"

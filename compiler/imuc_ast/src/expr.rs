@@ -15,7 +15,7 @@ pub enum Expr {
 
 pub enum Value {
     Unused,
-    Name(crate::StrRef),
+    Name(imuc_lexer::StrRef),
     Res(imuc_lexer::token::ResVal),
 }
 
@@ -45,5 +45,5 @@ pub struct Tuple {
 
 pub struct Cus {
     pub ty: crate::pat::Type,
-    pub elem: BTreeMap<crate::StrRef, Expr>,
+    pub elem: BTreeMap<imuc_lexer::StrRef, Expr>,
 }

@@ -1,21 +1,28 @@
+use imuc_derive::Spanned;
 use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
 /// A immutable, clonable handle of [`PatInner`], holding the pattern info
-#[derive(Clone)]
-pub struct Pat(Arc<PatInner>);
+#[derive(Clone, Spanned)]
+pub struct Pat {
+    inner: Arc<PatInner>,
+    span: crate::Span,
+}
 
 impl Pat {
-    pub fn new(pat: PatInner) -> Self {
-        Self(Arc::new(pat))
+    pub fn new(pat: PatInner, span: crate::Span) -> Self {
+        Self {
+            inner: Arc::new(pat),
+            span,
+        }
     }
 }
 
 impl Deref for Pat {
     type Target = PatInner;
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        self.inner.deref()
     }
 }
 
@@ -40,12 +47,12 @@ pub struct TuplePat(pub Vec<Pat>);
 pub struct AnyPat(pub Vec<Pat>);
 
 /// A name group of patterns that can be matched according to names
-pub struct NamedPat(pub BTreeMap<crate::StrRef, Option<Type>>);
+pub struct NamedPat(pub BTreeMap<imuc_lexer::StrRef, Option<Type>>);
 
 /// An enumeration used in [`IdentPat`] for an unused or normal name
 pub enum IdentKind {
     Unused,
-    Value(crate::StrRef),
+    Value(imuc_lexer::StrRef),
 }
 
 /// The flags of type pattern
@@ -66,5 +73,5 @@ pub struct Type {
 pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),
-    Single(crate::StrRef),
+    Single(imuc_lexer::StrRef),
 }

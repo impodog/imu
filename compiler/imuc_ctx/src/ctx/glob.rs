@@ -1,4 +1,4 @@
-use super::{Body, Value};
+use super::Body;
 use crate::prelude::*;
 use cmd::{Bytes, Cmd, Ptr};
 use std::collections::HashMap;

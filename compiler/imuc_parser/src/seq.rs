@@ -11,7 +11,14 @@ pub struct ParserInput<'s> {
 /// Trait for types that can be applied to a parser
 /// This requires an iterator over [`ParserInput`] and context info
 pub trait ParserSequence<'s>: Iterator<Item = ParserInput<'s>> + Send + Sync {
+    /// Maps an error with additional context from the parser
     fn map_error(&self, err: Error) -> Error;
+
+    /// Acquires the current file info
+    fn file_info(&self) -> crate::file::FileInfo;
+
+    /// Acquires a relative cursor position, and you must guarantee it to be increasing
+    fn relative_cursor(&self) -> usize;
 }
 
 /// Any type that holds a series of tokens to be matched against

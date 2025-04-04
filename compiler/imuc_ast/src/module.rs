@@ -1,4 +1,5 @@
 use crate::item::Item;
+use imuc_derive::Spanned;
 
 /// The syntax tree entry point for modules
 pub struct Module {
@@ -16,13 +17,15 @@ pub enum Public {
 
 /// An item of the import statement, either a type or a value
 pub enum ImportItemKind {
-    Value(crate::StrRef),
-    Type(crate::StrRef),
+    Value(imuc_lexer::StrRef),
+    Type(imuc_lexer::StrRef),
 }
 
+#[derive(Spanned)]
 pub struct ImportItem {
     pub kind: ImportItemKind,
-    pub alias: Option<crate::StrRef>,
+    pub alias: Option<imuc_lexer::StrRef>,
+    span: crate::Span,
 }
 
 /// A single import from the module

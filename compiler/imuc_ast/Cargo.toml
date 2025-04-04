@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 imuc_lexer = { path = "../imuc_lexer" }
 imuc_path = { path = "../imuc_path" }
+imuc_derive = { path = "../imuc_derive", features = ["ast"] }

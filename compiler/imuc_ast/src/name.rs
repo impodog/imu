@@ -1,40 +1,5 @@
-use std::borrow::Borrow;
-use std::collections::{BTreeSet, HashSet};
-use std::fmt;
-use std::ops::Bound;
-use std::ops::Deref;
-use std::sync::Arc;
-
-/// A slightly cheaper clonable reference handle to a string
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct StrRef(Arc<String>);
-impl fmt::Display for StrRef {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.as_ref().fmt(f)
-    }
-}
-
-impl Borrow<str> for StrRef {
-    fn borrow(&self) -> &str {
-        self
-    }
-}
-
-impl Deref for StrRef {
-    type Target = str;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> From<T> for StrRef
-where
-    T: Into<String>,
-{
-    fn from(value: T) -> Self {
-        Self(Arc::new(value.into()))
-    }
-}
+use imuc_lexer::StrRef;
+use std::collections::HashSet;
 
 /// A name lookup set that produces [`StrRef`] on insertion
 ///
@@ -56,7 +21,7 @@ impl LookUp {
         }
     }
 
-    /// Removes a string referrence from the set. Returns whether the value is present in the set
+    /// Removes a string reference from the set. Returns whether the value is present in the set
     pub fn remove(&mut self, s: &str) -> bool {
         self.set.remove(s)
     }

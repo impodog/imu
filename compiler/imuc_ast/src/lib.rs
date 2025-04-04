@@ -7,5 +7,6 @@ pub mod module;
 pub mod name;
 pub mod pat;
 pub mod prim;
+pub mod span;
 
-pub use name::StrRef;
+pub use span::Span;

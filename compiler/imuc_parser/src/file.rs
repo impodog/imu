@@ -103,6 +103,14 @@ where
     fn map_error(&self, err: Error) -> Error {
         err.context(self.info.clone())
     }
+
+    fn file_info(&self) -> crate::file::FileInfo {
+        self.info.clone()
+    }
+
+    fn relative_cursor(&self) -> usize {
+        self.index
+    }
 }
 
 impl Display for FileInfo {

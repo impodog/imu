@@ -26,7 +26,7 @@ impl Rule for PatRule {
                     first,
                     parser
                         .file_info()
-                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                        .into_span(cursor_begin),
                 )],
             }
             .parse(parser)?
@@ -40,14 +40,14 @@ impl Rule for PatRule {
                 pat::PatInner::Any(pat),
                 parser
                     .file_info()
-                    .into_span(parser.relative_cursor_to(cursor_begin)),
+                    .into_span(cursor_begin),
             )))
         } else {
             Ok(Some(pat::Pat::new(
                 first,
                 parser
                     .file_info()
-                    .into_span(parser.relative_cursor_to(cursor_begin)),
+                    .into_span(cursor_begin),
             )))
         }
     }

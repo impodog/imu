@@ -1,15 +1,16 @@
-mod conv;
 mod ir;
 mod lexer;
-mod memory;
 mod parser;
 mod path;
 mod syntax;
 
-pub use conv::ConvError;
 pub use ir::IrError;
 pub use lexer::LexerError;
-pub use memory::MemoryError;
 pub use parser::ParserError;
 pub use path::PathError;
 pub use syntax::SyntaxError;
+
+#[cfg(feature = "ctx")]
+pub mod ctx;
+#[cfg(feature = "ctx")]
+pub use ctx::{Cursor, Span};

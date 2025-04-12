@@ -121,15 +121,9 @@ where
         self.seq.file_info()
     }
 
-    /// Gets the current relative pointer, which is guaranteed to be increasing
-    pub fn relative_cursor(&self) -> usize {
+    /// Gets the current relative pointer, which is guaranteed to be increasing in position
+    pub fn relative_cursor(&self) -> imuc_ast::Cursor {
         self.seq.relative_cursor()
-    }
-
-    /// Gets the difference between current relative pointer and the given cursor, panics
-    /// if the given cursor is larger than the current cursor
-    pub fn relative_cursor_to(&self, cursor_begin: usize) -> usize {
-        self.relative_cursor() - cursor_begin
     }
 
     /// Maps the error then output a [`Result`] of [`Err`]

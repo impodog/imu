@@ -1,3 +1,4 @@
+use imuc_ast::Cursor;
 use imuc_error::*;
 use imuc_lexer::TokenKind;
 
@@ -17,8 +18,8 @@ pub trait ParserSequence<'s>: Iterator<Item = ParserInput<'s>> + Send + Sync {
     /// Acquires the current file info
     fn file_info(&self) -> crate::file::FileInfo;
 
-    /// Acquires a relative cursor position, and you must guarantee it to be increasing
-    fn relative_cursor(&self) -> usize;
+    /// Acquires a relative cursor position, and you must guarantee it to be increasing in position
+    fn relative_cursor(&self) -> Cursor;
 }
 
 /// Any type that holds a series of tokens to be matched against

@@ -1,4 +1,4 @@
-use imuc_ast::Span;
+use imuc_ast::{Cursor, Span};
 use imuc_error::Error;
 use imuc_lexer::{Filename, Token, TokenKind};
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -103,8 +103,11 @@ where
         self.info.clone()
     }
 
-    fn relative_cursor(&self) -> usize {
-        self.index
+    fn relative_cursor(&self) -> Cursor {
+        Cursor {
+            line: self.info.line,
+            column: self.info.column,
+        }
     }
 }
 
@@ -121,13 +124,12 @@ impl Display for FileInfo {
 }
 
 impl FileInfo {
-    pub fn into_span(self, len: usize) -> Span {
+    pub fn into_span(self, cursor_begin: Cursor) -> Span {
         let Self { file, line, column } = self;
         Span {
             file,
-            line,
-            column,
-            len,
+            start: cursor_begin,
+            end: Cursor { line, column },
         }
     }
 }

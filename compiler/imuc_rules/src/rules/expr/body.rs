@@ -11,7 +11,7 @@ struct BodyElem {
 }
 
 impl BodyElem {
-    fn convert<'s, I>(self, parser: &Parser<'s, I>, len: usize) -> expr::Expr
+    fn convert<'s, I>(self, parser: &Parser<'s, I>, cursor_begin: Cursor) -> expr::Expr
     where
         I: ParserSequence<'s>,
     {
@@ -20,7 +20,7 @@ impl BodyElem {
             bind,
             body,
             unit,
-            span: parser.file_info().into_span(len),
+            span: parser.file_info().into_span(cursor_begin),
         })
     }
 }
@@ -77,7 +77,7 @@ impl Rule for BodyRule {
                 if let Some(inner) = inner {
                     elem.body.push(inner);
                 }
-                Some(elem.convert(parser, parser.relative_cursor_to(cursor_begin)))
+                Some(elem.convert(parser, cursor_begin))
             });
             if let expr::Expr::Body(body) = body.expect("the stack should not be empty") {
                 Ok(Some(body))

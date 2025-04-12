@@ -16,7 +16,7 @@ impl Body {
                     body.push(Cmd::StorePtr(glob.ptr()));
                     body.push_stack(Bytes::ptr());
                     // FIXME: A memory move is performed. Fix?
-                    let size = value.ty.size_or()?;
+                    let size = value.ty.size().expect("values' type should be sized");
                     body.push(Cmd::Dupli(size, value.ptr));
                     body.push(Cmd::Call(size));
                 } else {

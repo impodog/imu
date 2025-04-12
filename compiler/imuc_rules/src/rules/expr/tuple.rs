@@ -49,7 +49,7 @@ impl Rule for TupleExprRule {
                     elem,
                     span: parser
                         .file_info()
-                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                        .into_span(cursor_begin),
                 }))),
             }
         } else {

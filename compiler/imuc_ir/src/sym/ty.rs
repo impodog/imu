@@ -118,11 +118,6 @@ impl Ty {
             .copied()
     }
 
-    pub fn size_or(&self) -> Result<Bytes> {
-        self.size()
-            .ok_or_else(|| errors::ConvError::UninitializedType(self.name.to_string()).into())
-    }
-
     generate_reserved!(unit, "Unit", Unit);
     generate_reserved!(bool, "Bool", Bool);
     generate_reserved!(i8, "I8", I8);

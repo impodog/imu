@@ -73,7 +73,7 @@ impl Rule for ImportItemRule {
                     alias,
                     span: parser
                         .file_info()
-                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                        .into_span(cursor_begin),
                 });
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
@@ -88,7 +88,7 @@ impl Rule for ImportItemRule {
                     alias,
                     span: parser
                         .file_info()
-                        .into_span(parser.relative_cursor_to(cursor_begin)),
+                        .into_span(cursor_begin),
                 }]))
             } else {
                 Ok(None)

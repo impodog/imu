@@ -36,16 +36,6 @@ impl Types {
         }
     }
 
-    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible,
-    /// returns an error otherwise
-    pub fn resolve_or<'a, 'b>(&'a self, item: &'b ty::TyItem) -> Result<&'a Ty>
-    where
-        'b: 'a,
-    {
-        self.resolve(item)
-            .ok_or_else(|| errors::ConvError::UninitializedType(item.name().to_string()).into())
-    }
-
     /// Merge a resolvable list of types
     ///
     /// If the iterator contains loops or undefined references, the function returns an error

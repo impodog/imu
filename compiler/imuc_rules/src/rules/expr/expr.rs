@@ -18,13 +18,13 @@ where
 /// A local struct that holds both the expression kind and its beginning cursor
 struct ExprItem {
     expr: expr::Expr,
-    cursor: usize,
+    cursor: Cursor,
 }
 
 /// A local struct that holds both the operator and its beginning cursor
 struct OpItem {
     op: TokenKind,
-    cursor: usize,
+    cursor: Cursor,
 }
 
 fn merge_symbols<'s, I>(
@@ -44,9 +44,7 @@ where
             let expr = expr::Expr::UnExpr(expr::UnExpr {
                 op,
                 val: Box::new(expr),
-                span: parser
-                    .file_info()
-                    .into_span(parser.relative_cursor_to(op_item.cursor)),
+                span: parser.file_info().into_span(op_item.cursor),
             });
             stack.push(ExprItem {
                 expr,
@@ -66,9 +64,7 @@ where
                 op,
                 lhs: Box::new(lhs_expr),
                 rhs: Box::new(rhs_expr),
-                span: parser
-                    .file_info()
-                    .into_span(parser.relative_cursor_to(lhs_cursor)),
+                span: parser.file_info().into_span(lhs_cursor),
             });
             stack.push(ExprItem {
                 expr,

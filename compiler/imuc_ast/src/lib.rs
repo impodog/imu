@@ -9,4 +9,4 @@ pub mod pat;
 pub mod prim;
 pub mod span;
 
-pub use span::Span;
+pub use span::{Cursor, Span};

@@ -122,7 +122,7 @@ where
     }
 
     /// Gets the current relative pointer, which is guaranteed to be increasing in position
-    pub fn relative_cursor(&self) -> imuc_ast::Cursor {
+    pub fn relative_cursor(&self) -> imuc_lexer::Cursor {
         self.seq.relative_cursor()
     }
 

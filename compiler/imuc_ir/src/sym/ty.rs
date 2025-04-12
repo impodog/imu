@@ -118,6 +118,19 @@ impl Ty {
             .copied()
     }
 
+    /// Calculates the size of the type in bytes, and store it for future use
+    ///
+    /// If the type contains unresolved types or ResTy::SelfType or TyKind::Fun, an error message addressing that is returned.
+    /// If you want custom messages, use [`Self::size`]
+    pub fn size_or(&self, span: imuc_lexer::Span) -> Result<Bytes, ConvError> {
+        self.size().ok_or_else(|| {
+            ConvError::new(Severity::Error, span).with_text(
+                "A type with fixed size is required",
+                format!("The type is {}", self.name),
+            )
+        })
+    }
+
     generate_reserved!(unit, "Unit", Unit);
     generate_reserved!(bool, "Bool", Bool);
     generate_reserved!(i8, "I8", I8);

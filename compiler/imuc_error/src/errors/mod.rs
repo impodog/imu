@@ -12,5 +12,3 @@ pub use syntax::SyntaxError;
 
 #[cfg(feature = "ctx")]
 pub mod ctx;
-#[cfg(feature = "ctx")]
-pub use ctx::{Cursor, Span};

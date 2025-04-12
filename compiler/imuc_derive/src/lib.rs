@@ -8,8 +8,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
     let DeriveInput { ident, .. } = parse_macro_input!(input);
     let output = quote! {
         impl #ident {
-            pub fn span(&self) -> &crate::Span {
-                &self.span
+            pub fn span(&self) -> imuc_lexer::Span {
+                self.span
             }
         }
     };

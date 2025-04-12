@@ -25,7 +25,7 @@ pub enum Value {
 pub struct UnExpr {
     pub op: UnOp,
     pub val: Box<Expr>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 /// An expression with a binary operator
@@ -34,7 +34,7 @@ pub struct BinExpr {
     pub op: BinOp,
     pub lhs: Box<Expr>,
     pub rhs: Box<Expr>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 /// A group of expressions and/or bindings wrapped in braces as a body
@@ -43,18 +43,18 @@ pub struct Body {
     pub bind: Vec<crate::bind::Bind>,
     pub body: Vec<Expr>,
     pub unit: bool,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 #[derive(Spanned)]
 pub struct Tuple {
     pub elem: Vec<Expr>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 #[derive(Spanned)]
 pub struct Cus {
     pub ty: crate::pat::Type,
     pub elem: BTreeMap<imuc_lexer::StrRef, Expr>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }

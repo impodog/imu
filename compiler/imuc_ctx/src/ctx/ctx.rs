@@ -1,7 +1,10 @@
 use crate::prelude::*;
+use imuc_error::errors::ctx::SendError;
 use imuc_ir::cmd::{GlobalPtr, Ptr};
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
+use std::collections::VecDeque;
+use std::sync::{Arc, RwLock};
 
 /// All context info used when converting AST to IR
 ///
@@ -10,6 +13,7 @@ use nonempty::NonEmpty;
 pub struct Ctx {
     pub ty: super::Types,
     pub globs: super::GlobsHandle,
+    pub error_queue: Arc<RwLock<VecDeque<Error>>>,
     body: NonEmpty<super::Body>,
 }
 
@@ -20,6 +24,7 @@ impl Ctx {
         Self {
             ty: Default::default(),
             globs: glob.clone(),
+            error_queue: Default::default(),
             body: NonEmpty::new(super::Body::new(glob, base_name, None)),
         }
     }
@@ -80,5 +85,23 @@ impl Ctx {
             .write()
             .unwrap()
             .merge_fun(self.body.last_mut(), funs);
+    }
+
+    /// Accesses [`Self::error_queue`] and pushes back an error
+    pub fn push_error(&self, error: impl Into<Error>) {
+        self.error_queue.write().unwrap().push_back(error.into());
+    }
+
+    /// Returns a function applicable to [`Result::map_err`] that grabs the stored error
+    /// and replaces it with a [`SendError`]
+    pub fn push_error_fn<E>(&self) -> impl Fn(E) -> SendError + 'static
+    where
+        E: Into<Error>,
+    {
+        let error_queue = self.error_queue.clone();
+        move |error: E| {
+            error_queue.write().unwrap().push_back(error.into());
+            SendError::default()
+        }
     }
 }

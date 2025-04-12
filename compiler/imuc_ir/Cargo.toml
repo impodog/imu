@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 imuc_ast = { path = "../imuc_ast" }
 imuc_lexer = { path = "../imuc_lexer" }
-imuc_error = { path = "../imuc_error" }
+imuc_error = { path = "../imuc_error", features = ["ctx"] }
 unescape = "0.1.0"

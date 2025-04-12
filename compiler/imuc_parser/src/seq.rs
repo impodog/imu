@@ -1,6 +1,5 @@
-use imuc_ast::Cursor;
 use imuc_error::*;
-use imuc_lexer::TokenKind;
+use imuc_lexer::{Cursor, TokenKind};
 
 /// The direct input to parser, holding [`TokenKind`] and its corresponding string slice
 #[derive(Debug, Clone, Copy)]

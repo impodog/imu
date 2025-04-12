@@ -11,16 +11,26 @@ impl Converter for CusConv {
 
 impl Convert<Value> for CusConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
-        let ty = convs::TypeConv
-            .convert(ctx, &input.ty)?
-            .ok_or_else(|| errors::ConvError::TypeRequired("Cus".to_string()))?;
+        let ty = convs::TypeConv.convert(ctx, &input.ty)?.ok_or_else(|| {
+            ctx.push_error(
+                ConvError::new(Severity::Error, input.span)
+                    .with_head("A solid type is required for Cus instantiation"),
+            );
+            SendError::default()
+        })?;
         if let ir::sym::ty::TyKind::Cus(cus) = &ty.kind {
             let mut map = BTreeMap::new();
             for (name, expr) in input.elem.iter() {
                 // TODO: Hint the type with cus item
                 let value = convs::ExprConv::default()
                     .convert(ctx, expr)?
-                    .ok_or_else(|| errors::ConvError::ValueRequired("Cus field".to_owned()))?;
+                    .ok_or_else(|| {
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, input.span)
+                                .with_head("A value is required for Cus field instantiation"),
+                        );
+                        SendError::default()
+                    })?;
                 map.insert(name.to_owned(), value);
             }
             let mut size = Bytes::default();
@@ -29,37 +39,59 @@ impl Convert<Value> for CusConv {
                     match ty {
                         TyItem::Solid(ty) => {
                             if !ty.test_eq(&value.ty) {
-                                return Err(errors::ConvError::TypesMismatch(format!(
-                                    "required {}, found {}",
-                                    ty.name, value.ty.name
-                                ))
-                                .into());
+                                ctx.push_error(
+                                    ConvError::new(Severity::Error, input.span).with_text(
+                                        "Types mismatch in Cus field instantiation",
+                                        format!("required {}, found {}", ty.name, value.ty.name),
+                                    ),
+                                );
+                                return Err(SendError::default().into());
                             }
                         }
                         TyItem::Pending(name) => {
-                            return Err(errors::ConvError::UndefinedType(name.to_string()).into())
+                            ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
+                                "Type is undefined in Cus field instantiation (FIXME)",
+                                format!("Type {} is undefined", name),
+                            ));
+                            return Err(SendError::default().into());
                         }
                     }
                 } else {
-                    return Err(errors::ConvError::UnknownField(key.to_string()).into());
+                    ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
+                        "Unknown field in Cus field instantiation",
+                        format!("Unknown field: {}", key),
+                    ));
+                    return Err(SendError::default().into());
                 }
-                size += value.ty.size_or()?;
+                size += value.ty.size_or(input.span).map_err(ctx.push_error_fn())?;
             }
             for key in cus.0.keys() {
                 if !map.contains_key(key) {
-                    return Err(errors::ConvError::MissingField(key.to_string()).into());
+                    ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
+                        "Missing field int Cus field instantiation",
+                        format!("Missing field: {}", key),
+                    ));
+                    return Err(SendError::default().into());
                 }
             }
 
+            let push_error_fn = ctx.push_error_fn();
             let body = ctx.body_mut();
             for (_name, value) in map.into_iter() {
-                body.push(Cmd::Dupli(value.ty.size_or()?, value.ptr));
+                body.push(Cmd::Dupli(
+                    value.ty.size_or(input.span).map_err(&push_error_fn)?,
+                    value.ptr,
+                ));
             }
 
             let ptr = body.push_stack(size);
             Ok(Value { ty, ptr })
         } else {
-            Err(errors::ConvError::CusRequired("Cus".to_string()).into())
+            ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
+                "Cus type required in Cus instantiation",
+                format!("Found {}", ty.name),
+            ));
+            Err(SendError::default().into())
         }
     }
 }

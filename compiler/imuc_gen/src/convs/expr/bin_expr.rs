@@ -20,28 +20,46 @@ impl Convert<Value> for BinExprConv {
         // TODO: Hint the type with values solved
         let lhs: Value = convs::ExprConv::default()
             .convert(ctx, input.lhs.as_ref())?
-            .ok_or_else(|| errors::ConvError::ValueRequired("BinExpr".to_owned()))?;
+            .ok_or_else(|| {
+                ctx.push_error(
+                    ConvError::new(Severity::Error, input.span)
+                        .with_head("Lhs should return a value"),
+                );
+                SendError::default()
+            })?;
         let rhs: Value = convs::ExprConv::default()
             .convert(ctx, input.rhs.as_ref())?
-            .ok_or_else(|| errors::ConvError::ValueRequired("BinExpr".to_owned()))?;
-        let lhs_ty = lhs
-            .ty
-            .to_res_ty()
-            .ok_or_else(|| errors::ConvError::PrimitiveRequired("BinExpr".to_owned()))?;
-        let rhs_ty = rhs
-            .ty
-            .to_res_ty()
-            .ok_or_else(|| errors::ConvError::PrimitiveRequired("BinExpr".to_owned()))?;
+            .ok_or_else(|| {
+                ctx.push_error(
+                    ConvError::new(Severity::Error, input.span)
+                        .with_head("Rhs should return a value"),
+                );
+                SendError::default()
+            })?;
+        let lhs_ty = lhs.ty.to_res_ty().ok_or_else(|| {
+            ctx.push_error(
+                ConvError::new(Severity::Error, input.span)
+                    .with_head("BinOp can only be applied to primitive lhs"),
+            );
+            SendError::default()
+        })?;
+        let rhs_ty = rhs.ty.to_res_ty().ok_or_else(|| {
+            ctx.push_error(
+                ConvError::new(Severity::Error, input.span)
+                    .with_head("BinOp can only be applied to primitive rhs"),
+            );
+            SendError::default()
+        })?;
         if lhs_ty != rhs_ty {
-            return Err(errors::ConvError::TypesMismatch(format!(
-                "lhs: {:?}, rhs: {:?}",
-                lhs_ty, rhs_ty
-            ))
-            .into());
+            ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
+                "BinOp requires two values of the same type",
+                format!("Two types are {} and {}", lhs.ty.name, rhs.ty.name),
+            ));
+            return Err(SendError::default().into());
         }
         let is_float = matches!(lhs_ty, ResTy::F32 | ResTy::F64);
         let bytes: NumBytes = lhs_ty.try_into()?;
-        let opd_bytes = lhs.ty.size_or()?;
+        let opd_bytes = lhs.ty.size_or(input.span)?;
 
         let kind = match input.op {
             BinOp::Add => {

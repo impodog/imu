@@ -7,11 +7,11 @@ use std::sync::Arc;
 #[derive(Clone, Spanned)]
 pub struct Pat {
     inner: Arc<PatInner>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 impl Pat {
-    pub fn new(pat: PatInner, span: crate::Span) -> Self {
+    pub fn new(pat: PatInner, span: imuc_lexer::Span) -> Self {
         Self {
             inner: Arc::new(pat),
             span,
@@ -64,9 +64,11 @@ pub enum PatFlags {
 }
 
 /// Used in pattern matching, indicating the specific type to match against
+#[derive(Spanned)]
 pub struct Type {
     pub flags: PatFlags,
     pub kind: TypeKind,
+    pub span: imuc_lexer::Span,
 }
 
 /// A part of [`Type`] storing only its name and template args

@@ -14,17 +14,27 @@ impl Convert<Option<Ty>> for TypeConv {
         let ty = match &input.kind {
             TypeKind::Wildcard => return Ok(None),
             TypeKind::Single(name) => {
-                let ty = ctx
-                    .get_type(name)
-                    .ok_or_else(|| errors::ConvError::UndefinedType(name.to_string()))?;
+                let ty = ctx.get_type(name).ok_or_else(|| {
+                    ctx.push_error(
+                        ConvError::new(Severity::Error, input.span)
+                            .with_text("Undefined type", format!("Undefined type: {}", name)),
+                    );
+                    SendError::default()
+                })?;
                 ty.to_owned()
             }
             TypeKind::Res(res) => match res {
-                ResTy::SelfType => ctx
-                    .body_mut()
-                    .self_ty()
-                    .ok_or(errors::ConvError::SelfRequired)?
-                    .to_owned(),
+                ResTy::SelfType => {
+                    if let Some(ty) = ctx.body_mut().self_ty() {
+                        ty.to_owned()
+                    } else {
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, input.span)
+                                .with_head("Self type is required"),
+                        );
+                        return Err(SendError::default().into());
+                    }
+                }
                 ResTy::Unit => Ty::unit(),
                 ResTy::I8 => Ty::i8(),
                 ResTy::I16 => Ty::i16(),

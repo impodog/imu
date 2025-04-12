@@ -1,6 +1,5 @@
-use imuc_ast::{Cursor, Span};
 use imuc_error::Error;
-use imuc_lexer::{Filename, Token, TokenKind};
+use imuc_lexer::{Cursor, Filename, Span, Token, TokenKind};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Clonable information of [`FileReader`] holding the file string and cursor position

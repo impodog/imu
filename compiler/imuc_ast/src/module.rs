@@ -25,7 +25,7 @@ pub enum ImportItemKind {
 pub struct ImportItem {
     pub kind: ImportItemKind,
     pub alias: Option<imuc_lexer::StrRef>,
-    pub span: crate::Span,
+    pub span: imuc_lexer::Span,
 }
 
 /// A single import from the module

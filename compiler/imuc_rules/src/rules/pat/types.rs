@@ -65,6 +65,8 @@ impl Rule for TypeRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
+
         let flags = if parser.next_if(&TokenKind::UnOp(UnOp::Ref))?.is_some() {
             pat::PatFlags::Shared
         } else if parser.next_if(&TokenKind::UnOp(UnOp::Ptr))?.is_some() {
@@ -82,6 +84,7 @@ impl Rule for TypeRule {
                         return Ok(Some(pat::Type {
                             flags,
                             kind: pat::TypeKind::Wildcard,
+                            span: parser.file_info().into_span(cursor_begin),
                         }))
                     }
                     _ => filtered!(),
@@ -93,6 +96,7 @@ impl Rule for TypeRule {
             Ok(Some(pat::Type {
                 flags,
                 kind: pat::TypeKind::Single(name),
+                span: parser.file_info().into_span(cursor_begin),
             }))
         } else if let Some(res) = parser.next_if(&ResTyTokens)? {
             let res = match res.kind {
@@ -102,6 +106,7 @@ impl Rule for TypeRule {
             Ok(Some(pat::Type {
                 flags,
                 kind: pat::TypeKind::Res(res),
+                span: parser.file_info().into_span(cursor_begin),
             }))
         } else if flags != pat::PatFlags::Unique {
             Err(parser.map_err(errors::SyntaxError::ExpectedAfter {

@@ -34,9 +34,19 @@ impl Ctx {
         self.body.last()
     }
 
-    /// Gets the reference to the current function body
+    /// Gets the mutable reference to the current function body
     pub fn body_mut(&mut self) -> &mut super::Body {
         self.body.last_mut()
+    }
+
+    /// Gets the reference to the bottom function body
+    pub fn bottom(&self) -> &super::Body {
+        self.body.first()
+    }
+
+    /// Gets the mutable reference to the bottom function body
+    pub fn bottom_mut(&mut self) -> &mut super::Body {
+        self.body.first_mut()
     }
 
     /// Pushes a new body of function when entering inner functions

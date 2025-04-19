@@ -124,4 +124,9 @@ impl Body {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    /// Takes the list of cmd of the body when exporting as a function
+    pub fn take_cmd(self) -> Vec<cmd::Cmd> {
+        self.list
+    }
 }

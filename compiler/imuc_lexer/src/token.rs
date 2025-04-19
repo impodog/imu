@@ -137,6 +137,7 @@ pub enum Symbol {
     Colon,
     Comma,
     Dot,
+    Arrow,
     Assign,
 }
 

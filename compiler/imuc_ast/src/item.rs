@@ -1,6 +1,6 @@
 use crate::expr::Body;
 use crate::module::Public;
-use crate::pat::Pat;
+use crate::pat::{Pat, Type};
 use crate::prim::Prim;
 
 /// An item definition directly used in modules, containing different kinds
@@ -30,8 +30,19 @@ pub enum ItemKind {
 
 /// A function definition with arguments and body
 pub struct Fun {
-    pub args: Pat,
+    pub param: Pat,
+    pub ret: Option<Type>,
     pub body: Body,
+}
+
+impl Fun {
+    pub fn span(&self) -> imuc_lexer::Span {
+        imuc_lexer::Span {
+            file: self.param.span.file,
+            start: self.param.span.start,
+            end: self.body.span.end,
+        }
+    }
 }
 
 /// A custom compound type definition

@@ -59,11 +59,11 @@ pub enum Cmd {
     Mulf(NumBytes, Ptr, Ptr),
     Divf(NumBytes, Ptr, Ptr),
     Testf(NumBytes, Ptr, Ptr),
-    /// If condition in pointer 1, jump to pointer 2
+    /// If the 1-byte condition in pointer 1 is true, jump to pointer 2
     JumpIf(Ptr, Ptr),
     /// Call the function with top bytes plus a function pointer at the bottom
     Call(Bytes),
-    /// Globally links to the function and puts its global handle (ptr) to the top of the global
+    /// Globally links to the function and puts its global handle (ptr-sized) to the top of the global
     /// stack(does not affect local stack)
     Link(StrRef),
     /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,

@@ -1,12 +1,12 @@
 use super::Body;
 use crate::prelude::*;
 use cmd::{Bytes, Cmd, Ptr};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use sym::{
     ty::{TyInner, TyKind},
-    FunSig, Ty,
+    Fun, FunSig, Ty,
 };
 
 type GlobMap = HashMap<StrRef, Glob>;
@@ -16,7 +16,7 @@ pub type GlobsHandle = Arc<RwLock<Globs>>;
 
 /// A global variable that can be accessed or created in the current module
 ///
-/// If [`Self::external`] is set to true, this will not be exported,
+/// If [`Self::kind`] is [`GlobKind::External`], this will not be exported,
 /// otherwise the corresponding global will be written to the output file
 ///
 /// [`Self::ty`] is the bare type of the global. However most of the time a ptr wrapping this ty is required
@@ -25,25 +25,42 @@ pub type GlobsHandle = Arc<RwLock<Globs>>;
 pub struct Glob {
     ptr: Ptr,
     ty: Ty,
-    external: bool,
+    kind: GlobKind,
 }
 
 impl Glob {
-    pub fn new(ptr: Ptr, ty: Ty, external: bool) -> Self {
-        Self { ptr, ty, external }
+    pub fn new(ptr: Ptr, ty: Ty, kind: GlobKind) -> Self {
+        Self { ptr, ty, kind }
     }
 
+    /// Returns the global's pointer
     pub fn ptr(&self) -> Ptr {
         self.ptr
     }
 
+    /// Returns the global's type reference
     pub fn ty(&self) -> &Ty {
         &self.ty
     }
 
+    /// Returns whether the global is external and has no details
     pub fn external(&self) -> bool {
-        self.external
+        matches!(self.kind, GlobKind::External)
     }
+
+    /// Returns the global's kind
+    pub fn kind(&self) -> &GlobKind {
+        &self.kind
+    }
+}
+
+/// Stores the type and detailed data of the [`Glob`] variable, such as function internals;
+/// Or, as an external type, the details are omitted and only referenced by ptr
+#[derive(Default)]
+pub enum GlobKind {
+    #[default]
+    External,
+    Fun(Fun),
 }
 
 /// A map used in [`Ctx`](`super::Ctx`) for compiling global variables with a static, mangled name
@@ -51,15 +68,21 @@ impl Glob {
 /// This also stores a ptr to the top of globals stack
 #[derive(Default)]
 pub struct Globs {
-    fun: GlobMap,
+    map: GlobMap,
     stack: Ptr,
 }
 
 impl Deref for Globs {
     type Target = GlobMap;
     fn deref(&self) -> &Self::Target {
-        &self.fun
+        &self.map
     }
+}
+
+/// The exported results of all globals that are external
+#[derive(Default)]
+pub struct ExportGlobs {
+    pub fun: BTreeMap<StrRef, Fun>,
 }
 
 impl Globs {
@@ -67,17 +90,22 @@ impl Globs {
     ///
     /// TODO: This is not made global, because general global exporting is not supported at present
     fn insert(&mut self, name: StrRef, glob: Glob) {
-        self.fun.insert(name, glob);
+        self.map.insert(name, glob);
     }
 
-    fn load_fun(&mut self, body: &mut Body, name: StrRef, ty: Ty) {
+    /// Loads a function with given name as an *external*, pushing commands and references into the body
+    ///
+    /// You must input the *bottom*(base) body into this function to prevent multiple calls
+    pub fn load_fun(&mut self, body: &mut Body, name: StrRef, ty: Ty) {
         let ptr = self.stack;
         body.push(Cmd::Link(name.clone()));
         self.stack += Bytes::ptr();
-        self.insert(name, Glob::new(ptr, ty, true));
+        self.insert(name, Glob::new(ptr, ty, GlobKind::External));
     }
 
-    /// Merges an iterator of functions into globals, assigning each with a ptr, if not already
+    /// Merges an iterator of *external* functions into globals, assigning each with a ptr, if not already
+    ///
+    /// You must input the *bottom*(base) body into this function to prevent multiple calls
     ///
     /// Normally, the argument of this function is read from header files
     pub fn merge_fun<'a, I>(&mut self, body: &mut Body, funs: I)
@@ -97,5 +125,20 @@ impl Globs {
                 self.load_fun(body, name.clone(), ty);
             }
         }
+    }
+
+    /// Takes all non-external globals of the map, and returns them in [`ExportGlobs`],
+    /// note that this will turn all non-external globals into external globals
+    pub fn export_globs(&mut self) -> ExportGlobs {
+        let mut export = ExportGlobs::default();
+        for (name, glob) in self.map.iter_mut() {
+            match std::mem::take(&mut glob.kind) {
+                GlobKind::External => {}
+                GlobKind::Fun(fun) => {
+                    export.fun.insert(name.to_owned(), fun);
+                }
+            }
+        }
+        export
     }
 }

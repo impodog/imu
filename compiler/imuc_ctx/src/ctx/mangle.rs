@@ -13,6 +13,16 @@ pub fn mangle_ty_fun(ty_name: &str, name: &str) -> String {
     format!("{}@{}", ty_name, name)
 }
 
+/// Mangles the name of the ty of a function related to the type
+pub fn mangle_fun_ty(fun_name: &str) -> String {
+    format!("%{}", fun_name)
+}
+
+/// Mangles the name of a pointer
+pub fn mangle_ptr(name: &str) -> String {
+    format!("*{}", name)
+}
+
 /// Mangles the name of a tupled type, such that types A, B... become "(A,B,...)"
 pub fn tuple_name<'a, I>(tuple: I) -> String
 where

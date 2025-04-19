@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use imuc_lexer::token::Symbol;
 
 pub struct FunRule;
 
@@ -15,12 +16,21 @@ impl Rule for FunRule {
                 context: "function arguments".to_owned(),
             })
         })?;
+        let ret = if parser.next_if(&TokenKind::Symbol(Symbol::Arrow))?.is_some() {
+            rules::TypeRule.parse(parser)?
+        } else {
+            None
+        };
         let body = rules::BodyRule.parse(parser)?.ok_or_else(|| {
             parser.map_err(errors::SyntaxError::ExpectedIn {
                 expect: "Body".to_owned(),
                 context: "function body".to_owned(),
             })
         })?;
-        Ok(Some(item::Fun { args, body }))
+        Ok(Some(item::Fun {
+            param: args,
+            body,
+            ret,
+        }))
     }
 }

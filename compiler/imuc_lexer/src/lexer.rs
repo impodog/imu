@@ -98,6 +98,9 @@ where
                     if self.first().is_ascii_digit() {
                         let ch = self.next_char();
                         Token::new(self.next_number(ch), self.diff(begin))
+                    } else if self.first() == '>' {
+                        self.advance();
+                        Token::new(TokenKind::Symbol(Symbol::Arrow), self.diff(begin))
                     } else {
                         Token::new(TokenKind::BinOp(BinOp::Sub), self.diff(begin))
                     }

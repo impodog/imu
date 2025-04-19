@@ -12,7 +12,7 @@ impl Rule for PatRule {
     {
         let cursor_begin = parser.relative_cursor();
         let first = if let Some(named) = rules::NamedPatRule.parse(parser)? {
-            pat::PatInner::Named(named)
+            pat::PatInner::Cus(named)
         } else if let Some(first) = rules::TuplePatRule.parse(parser)? {
             pat::PatInner::Tuple(first)
         } else if let Some(first) = rules::IdentPatRule.parse(parser)? {
@@ -24,9 +24,7 @@ impl Rule for PatRule {
             let pat = rules::AnyPatRule {
                 list: vec![pat::Pat::new(
                     first,
-                    parser
-                        .file_info()
-                        .into_span(cursor_begin),
+                    parser.file_info().into_span(cursor_begin),
                 )],
             }
             .parse(parser)?
@@ -38,16 +36,12 @@ impl Rule for PatRule {
             })?;
             Ok(Some(pat::Pat::new(
                 pat::PatInner::Any(pat),
-                parser
-                    .file_info()
-                    .into_span(cursor_begin),
+                parser.file_info().into_span(cursor_begin),
             )))
         } else {
             Ok(Some(pat::Pat::new(
                 first,
-                parser
-                    .file_info()
-                    .into_span(cursor_begin),
+                parser.file_info().into_span(cursor_begin),
             )))
         }
     }

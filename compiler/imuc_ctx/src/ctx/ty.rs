@@ -1,5 +1,6 @@
 use crate::graph::Dag;
 use crate::prelude::*;
+use imuc_error::errors::ctx::{ConvError, Severity};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use sym::{ty, Ty};
@@ -34,6 +35,26 @@ impl Types {
             ty::TyItem::Solid(ty) => Some(ty),
             ty::TyItem::Pending(key) => self.get(key),
         }
+    }
+
+    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible,
+    /// or an error with the given span and a relatively fixed message is returned
+    ///
+    /// If you want custom messages, use [`Self::resolve`] instead
+    pub fn resolve_or<'a, 'b>(
+        &'a self,
+        item: &'b ty::TyItem,
+        span: imuc_lexer::Span,
+    ) -> Result<&'a Ty, ConvError>
+    where
+        'b: 'a,
+    {
+        self.resolve(item).ok_or_else(move || {
+            ConvError::new(Severity::Error, span).with_text(
+                "Ty is undefined",
+                format!("Unable to find ty {}", item.name()),
+            )
+        })
     }
 
     /// Merge a resolvable list of types

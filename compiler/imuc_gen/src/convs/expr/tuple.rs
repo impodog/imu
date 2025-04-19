@@ -16,10 +16,19 @@ impl Convert<Value> for TupleConv {
         for expr in input.elem.iter() {
             let value = convs::ExprConv::default()
                 .convert(ctx, expr)?
-                .ok_or_else(|| errors::ConvError::ValueRequired("Tuple".to_string()))?;
+                .ok_or_else(|| {
+                    ctx.push_error(
+                        ConvError::new(Severity::Warn, input.span())
+                            .with_head("Tuple initialization requires a value"),
+                    );
+                    SendError::default()
+                })?;
 
+            let bytes = value.ty.size_or(input.span).map_err(|err| {
+                ctx.push_error(err);
+                SendError::default()
+            })?;
             let body = ctx.body_mut();
-            let bytes = value.ty.size_or()?;
             body.push(Cmd::Dupli(value.ptr, bytes));
 
             size += bytes;

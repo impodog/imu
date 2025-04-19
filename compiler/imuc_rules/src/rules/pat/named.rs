@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 pub struct NamedPatRule;
 
 impl Rule for NamedPatRule {
-    type Output = pat::NamedPat;
+    type Output = pat::CusPat;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
@@ -49,7 +49,7 @@ impl Rule for NamedPatRule {
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
             }
-            Ok(Some(pat::NamedPat(list)))
+            Ok(Some(pat::CusPat(list)))
         } else {
             Ok(None)
         }

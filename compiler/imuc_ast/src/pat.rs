@@ -31,7 +31,7 @@ pub enum PatInner {
     Ident(IdentPat),
     Tuple(TuplePat),
     Any(AnyPat),
-    Named(NamedPat),
+    Cus(CusPat),
 }
 
 /// The basic pattern, matching value to a certain type
@@ -47,7 +47,7 @@ pub struct TuplePat(pub Vec<Pat>);
 pub struct AnyPat(pub Vec<Pat>);
 
 /// A name group of patterns that can be matched according to names
-pub struct NamedPat(pub BTreeMap<imuc_lexer::StrRef, Option<Type>>);
+pub struct CusPat(pub BTreeMap<imuc_lexer::StrRef, Option<Type>>);
 
 /// An enumeration used in [`IdentPat`] for an unused or normal name
 pub enum IdentKind {

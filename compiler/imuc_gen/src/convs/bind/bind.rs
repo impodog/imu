@@ -54,49 +54,70 @@ fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                         }
                         Ok(())
                     } else {
-                        Err(errors::ConvError::ValueRequired("let binding".to_owned()).into())
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, pat.span())
+                                .with_head("Let binding to a name requires a value"),
+                        );
+                        Err(SendError::default().into())
                     }
                 }
             }
         }
         PatInner::Tuple(tuple) => {
-            let value = val
-                .into_value(ctx)?
-                .ok_or_else(|| errors::ConvError::ValueRequired("let binding".to_owned()))?;
+            let value = val.into_value(ctx)?.ok_or_else(|| {
+                ctx.push_error(
+                    ConvError::new(Severity::Error, pat.span())
+                        .with_head("Tuple binding requires a value"),
+                );
+                SendError::default()
+            })?;
             match &value.ty.kind {
                 TyKind::Tuple(tuple_ty) => {
                     if tuple.0.len() != tuple_ty.0.len() {
-                        Err(errors::ConvError::TypesMismatch(format!(
-                            "{} with a pattern of {}",
-                            value.ty.name,
-                            tuple.0.len()
-                        ))
-                        .into())
+                        ctx.push_error(ConvError::new(Severity::Error, pat.span()).with_text(
+                            "Tuple pattern length mismatch",
+                            format!(
+                                "Lengths are {} of type and {} of value",
+                                tuple_ty.0.len(),
+                                tuple.0.len()
+                            ),
+                        ));
+                        Err(SendError::default().into())
                     } else {
                         let mut ptr = value.ptr;
                         for (pat, ty) in tuple.0.iter().zip(tuple_ty.0.iter()) {
-                            let ty = ctx.ty.resolve_or(ty)?.clone();
+                            let ty = ctx
+                                .ty
+                                .resolve_or(ty, pat.span)
+                                .map_err(ctx.push_error_fn())?
+                                .clone();
                             convert_let(
                                 ctx,
                                 pat,
                                 Conversion::Value(Some(Value::new(ty.clone(), ptr))),
                             )?;
-                            ptr += ty.size_or()?;
+                            ptr += ty.size_or(pat.span()).map_err(ctx.push_error_fn())?;
                         }
                         Ok(())
                     }
                 }
-                _ => Err(errors::ConvError::TypesMismatch(format!(
-                    "{} with a tuple binding",
-                    value.ty.name
-                ))
-                .into()),
+                _ => {
+                    ctx.push_error(ConvError::new(Severity::Error, pat.span()).with_text(
+                        "Tuple binding requires a tuple value",
+                        format!("Found {}", value.ty.name),
+                    ));
+                    Err(SendError::default().into())
+                }
             }
         }
-        PatInner::Named(named) => {
-            let value = val
-                .into_value(ctx)?
-                .ok_or_else(|| errors::ConvError::ValueRequired("let binding".to_owned()))?;
+        PatInner::Cus(named) => {
+            let value = val.into_value(ctx)?.ok_or_else(|| {
+                ctx.push_error(
+                    ConvError::new(Severity::Error, pat.span())
+                        .with_head("Cut binding requires a value"),
+                );
+                SendError::default()
+            })?;
             match &value.ty.kind {
                 TyKind::Cus(cus) => {
                     let mut left = cus.0.iter();
@@ -104,33 +125,50 @@ fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                     for (name, item) in named.0.iter() {
                         let (current_ptr, ty) = loop {
                             if let Some((origin_name, origin_item)) = left.next() {
-                                let origin_ty = ctx.ty.resolve_or(origin_item)?.clone();
+                                let origin_ty = ctx
+                                    .ty
+                                    .resolve_or(origin_item, pat.span())
+                                    .map_err(ctx.push_error_fn())?
+                                    .clone();
                                 let prev = ptr;
-                                ptr += origin_ty.size_or()?;
+                                ptr +=
+                                    origin_ty.size_or(pat.span()).map_err(ctx.push_error_fn())?;
                                 if name == origin_name {
                                     break (prev, origin_ty);
                                 }
                             } else {
-                                return Err(
-                                    errors::ConvError::UnexpectedField(name.to_string()).into()
+                                ctx.push_error(
+                                    ConvError::new(Severity::Error, pat.span()).with_text(
+                                        "Unexpected field in Cus binding",
+                                        format!("Unexpected field: {}", name),
+                                    ),
                                 );
+                                return Err(SendError::default().into());
                             }
                         };
-                        if let Some(named_ty) = item {
-                            if let Some(named_ty) = convs::TypeConv.convert(ctx, named_ty)? {
+                        if let Some(cus_ty) = item {
+                            if let Some(named_ty) = convs::TypeConv.convert(ctx, cus_ty)? {
                                 if !named_ty.test_eq(&ty) {
-                                    return Err(errors::ConvError::TypesMismatch(format!(
-                                        "{} and {}",
-                                        named_ty.name, ty.name
-                                    ))
-                                    .into());
+                                    ctx.push_error(
+                                        ConvError::new(Severity::Error, pat.span()).with_text(
+                                            "Cus field types mismatch",
+                                            format!(
+                                                "Field {} requires {}, but {} is given",
+                                                name, named_ty.name, ty.name
+                                            ),
+                                        ),
+                                    );
+                                    return Err(SendError::default().into());
                                 }
                             }
                         }
-                        let pat = Pat::new(PatInner::Ident(IdentPat {
-                            ident: IdentKind::Value(name.clone()),
-                            ty: None,
-                        }));
+                        let pat = Pat::new(
+                            PatInner::Ident(IdentPat {
+                                ident: IdentKind::Value(name.clone()),
+                                ty: None,
+                            }),
+                            Default::default(),
+                        );
                         convert_let(
                             ctx,
                             &pat,
@@ -142,15 +180,17 @@ fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                     }
                     Ok(())
                 }
-                _ => Err(errors::ConvError::TypesMismatch(format!(
-                    "{} with a named binding",
-                    value.ty.name
-                ))
-                .into()),
+                _ => {
+                    ctx.push_error(ConvError::new(Severity::Error, pat.span()).with_text(
+                        "Cus binding requires a cus value",
+                        format!("Found {}", value.ty.name),
+                    ));
+                    Err(SendError::default().into())
+                }
             }
         }
         PatInner::Any(_any) => {
-            Err(errors::ConvError::SyntaxMaybeImplement("any pat in let binding".to_owned()).into())
+            todo!("Should we implement any binding?")
         }
     }
 }

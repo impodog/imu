@@ -59,7 +59,7 @@ impl Convert<Value> for BinExprConv {
         }
         let is_float = matches!(lhs_ty, ResTy::F32 | ResTy::F64);
         let bytes: NumBytes = lhs_ty.try_into()?;
-        let opd_bytes = lhs.ty.size_or(input.span)?;
+        let opd_bytes = lhs.ty.size_or(input.span).map_err(ctx.push_error_fn())?;
 
         let kind = match input.op {
             BinOp::Add => {

@@ -14,17 +14,25 @@ impl Convert<Value> for UnExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         let value: Value = convs::ExprConv::default()
             .convert(ctx, input.val.as_ref())?
-            .ok_or_else(|| errors::ConvError::ValueRequired("UnExpr".to_owned()))?;
+            .ok_or_else(|| {
+                ctx.push_error(
+                    ConvError::new(Severity::Error, input.span())
+                        .with_head("UnExpr requires an value"),
+                );
+                SendError::default()
+            })?;
         match input.op {
             UnOp::Ref => {
+                let size = value.ty.size().ok_or_else(|| {
+                    ctx.push_error(
+                        ConvError::new(Severity::Error, input.span())
+                            .with_head("Taking reference requires a defined and sized type"),
+                    );
+                    SendError::default()
+                })?;
                 let body = ctx.body_mut();
                 let ptr = body.push_stack(Bytes::ptr());
-                body.push(Cmd::Wrap(
-                    value.ty.size().ok_or_else(|| {
-                        errors::ConvError::UndefinedType(value.ty.name.to_string())
-                    })?,
-                    value.ptr,
-                ));
+                body.push(Cmd::Wrap(size, value.ptr));
 
                 let name: StrRef = format!("@{}", value.ty.name).into();
                 let ty = ctx
@@ -65,13 +73,20 @@ impl Convert<Value> for UnExprConv {
                 Ok(Value { ptr, ty })
             }
             UnOp::Not => {
-                let body = ctx.body_mut();
+                let push_error_fn = ctx.push_error_fn();
                 let bytes = value
                     .ty
                     .to_res_ty()
-                    .ok_or_else(|| errors::ConvError::PrimitiveRequired("Not".to_owned()))?
+                    .ok_or_else(|| {
+                        push_error_fn(ConvError::new(Severity::Error, input.span()).with_text(
+                            "Not requires a primitive",
+                            format!("Operand type is {}", value.ty.name),
+                        ));
+                        SendError::default()
+                    })?
                     .try_into()?;
-                let ptr = body.push_stack(value.ty.size_or()?);
+                let body = ctx.body_mut();
+                let ptr = body.push_stack(value.ty.size_or(input.span()).map_err(push_error_fn)?);
                 body.push(Cmd::Not(bytes, value.ptr));
                 Ok(Value {
                     ty: value.ty.clone(),

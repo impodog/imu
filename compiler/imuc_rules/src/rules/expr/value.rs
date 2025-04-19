@@ -12,18 +12,23 @@ impl Rule for ValueRule {
     where
         I: ParserSequence<'s>,
     {
-        if let Some(input) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
-            Ok(Some(expr::Value::Name(parser.look_up.insert(input.value))))
+        let cursor_begin = parser.relative_cursor();
+        let value = if let Some(input) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
+            expr::ValueInner::Name(parser.look_up.insert(input.value))
         } else if let Some(_input) = parser.next_if(&TokenKind::Ident(Ident::Unused))? {
-            Ok(Some(expr::Value::Unused))
+            expr::ValueInner::Unused
         } else if let Some(input) = parser.next_if(&ResValTokens)? {
             if let TokenKind::ResVal(res) = input.kind {
-                Ok(Some(expr::Value::Res(res)))
+                expr::ValueInner::Res(res)
             } else {
                 unreachable!("the token kind should be TokenKind::ResVal")
             }
         } else {
-            Ok(None)
-        }
+            return Ok(None);
+        };
+        Ok(Some(expr::Value {
+            value,
+            span: parser.file_info().into_span(cursor_begin),
+        }))
     }
 }

@@ -14,7 +14,33 @@ pub enum Expr {
     Cus(Cus),
 }
 
-pub enum Value {
+impl Expr {
+    /// Gets the span of the element of this expression, if any.
+    /// Some expression variants do not contain a value, because they do not cause any errors by
+    /// themselves, and will never become valueless
+    pub fn span(&self) -> Option<imuc_lexer::Span> {
+        let span = match self {
+            Self::Prim(_prim) => return None,
+            Self::Value(value) => value.span(),
+            Self::UnExpr(un_expr) => un_expr.span(),
+            Self::BinExpr(bin_expr) => bin_expr.span(),
+            Self::Body(body) => body.span(),
+            Self::Flow(_flow) => return None,
+            Self::Tuple(tuple) => tuple.span(),
+            Self::Cus(cus) => cus.span(),
+        };
+        Some(span)
+    }
+}
+
+/// An expression of name token or reserved value
+#[derive(Spanned)]
+pub struct Value {
+    pub value: ValueInner,
+    pub span: imuc_lexer::Span,
+}
+
+pub enum ValueInner {
     Unused,
     Name(imuc_lexer::StrRef),
     Res(imuc_lexer::token::ResVal),

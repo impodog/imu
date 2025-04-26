@@ -19,4 +19,4 @@ lexical = { version = "7.0.4", default-features = false, features = [
 ] }
 lazy_static = "1.5.0"
 unescape = "0.1.0"
-unquote = "0.0.7"
+unquote = "0.0.8"

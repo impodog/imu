@@ -8,6 +8,7 @@ pub struct Module {
 }
 
 /// The level of publicity in item definitions and items
+#[derive(Debug, Clone, Copy)]
 pub enum Public {
     Pub,
     // TODO: Add keywords corresponding to this, if necessary

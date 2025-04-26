@@ -63,8 +63,7 @@ pub enum Cmd {
     JumpIf(Ptr, Ptr),
     /// Call the function with top bytes plus a function pointer at the bottom
     Call(Bytes),
-    /// Globally links to the function and puts its global handle (ptr-sized) to the top of the global
-    /// stack(does not affect local stack)
+    /// Globally links to the function, putting its handle(ptr-sized) on top of the global stack
     Link(StrRef),
     /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,
     /// or to act as a placeholder for optional commands

@@ -39,6 +39,10 @@ macro_rules! generate_reserved {
 
 impl Ty {
     /// Creates an initial handle to the inner type
+    ///
+    /// Please note that if the type is created by user code, or generated to be used in the output
+    /// form of user code, you must *insert* it into the type map so that it can be normally
+    /// referenced in other modules
     pub fn new(inner: TyInner) -> Self {
         Self(Arc::new((inner, OnceLock::new())))
     }
@@ -345,13 +349,8 @@ impl Rw for Ty {
                 }))
             }
             _ => {
-                let res = ResTy::read(LineReader::new(content, external))?;
-                // TODO: Reuse reserved type definitions to save space
-                Ok(Ty::new(TyInner {
-                    name,
-                    kind: TyKind::Res(res),
-                    external: input.external(),
-                }))
+                let res_ty = ResTy::read(LineReader::new(content, external))?;
+                Ok(Ty::from_res(res_ty).expect("expected ResTy to read only applicable types"))
             }
         }
     }

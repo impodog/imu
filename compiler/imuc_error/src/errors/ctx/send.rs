@@ -8,7 +8,13 @@ pub struct SendError {
 }
 
 impl SendError {
+    /// Creates a new marker error
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a new marker error wrapped in type [`Error`]
+    pub fn new_error() -> Error {
+        Self::new().into()
     }
 }

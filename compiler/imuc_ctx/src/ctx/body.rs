@@ -129,4 +129,9 @@ impl Body {
     pub fn take_cmd(self) -> Vec<cmd::Cmd> {
         self.list
     }
+
+    /// Adds a list of commands into current list. This is not commonly used
+    pub fn extend_cmd(&mut self, cmd: impl IntoIterator<Item = cmd::Cmd>) {
+        self.list.extend(cmd);
+    }
 }

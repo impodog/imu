@@ -12,6 +12,7 @@ use std::sync::{Arc, RwLock};
 /// Searching directly is impossible, thus a vector of bodies should be used
 pub struct Ctx {
     pub ty: super::Types,
+    pub fun: super::Funs,
     pub globs: super::GlobsHandle,
     pub error_queue: Arc<RwLock<VecDeque<Error>>>,
     body: NonEmpty<super::Body>,
@@ -23,6 +24,7 @@ impl Ctx {
         let glob = super::GlobsHandle::default();
         Self {
             ty: Default::default(),
+            fun: Default::default(),
             globs: glob.clone(),
             error_queue: Default::default(),
             body: NonEmpty::new(super::Body::new(glob, base_name, None)),

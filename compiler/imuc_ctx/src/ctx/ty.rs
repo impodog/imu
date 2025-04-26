@@ -164,8 +164,8 @@ impl Types {
         Ok(())
     }
 
-    pub fn insert(&mut self, name: StrRef, ty: Ty) {
-        self.map.insert(name, ty);
+    pub fn insert(&mut self, ty: Ty) {
+        self.map.insert(ty.name.clone(), ty);
     }
 
     pub fn or_insert_with<F>(&mut self, name: StrRef, f: F) -> &mut Ty

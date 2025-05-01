@@ -21,7 +21,7 @@ impl Rule for TupleExprRule {
                     .is_some()
                 {
                     break;
-                } else if !comma {
+                } else if !elem.is_empty() && !comma {
                     return Err(parser.map_err(errors::SyntaxError::ExpectedToken {
                         expect: TokenKind::Pair(Pair::RightParen),
                     }));
@@ -47,9 +47,7 @@ impl Rule for TupleExprRule {
                 1 if !comma => Ok(Some(elem.into_iter().next().unwrap())),
                 _ => Ok(Some(expr::Expr::Tuple(expr::Tuple {
                     elem,
-                    span: parser
-                        .file_info()
-                        .into_span(cursor_begin),
+                    span: parser.file_info().into_span(cursor_begin),
                 }))),
             }
         } else {

@@ -91,14 +91,40 @@ where
         let end = (self.end, EndTokens);
         let mut stack: Vec<ExprItem> = Vec::new();
         let mut op: Vec<OpItem> = Vec::new();
+        // Determines whether to parse the expression as function call
+        let mut prev_is_expr = false;
         loop {
             let cursor_begin = parser.relative_cursor();
             if let Some(expr) = rules::ElemExprRule.parse(parser)? {
-                stack.push(ExprItem {
-                    expr,
-                    cursor: cursor_begin,
-                });
+                if prev_is_expr {
+                    let ExprItem {
+                        expr: prev_expr,
+                        cursor: prev_cursor,
+                    } = stack
+                        .pop()
+                        .expect("when prev_is_expr, stack should not be empty");
+                    let call = ExprItem {
+                        expr: expr::Expr::Call(expr::Call {
+                            func: Box::new(prev_expr),
+                            args: Box::new(expr),
+                            span: parser.file_info().into_span(prev_cursor),
+                        }),
+                        cursor: prev_cursor,
+                    };
+                    stack.push(call);
+                    // No need to update prev_is_expr since it is already true
+                    // This also allows chained function calls
+                } else {
+                    let expr = ExprItem {
+                        expr,
+                        cursor: cursor_begin,
+                    };
+                    stack.push(expr);
+                    prev_is_expr = true;
+                }
             } else {
+                prev_is_expr = false;
+
                 let input = parser.next_some()?;
                 match input.kind {
                     TokenKind::UnOp(_) | TokenKind::BinOp(_) => {

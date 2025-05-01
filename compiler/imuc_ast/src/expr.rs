@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 pub enum Expr {
     Prim(crate::prim::Prim),
     Value(Value),
+    Call(Call),
     UnExpr(UnExpr),
     BinExpr(BinExpr),
     Body(Body),
@@ -16,12 +17,13 @@ pub enum Expr {
 
 impl Expr {
     /// Gets the span of the element of this expression, if any.
-    /// Some expression variants do not contain a value, because they do not cause any errors by
+    /// Some expression variants do not contain a span, because they do not cause any errors by
     /// themselves, and will never become valueless
     pub fn span(&self) -> Option<imuc_lexer::Span> {
         let span = match self {
             Self::Prim(_prim) => return None,
             Self::Value(value) => value.span(),
+            Self::Call(call) => call.span(),
             Self::UnExpr(un_expr) => un_expr.span(),
             Self::BinExpr(bin_expr) => bin_expr.span(),
             Self::Body(body) => body.span(),
@@ -31,12 +33,29 @@ impl Expr {
         };
         Some(span)
     }
+
+    /// Gets the span of the element of this expression.
+    /// Some expression variants do not contain a span, because they do not cause any errors by
+    /// themselves, and will never become valueless.
+    /// If you call this, you must make sure that the expression *can* cause errors, and therefore
+    /// contains a span
+    pub fn unwrap_span(&self) -> imuc_lexer::Span {
+        self.span()
+            .expect("the span should exist as user called this on never valueless expressions")
+    }
 }
 
 /// An expression of name token or reserved value
 #[derive(Spanned)]
 pub struct Value {
     pub value: ValueInner,
+    pub span: imuc_lexer::Span,
+}
+
+#[derive(Spanned)]
+pub struct Call {
+    pub func: Box<Expr>,
+    pub args: Box<Expr>,
     pub span: imuc_lexer::Span,
 }
 

@@ -81,6 +81,11 @@ impl Bytes {
     pub const fn ptr() -> Self {
         Self(PTR_SIZE)
     }
+
+    /// Creates a representation of bytes with length equal to [`u64`]
+    pub const fn global_ptr() -> Self {
+        Self(GLOBAL_PTR_SIZE)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

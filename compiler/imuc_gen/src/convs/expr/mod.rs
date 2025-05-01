@@ -1,5 +1,6 @@
 mod bin_expr;
 mod body;
+mod call;
 mod cus;
 mod expr;
 mod prim;
@@ -10,6 +11,7 @@ mod value;
 
 pub use bin_expr::BinExprConv;
 pub use body::BodyConv;
+pub use call::CallConv;
 pub use cus::CusConv;
 pub use expr::ExprConv;
 pub use prim::PrimConv;

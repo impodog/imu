@@ -14,6 +14,7 @@ impl Rule for PublicRule {
     {
         let input = parser.next_if(&PublicTokens)?;
         if let Some(input) = input {
+            #[allow(clippy::collapsible_match)]
             match input.kind {
                 TokenKind::Keyword(keyword) => match keyword {
                     Keyword::Pub => Ok(Some(module::Public::Pub)),

@@ -22,7 +22,7 @@ impl Rule for StructExprRule {
                     .is_some()
                 {
                     break;
-                } else if !comma {
+                } else if !elem.is_empty() && !comma {
                     return Err(parser.map_err(errors::SyntaxError::ExpectedToken {
                         expect: TokenKind::Pair(Pair::RightParen),
                     }));
@@ -50,9 +50,7 @@ impl Rule for StructExprRule {
             Ok(Some(expr::Cus {
                 ty,
                 elem,
-                span: parser
-                    .file_info()
-                    .into_span(cursor_begin),
+                span: parser.file_info().into_span(cursor_begin),
             }))
         } else {
             Ok(None)

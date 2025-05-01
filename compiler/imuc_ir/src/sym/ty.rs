@@ -94,7 +94,7 @@ impl Ty {
                             ResTy::I16 => 2,
                             ResTy::I32 | ResTy::F32 => 4,
                             ResTy::I64 | ResTy::F64 => 8,
-                            ResTy::Str | ResTy::Ptr => crate::cmd::PTR_SIZE,
+                            ResTy::Str | ResTy::Ptr => crate::cmd::GLOBAL_PTR_SIZE,
                             ResTy::Drop => 0,
                         };
                         Bytes::new(len)

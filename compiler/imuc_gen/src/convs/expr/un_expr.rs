@@ -53,7 +53,7 @@ impl Convert<Value> for UnExprConv {
                 let global_ptr = ctx.get_global_ptr(value.ptr);
 
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(Bytes::ptr());
+                let ptr = body.push_stack(Bytes::global_ptr());
 
                 body.push(Cmd::StoreGlobalPtr(global_ptr));
 

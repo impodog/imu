@@ -19,7 +19,7 @@ impl Rule for TuplePatRule {
                     .is_some()
                 {
                     break;
-                } else if !comma {
+                } else if !list.is_empty() && !comma {
                     return Err(parser.map_err(errors::SyntaxError::ExpectedToken {
                         expect: TokenKind::Pair(Pair::RightParen),
                     }));

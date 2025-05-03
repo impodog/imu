@@ -19,7 +19,7 @@ impl Convert<Value> for PrimConv {
             }),
             Prim::Integer(integer) => match integer {
                 Integer::I8(_) => {
-                    let ptr = body.push_stack(Bytes::new(1));
+                    let ptr = body.push_stack(Bytes::byte());
                     Ok(Value { ptr, ty: Ty::i8() })
                 }
                 Integer::I16(_) => {
@@ -46,7 +46,7 @@ impl Convert<Value> for PrimConv {
                 }
             },
             Prim::Bool(_) => {
-                let ptr = body.push_stack(Bytes::new(1));
+                let ptr = body.push_stack(Bytes::byte());
                 Ok(Value {
                     ptr,
                     ty: Ty::bool(),

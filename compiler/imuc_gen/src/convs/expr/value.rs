@@ -29,7 +29,7 @@ impl Convert<Option<Value>> for ValueConv {
             }
             ValueInner::Res(res) => match res {
                 ResVal::True => {
-                    let ptr = body.push_stack(Bytes::new(1));
+                    let ptr = body.push_stack(Bytes::byte());
                     body.push(Cmd::Store(ast::prim::Prim::Bool(true)));
                     Ok(Some(Value {
                         ptr,
@@ -37,7 +37,7 @@ impl Convert<Option<Value>> for ValueConv {
                     }))
                 }
                 ResVal::False => {
-                    let ptr = body.push_stack(Bytes::new(1));
+                    let ptr = body.push_stack(Bytes::byte());
                     body.push(Cmd::Store(ast::prim::Prim::Bool(false)));
                     Ok(Some(Value {
                         ptr,

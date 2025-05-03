@@ -96,8 +96,8 @@ impl Convert<Value> for BinExprConv {
             }
             BinOpKind::Compare(target) => {
                 let body = ctx.body_mut();
-                let compare_ptr = body.push_stack(Bytes::new(1));
-                let ptr = body.push_stack(Bytes::new(1));
+                let compare_ptr = body.push_stack(Bytes::byte());
+                let ptr = body.push_stack(Bytes::byte());
                 if is_float {
                     body.push(Cmd::Testf(bytes, lhs.ptr, rhs.ptr));
                 } else {
@@ -111,10 +111,10 @@ impl Convert<Value> for BinExprConv {
             }
             BinOpKind::CompareEq(target) => {
                 let body = ctx.body_mut();
-                let compare_ptr = body.push_stack(Bytes::new(1));
-                let compare_lhs = body.push_stack(Bytes::new(1));
-                let compare_rhs = body.push_stack(Bytes::new(1));
-                let ptr = body.push_stack(Bytes::new(1));
+                let compare_ptr = body.push_stack(Bytes::byte());
+                let compare_lhs = body.push_stack(Bytes::byte());
+                let compare_rhs = body.push_stack(Bytes::byte());
+                let ptr = body.push_stack(Bytes::byte());
                 if is_float {
                     body.push(Cmd::Testf(bytes, lhs.ptr, rhs.ptr));
                 } else {

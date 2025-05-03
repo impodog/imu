@@ -58,6 +58,7 @@ impl Convert<Value> for UnExprConv {
                 body.push(Cmd::StoreGlobalPtr(global_ptr));
 
                 let name: StrRef = format!("${}", value.ty.name).into();
+                // FIXME: GlobalPtr(64) is stored, but the value type is Ptr(32)
                 let ty = ctx
                     .ty
                     .or_insert_with(name.clone(), || {

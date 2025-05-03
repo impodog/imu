@@ -1,10 +1,13 @@
 use crate::prelude::*;
 use ast::{item::Fun, module::Public};
-use imuc_ir::{
+use convs::bind::bind::*;
+use ir::{
     cmd::CmdBody,
-    sym::{Fun as IrFun, FunSig},
+    sym::{
+        ty::{TyInner, TyKind},
+        Fun as IrFun, FunSig,
+    },
 };
-use ir::sym::ty::{TyInner, TyKind};
 
 pub struct FunConv {
     pub name: StrRef,
@@ -17,7 +20,7 @@ impl Converter for FunConv {
 }
 
 impl Convert<()> for FunConv {
-    /// Converts the function
+    /// Converts the function definition
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<()> {
         let FunConv {
             name,
@@ -25,30 +28,21 @@ impl Convert<()> for FunConv {
             public,
             self_ty,
         } = self;
-        ctx.push_body(name.as_str(), self_ty);
-        let value = convs::BodyConv.convert(ctx, &input.body)?;
-        let body = ctx
-            .pop_body()
-            .expect("a body should exist after pushing")
-            .take_cmd();
 
+        // Parse parameter and return types signature
         let ret = if let Some(ref ret) = input.ret {
             convs::TypeConv.convert(ctx, ret)?
         } else {
             None
         }
         .unwrap_or_else(Ty::unit);
-        if !ret.test_eq(&value.ty) {
-            // TODO: Should this be warn?
-            ctx.push_error(ConvError::new(Severity::Warn, input.span()).with_text(
-                "Fun return types mismatch",
-                format!("Expected {}, but returned {}", ret.name, value.ty.name),
-            ));
-            return Err(SendError::default().into());
+        let param = convs::PatConv {
+            requires_ty: true,
+            discard_name_warn: false,
+            name: Some(ctx::mangle::mangle_fun_sig(name.as_str()).into()),
         }
-        let param = convs::PatConv { requires_ty: true }
-            .convert(ctx, &input.param)?
-            .expect("PatConv should not return None when requires_ty is enabled");
+        .convert(ctx, &input.param)?
+        .expect("PatConv should not return None when requires_ty is enabled");
         let fun_ty_name = StrRef::from(ctx::mangle::mangle_fun_ty(name.as_str()));
         let fun_ty = ctx
             .ty
@@ -74,6 +68,30 @@ impl Convert<()> for FunConv {
                 })
             })
             .clone();
+
+        // Work to compile body expression
+        ctx.push_body(name.as_str(), self_ty);
+        // Assign arguments to current namespace
+        convert_let(
+            ctx,
+            &input.param,
+            Conversion::Value(Some(Value::new(param.clone(), Bytes::start()))),
+        );
+        let value = convs::BodyConv.convert(ctx, &input.body)?;
+        let body = ctx
+            .pop_body()
+            .expect("a body should exist after pushing")
+            .take_cmd();
+
+        if !ret.test_eq(&value.ty) {
+            // TODO: Should this be warn?
+            ctx.push_error(ConvError::new(Severity::Warn, input.span()).with_text(
+                "Fun return types mismatch",
+                format!("Expected {}, but returned {}", ret.name, value.ty.name),
+            ));
+            return Err(SendError::default().into());
+        }
+
         let globs = ctx.globs.clone();
         globs
             .write()

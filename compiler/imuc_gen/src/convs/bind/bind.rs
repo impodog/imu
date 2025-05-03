@@ -10,13 +10,13 @@ impl Converter for BindConv {
     type Input = Bind;
 }
 
-enum Conversion<'a> {
+pub enum Conversion<'a> {
     Value(Option<Value>),
     Expr(&'a Expr, Option<Ty>),
 }
 
 impl Conversion<'_> {
-    fn with_hint(self, hint: Option<Ty>) -> Self {
+    pub fn with_hint(self, hint: Option<Ty>) -> Self {
         match self {
             Self::Expr(expr, _) => Self::Expr(expr, hint),
             _ => self,
@@ -33,7 +33,7 @@ impl Conversion<'_> {
     }
 }
 
-fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
+pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
     match &**pat {
         PatInner::Ident(ident) => {
             let ty = if let Some(ref ty) = ident.ty {

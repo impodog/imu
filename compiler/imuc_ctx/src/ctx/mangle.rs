@@ -6,10 +6,20 @@ impl Ctx {
     pub fn mangle(&self, name: &str) -> String {
         format!("{}-{}", self.body().name(), name)
     }
+
+    /// Mangles a local name to a global name according to current body, and the self body it is in
+    pub fn mangle_with_self(&self, name: &str) -> String {
+        let name = self.mangle(name);
+        if let Some(self_ty) = self.body().self_ty() {
+            mangle_ty_item(self_ty.name.as_str(), name.as_str())
+        } else {
+            name
+        }
+    }
 }
 
-/// Mangles the name of a function related to the type
-pub fn mangle_ty_fun(ty_name: &str, name: &str) -> String {
+/// Mangles the name of an item related to the type
+pub fn mangle_ty_item(ty_name: &str, name: &str) -> String {
     format!("{}@{}", ty_name, name)
 }
 
@@ -23,7 +33,7 @@ pub fn mangle_ptr(name: &str) -> String {
     format!("*{}", name)
 }
 
-/// Mangles the name of a tupled type, such that types A, B... become "(A,B,...)"
+/// Mangles the name of a tupled type, such that types A, B, ... become "(A,B,...)"
 pub fn tuple_name<'a, I>(tuple: I) -> String
 where
     I: IntoIterator<Item = &'a str>,
@@ -54,9 +64,10 @@ where
 pub fn mangle_builtin_fun(ty: &str, res_ty: ResTy) -> String {
     let res_name = imuc_ast::builtin::associated_fun_name(res_ty);
     let name = tuple_name([res_name, ty]);
-    mangle_ty_fun(&name, res_name)
+    mangle_ty_item(&name, res_name)
 }
 
+/// Mangles the function name into its signature type name
 pub fn mangle_fun_sig(fun_name: &str) -> String {
     format!("@{}", fun_name)
 }

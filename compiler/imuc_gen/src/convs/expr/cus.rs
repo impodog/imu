@@ -3,13 +3,13 @@ use ast::expr::Cus;
 use ir::sym::ty::TyItem;
 use std::collections::BTreeMap;
 
-pub struct CusConv;
+pub struct CusExprConv;
 
-impl Converter for CusConv {
+impl Converter for CusExprConv {
     type Input = Cus;
 }
 
-impl Convert<Value> for CusConv {
+impl Convert<Value> for CusExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         let ty = convs::TypeConv.convert(ctx, &input.ty)?.ok_or_else(|| {
             ctx.push_error(

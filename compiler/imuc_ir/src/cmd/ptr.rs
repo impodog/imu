@@ -86,6 +86,16 @@ impl Bytes {
     pub const fn global_ptr() -> Self {
         Self(GLOBAL_PTR_SIZE)
     }
+
+    /// Creates a representation of bytes with length equal to [`i8`]
+    pub const fn byte() -> Self {
+        Self(1)
+    }
+
+    /// Creates a stack ptr to init position
+    pub const fn start() -> Self {
+        Self(0)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

@@ -32,7 +32,7 @@ impl Convert<Option<Value>> for ExprConv {
             Expr::BinExpr(bin_expr) => convs::BinExprConv.convert(ctx, bin_expr).map(Some),
             Expr::Body(body) => convs::BodyConv.convert(ctx, body).map(Some),
             Expr::Tuple(tuple) => convs::TupleConv.convert(ctx, tuple).map(Some),
-            Expr::Cus(cus) => convs::CusConv.convert(ctx, cus).map(Some),
+            Expr::Cus(cus) => convs::CusExprConv.convert(ctx, cus).map(Some),
             _ => {
                 todo!("expression conversion")
             }

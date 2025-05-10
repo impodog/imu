@@ -1,3 +1,3 @@
-pub mod bind;
+pub mod binds;
 
-pub use bind::BindConv;
+pub use binds::BindConv;

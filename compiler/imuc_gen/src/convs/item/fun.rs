@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ast::{item::Fun, module::Public};
-use convs::bind::bind::*;
+use convs::bind::binds::*;
 use ir::{
     cmd::CmdBody,
     sym::{

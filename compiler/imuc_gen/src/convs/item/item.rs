@@ -29,8 +29,13 @@ impl Convert<()> for ItemConv {
                 conv.convert(ctx, cus)?;
                 Ok(())
             }
-            _ => {
-                todo!("item conversions")
+            ItemKind::For(for_block) => {
+                let conv = convs::ForConv;
+                conv.convert(ctx, for_block)?;
+                Ok(())
+            }
+            ItemKind::Val(_val) => {
+                todo!("global value conversion")
             }
         }
     }

@@ -10,6 +10,7 @@ impl Rule for LoopRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         if parser
             .next_if(&TokenKind::Keyword(Keyword::Loop))?
             .is_some()
@@ -20,7 +21,10 @@ impl Rule for LoopRule {
                     after: TokenKind::Keyword(Keyword::Loop),
                 })
             })?;
-            Ok(Some(flow::Loop { body }))
+            Ok(Some(flow::Loop {
+                body,
+                span: parser.file_info().into_span(cursor_begin),
+            }))
         } else {
             Ok(None)
         }

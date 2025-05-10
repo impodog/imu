@@ -10,6 +10,14 @@ const SMALL_STRING_THRESHOLD: usize = 60;
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub struct StrRef(StrRefInner);
 
+static EMPTY_STR_REF: LazyLock<StrRef> = LazyLock::new(|| StrRef::from(""));
+
+impl Default for StrRef {
+    fn default() -> Self {
+        EMPTY_STR_REF.clone()
+    }
+}
+
 /// The internal enum that holds data of [`StrRef`]
 ///
 /// The enum is two variants, namely Small and Big.

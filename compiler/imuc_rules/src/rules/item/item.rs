@@ -56,7 +56,19 @@ impl Rule for ItemRule {
                             kind: item::ItemKind::Cus(cus),
                         }))
                     }
-                    Keyword::For => todo!(),
+                    Keyword::For => {
+                        let for_block = rules::ForRule.parse(parser)?.ok_or_else(|| {
+                            parser.map_err(errors::SyntaxError::ExpectedIn {
+                                expect: "For".to_owned(),
+                                context: "type implementation".to_owned(),
+                            })
+                        })?;
+                        Ok(Some(item::Item {
+                            public,
+                            name: StrRef::default(),
+                            kind: item::ItemKind::For(for_block),
+                        }))
+                    }
                     Keyword::Val => todo!(),
                     _ => filtered!(),
                 },

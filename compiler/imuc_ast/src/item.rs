@@ -52,6 +52,7 @@ pub struct Cus {
 
 /// A list of implementations for a type
 pub struct For {
+    pub ty: Pat,
     pub items: Vec<Item>,
 }
 

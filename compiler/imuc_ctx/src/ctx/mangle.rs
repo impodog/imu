@@ -3,17 +3,16 @@ use imuc_lexer::token::ResTy;
 
 impl Ctx {
     /// Mangles a local name to a global name according to current body
-    pub fn mangle(&self, name: &str) -> String {
+    pub fn mangle_body(&self, name: &str) -> String {
         format!("{}-{}", self.body().name(), name)
     }
 
-    /// Mangles a local name to a global name according to current body, and the self body it is in
+    /// Mangles a local name to a global name according to current body or the self body it is in
     pub fn mangle_with_self(&self, name: &str) -> String {
-        let name = self.mangle(name);
         if let Some(self_ty) = self.body().self_ty() {
-            mangle_ty_item(self_ty.name.as_str(), name.as_str())
+            mangle_ty_item(self_ty.name.as_str(), name)
         } else {
-            name
+            self.mangle_body(name)
         }
     }
 }

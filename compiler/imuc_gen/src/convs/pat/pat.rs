@@ -9,6 +9,8 @@ use std::collections::BTreeMap;
 pub struct PatConv {
     /// If set to `true`, a missing wildcard type is regarded as an error
     pub requires_ty: bool,
+    /// If set to `true`, a warning will be thrown out when the type contains identifier patterns
+    /// with identifier names (that does not belong to a cus pattern)
     pub discard_name_warn: bool,
     pub name: Option<StrRef>,
 }

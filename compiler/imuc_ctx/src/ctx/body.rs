@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut};
 pub struct Body {
     pub globs: super::GlobsHandle,
     name: String,
-    self_ty: Option<Ty>,
+    self_ty: Vec<Ty>,
     list: Vec<cmd::Cmd>,
     stack: cmd::Ptr,
     locals: NonEmpty<super::Locals>,
@@ -31,7 +31,11 @@ impl Body {
         Self {
             globs,
             name,
-            self_ty,
+            self_ty: if let Some(self_ty) = self_ty {
+                vec![self_ty]
+            } else {
+                Vec::new()
+            },
             list: Default::default(),
             stack: Default::default(),
             locals: Default::default(),
@@ -113,7 +117,17 @@ impl Body {
 
     /// Gets the self type context, if any
     pub fn self_ty(&self) -> Option<&Ty> {
-        self.self_ty.as_ref()
+        self.self_ty.last()
+    }
+
+    /// Pushes a new layer of self_ty, making it the current available type
+    pub fn push_self_ty(&mut self, ty: Ty) {
+        self.self_ty.push(ty);
+    }
+
+    /// Removes the last layer of self_ty, if any
+    pub fn pop_self_ty(&mut self) -> Option<Ty> {
+        self.self_ty.pop()
     }
 
     /// Mangle the name of elements for types

@@ -53,6 +53,7 @@ dependencies = [
  "imuc_derive",
  "imuc_lexer",
  "imuc_path",
+ "nonempty",
 ]
 
 [[package]]
@@ -140,8 +141,8 @@ dependencies = [
  "imuc_lexer",
  "imuc_parser",
  "imuc_path",
- "lazy_static",
  "lexical",
+ "nonempty",
  "unescape",
  "unquote",
 ]

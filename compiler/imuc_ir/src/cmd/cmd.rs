@@ -59,6 +59,8 @@ pub enum Cmd {
     Mulf(NumBytes, Ptr, Ptr),
     Divf(NumBytes, Ptr, Ptr),
     Testf(NumBytes, Ptr, Ptr),
+    /// Jump to a specific location if eached
+    Jump(Ptr),
     /// If the 1-byte condition in pointer 1 is true, jump to pointer 2
     JumpIf(Ptr, Ptr),
     /// Call the function with top bytes plus a function pointer at the bottom;
@@ -124,6 +126,10 @@ impl Rw for Cmd {
             "mlf" => arithmetic!(read Mulf, bytes, input),
             "dvf" => arithmetic!(read Divf, bytes, input),
             "tsf" => arithmetic!(read Testf, bytes, input),
+            "jmp" => {
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::Jump(ptr))
+            }
             "jif" => {
                 let cond = Ptr::read(&mut input)?;
                 let ptr = Ptr::read(&mut input)?;
@@ -190,6 +196,10 @@ impl Rw for Cmd {
             Self::Divf(bytes, lhs, rhs) => arithmetic!(write "dvf", bytes, lhs, rhs, output),
             Self::Testf(bytes, lhs, rhs) => arithmetic!(write "tsf", bytes, lhs, rhs, output),
             Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
+            Self::Jump(ptr) => {
+                write!(output, "jmp ")?;
+                ptr.write(&mut output)?;
+            }
             Self::JumpIf(cond, ptr) => {
                 write!(output, "jif ")?;
                 cond.write(&mut output)?;

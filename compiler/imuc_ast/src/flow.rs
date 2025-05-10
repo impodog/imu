@@ -28,7 +28,7 @@ pub struct If {
 #[derive(Spanned)]
 pub struct IfElse {
     /// Conditions first handled
-    pub ifs: Vec<If>,
+    pub ifs: nonempty::NonEmpty<If>,
     /// The final "else" statement, if any
     pub end: Option<Body>,
     pub span: imuc_lexer::Span,

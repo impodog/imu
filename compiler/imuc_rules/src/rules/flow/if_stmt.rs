@@ -83,14 +83,14 @@ impl Rule for IfElseRule {
                 break None;
             }
         };
-        if ifs.is_empty() {
-            Ok(None)
-        } else {
+        if let Some(ifs) = nonempty::NonEmpty::from_vec(ifs) {
             Ok(Some(flow::IfElse {
                 ifs,
                 end,
                 span: parser.file_info().into_span(cursor_begin),
             }))
+        } else {
+            Ok(None)
         }
     }
 }

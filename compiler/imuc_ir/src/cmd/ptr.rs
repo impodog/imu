@@ -77,6 +77,11 @@ impl Bytes {
         Self(value)
     }
 
+    /// Creates a representation of bytes from a usize, panics if it exceeds [`u32::MAX`]
+    pub fn new_usize(value: usize) -> Self {
+        Self(value.try_into().expect("usize should not exceed bounds"))
+    }
+
     /// Creates a representation of bytes with length equal to [`u32`]
     pub const fn ptr() -> Self {
         Self(PTR_SIZE)

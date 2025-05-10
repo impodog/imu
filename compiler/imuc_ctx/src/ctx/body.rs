@@ -9,6 +9,7 @@ pub struct Body {
     self_ty: Vec<Ty>,
     list: Vec<cmd::Cmd>,
     stack: cmd::Ptr,
+    stack_record: Vec<cmd::Ptr>,
     locals: NonEmpty<super::Locals>,
 }
 
@@ -38,6 +39,7 @@ impl Body {
             },
             list: Default::default(),
             stack: Default::default(),
+            stack_record: Default::default(),
             locals: Default::default(),
         }
     }
@@ -54,13 +56,42 @@ impl Body {
         self.stack
     }
 
+    /// Memorize the current stack pointer, to be reverted later
+    pub fn push_stack_record(&mut self) {
+        self.stack_record.push(self.stack());
+    }
+
+    /// Pops the most recent stack pointer and reverts to it, if any. Returns true if successful
+    pub fn pop_stack_record(&mut self) -> bool {
+        if let Some(stack) = self.stack_record.pop() {
+            self.stack = stack;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Reverts to the most recent stack pointer, if any. Returns true if successful
+    pub fn revert_stack_record(&mut self) -> bool {
+        if let Some(stack) = self.stack_record.last() {
+            self.stack = *stack;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn stack_record(&self) -> Option<cmd::Ptr> {
+        self.stack_record.last().copied()
+    }
+
     /// Creates a new group of locals at the back of the stack
     pub fn push_locals(&mut self) -> &mut super::Locals {
         self.locals.push(Default::default());
         self.locals.last_mut()
     }
 
-    /// Deletes the last group of locals of the stack, also drops all assigned locals
+    /// Deletes the last group of locals of the stack, also drops all assigned locals.
     pub fn pop_locals(&mut self) -> Option<super::Locals> {
         if let Some(locals) = self.locals.pop() {
             for (_, value) in locals.value.iter() {

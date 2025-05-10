@@ -66,6 +66,7 @@ pub enum Keyword {
     If,
     Else,
     Loop,
+    Mit,
 }
 
 /// A part of [`TokenKind`] for values using reserved names

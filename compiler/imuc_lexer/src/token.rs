@@ -93,8 +93,6 @@ pub enum ResTy {
     F64,
     Str,
     // Trait-like types
-    // TODO: Abandon drop
-    Drop,
 }
 
 /// A part of [`TokenKind`] for left / right bracket

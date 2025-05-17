@@ -45,7 +45,6 @@ impl Convert<Option<Ty>> for TypeConv {
                 ResTy::Bool => Ty::bool(),
                 ResTy::Str => Ty::str(),
                 ResTy::Ptr => Ty::ptr(),
-                ResTy::Drop => Ty::drop(),
             },
         };
         let ty = match input.flags {

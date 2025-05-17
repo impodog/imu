@@ -134,16 +134,9 @@ impl Body {
         self.locals.last_mut()
     }
 
-    /// Deletes the last group of locals of the stack, also drops all assigned locals.
+    /// Deletes the last group of locals of the stack
     pub fn pop_locals(&mut self) -> Option<super::Locals> {
-        if let Some(locals) = self.locals.pop() {
-            for (_, value) in locals.value.iter() {
-                self.drop_value(value).expect("The type should exist");
-            }
-            Some(locals)
-        } else {
-            None
-        }
+        self.locals.pop()
     }
 
     /// Gets the reference to the current locals

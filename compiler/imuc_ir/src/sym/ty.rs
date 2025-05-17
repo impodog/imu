@@ -73,7 +73,6 @@ impl Ty {
             ResTy::F64 => Self::f64(),
             ResTy::Ptr => Self::ptr(),
             ResTy::Str => Self::str(),
-            ResTy::Drop => Self::drop(),
         };
         Some(ty)
     }
@@ -95,7 +94,6 @@ impl Ty {
                             ResTy::I32 | ResTy::F32 => 4,
                             ResTy::I64 | ResTy::F64 => 8,
                             ResTy::Str | ResTy::Ptr => crate::cmd::GLOBAL_PTR_SIZE,
-                            ResTy::Drop => 0,
                         };
                         Bytes::new(len)
                     }
@@ -145,7 +143,6 @@ impl Ty {
     generate_reserved!(f64, "F64", F64);
     generate_reserved!(ptr, "Ptr", Ptr);
     generate_reserved!(str, "Str", Str);
-    generate_reserved!(drop, "Drop", Drop);
 }
 
 /// The inner contents of a type, containing name, sources, and memory info
@@ -223,7 +220,6 @@ impl Rw for ResTy {
             "F64" => ResTy::F64,
             "Str" => ResTy::Str,
             "Ptr" => ResTy::Ptr,
-            "Drop" => ResTy::Drop,
             _ => return Err(errors::IrError::NoSuchType(name.to_owned()).into()),
         };
         Ok(res)
@@ -238,7 +234,6 @@ impl Rw for ResTy {
             ResTy::F64 => "F64",
             ResTy::Str => "Str",
             ResTy::Ptr => "Ptr",
-            ResTy::Drop => "Drop",
             _ => return Err(errors::IrError::TypeNotAllowed(format!("{:?}", self)).into()),
         };
         write!(output, "{}", str)?;

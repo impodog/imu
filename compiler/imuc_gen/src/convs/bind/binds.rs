@@ -42,16 +42,11 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                 None
             };
             let value = val.with_hint(ty).into_value(ctx)?;
-            let body = ctx.body_mut();
+            let _body = ctx.body_mut();
             match &ident.ident {
                 IdentKind::Unused => Ok(()),
-                IdentKind::Value(name) => {
-                    if let Some(value) = value {
-                        if let Some(drop_value) =
-                            body.locals_mut().value.insert(name.clone(), value)
-                        {
-                            body.drop_value(&drop_value)?;
-                        }
+                IdentKind::Value(_name) => {
+                    if let Some(_value) = value {
                         Ok(())
                     } else {
                         ctx.push_error(
@@ -202,9 +197,7 @@ impl Convert<()> for BindConv {
                 let Let { pat, val } = bind;
                 convert_let(ctx, pat, Conversion::Expr(val, None))
             }
-            Bind::Item(item) => {
-                todo!()
-            }
+            Bind::Item(item) => convs::ItemConv.convert(ctx, item),
         }
     }
 }

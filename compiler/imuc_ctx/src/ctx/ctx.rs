@@ -61,7 +61,7 @@ impl Ctx {
         self.body.last_mut()
     }
 
-    /// Gets the last body of functions being pushed, dropping all locals
+    /// Gets the last body of functions being pushed, popping all locals bound
     pub fn pop_body(&mut self) -> Option<super::Body> {
         if let Some(mut body) = self.body.pop() {
             while body.pop_locals().is_some() {}

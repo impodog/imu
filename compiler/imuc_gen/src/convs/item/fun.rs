@@ -76,7 +76,7 @@ impl Convert<()> for FunConv {
             ctx,
             &input.param,
             Conversion::Value(Some(Value::new(param.clone(), Bytes::start()))),
-        );
+        )?;
         let value = convs::BodyConv.convert(ctx, &input.body)?;
         let body = ctx
             .pop_body()

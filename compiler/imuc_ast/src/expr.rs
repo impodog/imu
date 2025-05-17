@@ -13,6 +13,7 @@ pub enum Expr {
     Flow(crate::flow::Flow),
     Tuple(Tuple),
     Cus(Cus),
+    Mit(Mit),
 }
 
 impl Expr {
@@ -30,6 +31,7 @@ impl Expr {
             Self::Flow(_flow) => return None,
             Self::Tuple(tuple) => tuple.span(),
             Self::Cus(cus) => cus.span(),
+            Self::Mit(mit) => mit.span(),
         };
         Some(span)
     }
@@ -101,5 +103,13 @@ pub struct Tuple {
 pub struct Cus {
     pub ty: crate::pat::Type,
     pub elem: BTreeMap<imuc_lexer::StrRef, Expr>,
+    pub span: imuc_lexer::Span,
+}
+
+#[derive(Spanned)]
+pub struct Mit {
+    /// The layers of loops to jump out of, minus 1
+    pub index: usize,
+    pub expr: Box<Expr>,
     pub span: imuc_lexer::Span,
 }

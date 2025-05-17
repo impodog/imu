@@ -93,6 +93,7 @@ pub enum ResTy {
     F64,
     Str,
     // Trait-like types
+    // TODO: Abandon drop
     Drop,
 }
 

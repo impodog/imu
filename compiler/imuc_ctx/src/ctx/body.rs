@@ -2,6 +2,7 @@ use crate::prelude::*;
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 use std::ops::{Deref, DerefMut};
+use std::sync::OnceLock;
 
 pub struct Body {
     pub globs: super::GlobsHandle,
@@ -9,7 +10,10 @@ pub struct Body {
     self_ty: Vec<Ty>,
     list: Vec<cmd::Cmd>,
     stack: cmd::Ptr,
+    /// Pointers to the past stack pointers when entering a body
     stack_record: Vec<cmd::Ptr>,
+    /// Pointers to the loop quit handle command
+    loop_record: Vec<LoopRecord>,
     locals: NonEmpty<super::Locals>,
 }
 
@@ -40,6 +44,7 @@ impl Body {
             list: Default::default(),
             stack: Default::default(),
             stack_record: Default::default(),
+            loop_record: Default::default(),
             locals: Default::default(),
         }
     }
@@ -61,28 +66,66 @@ impl Body {
         self.stack_record.push(self.stack());
     }
 
-    /// Pops the most recent stack pointer and reverts to it, if any. Returns true if successful
-    pub fn pop_stack_record(&mut self) -> bool {
+    /// Reverts to the given stack pointer, asserting it is lower than or equal to current stack
+    pub fn revert_stack_record_to(&mut self, stack: cmd::Ptr) {
+        assert!(self.stack > stack);
+        self.push(cmd::Cmd::Shrink(stack));
+        self.stack = stack;
+    }
+
+    /// Pops the most recent stack pointer and reverts to it plus given bytes, if any. Returns true if successful
+    pub fn pop_stack_record(&mut self, plus: cmd::Bytes) -> bool {
         if let Some(stack) = self.stack_record.pop() {
-            self.stack = stack;
+            self.revert_stack_record_to(stack + plus);
             true
         } else {
             false
         }
     }
 
-    /// Reverts to the most recent stack pointer, if any. Returns true if successful
-    pub fn revert_stack_record(&mut self) -> bool {
+    /// Reverts to the most recent stack pointer plus given bytes, if any. Returns true if successful
+    pub fn revert_stack_record(&mut self, plus: cmd::Bytes) -> bool {
         if let Some(stack) = self.stack_record.last() {
-            self.stack = *stack;
+            self.revert_stack_record_to(*stack + plus);
             true
         } else {
             false
         }
     }
 
+    /// Gets the last stack record pointer stored
     pub fn stack_record(&self) -> Option<cmd::Ptr> {
         self.stack_record.last().copied()
+    }
+
+    /// Memorize the *next* (yet to push) cmd pointer in the loop records, so that "mit" expressions can be
+    /// evaluated and jumped properly
+    pub fn push_loop_record(&mut self) {
+        let ptr = cmd::Ptr::new_usize(self.len());
+        self.loop_record.push(LoopRecord {
+            ptr,
+            stack: self.stack(),
+            ty: Default::default(),
+        });
+    }
+
+    /// Pops the most recent loop pointer, if any.
+    /// Note this does not revert the stack, and you have to do it manually
+    pub fn pop_loop_record(&mut self) -> Option<LoopRecord> {
+        self.loop_record.pop()
+    }
+
+    /// Gets the nth most recent loop record pointer stored, but you have to revert manually
+    pub fn loop_record(&self, index: usize) -> Option<&LoopRecord> {
+        if let Some(index) = self.loop_record.len().checked_sub(index + 1) {
+            let loop_record = self
+                .loop_record
+                .get(index)
+                .expect("value should exist since the index is lower than length");
+            Some(loop_record)
+        } else {
+            None
+        }
     }
 
     /// Creates a new group of locals at the back of the stack
@@ -178,5 +221,24 @@ impl Body {
     /// Adds a list of commands into current list. This is not commonly used
     pub fn extend_cmd(&mut self, cmd: impl IntoIterator<Item = cmd::Cmd>) {
         self.list.extend(cmd);
+    }
+}
+
+/// Records the loop related pointers responsible for handling "mit" expressions.
+/// `ptr` is the index to the command that jumps out of the loop
+/// `stack` is the stack location before the loop starts
+/// `ty` is the return type of the loop, and will be initialized when a "mit" is first met
+pub struct LoopRecord {
+    pub ptr: cmd::Ptr,
+    pub stack: cmd::Ptr,
+    pub ty: OnceLock<Ty>,
+}
+
+impl LoopRecord {
+    /// Check if the return type of the loop is the same as given or undetermined,
+    /// If undetermined, the type is set to the given type
+    pub fn check_ty(&self, ty: &Ty) -> bool {
+        let other = self.ty.get_or_init(|| ty.clone());
+        other.test_eq(ty)
     }
 }

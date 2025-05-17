@@ -34,6 +34,10 @@ impl Convert<Option<Value>> for ExprConv {
             Expr::Flow(flow) => convs::FlowConv { solver }.convert(ctx, flow).map(Some),
             Expr::Tuple(tuple) => convs::TupleConv.convert(ctx, tuple).map(Some),
             Expr::Cus(cus) => convs::CusExprConv.convert(ctx, cus).map(Some),
+            Expr::Mit(mit) => {
+                convs::MitConv.convert(ctx, mit)?;
+                Ok(None)
+            }
         }
     }
 }

@@ -37,10 +37,17 @@ macro_rules! arithmetic {
 
 #[derive(Clone)]
 pub enum Cmd {
+    /// Duplicate bytes from pointer to the top of stack
     Dupli(Bytes, Ptr),
+    /// Duplicate bytes from the first pointer, then overwrite contents of the second pointer.
+    /// If the two segments overlap, correct behavior is also guaranteed
+    Overwrite(Bytes, Ptr, Ptr),
     Store(crate::sym::Prim),
     StorePtr(Ptr),
     StoreGlobalPtr(super::GlobalPtr),
+    /// Shrinks the stack to given size, discarding memory after it. If the stack is
+    /// smaller than the given size, no action will be performed
+    Shrink(Ptr),
     /// Allocates a heap location for bytes at stack position, putting the pointer on top of the
     /// stack
     Wrap(Bytes, Ptr),
@@ -86,6 +93,12 @@ impl Rw for Cmd {
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::Dupli(bytes, ptr))
             }
+            "ovw" => {
+                let bytes = Bytes::read(&mut input)?;
+                let src = Ptr::read(&mut input)?;
+                let dst = Ptr::read(&mut input)?;
+                Ok(Self::Overwrite(bytes, src, dst))
+            }
             "str" => {
                 let prim = crate::sym::Prim::read(&mut input)?;
                 Ok(Self::Store(prim))
@@ -97,6 +110,10 @@ impl Rw for Cmd {
             "sgp" => {
                 let ptr = super::GlobalPtr::read(&mut input)?;
                 Ok(Self::StoreGlobalPtr(ptr))
+            }
+            "srk" => {
+                let ptr = super::Ptr::read(&mut input)?;
+                Ok(Self::Shrink(ptr))
             }
             "wrp" => {
                 let bytes = Bytes::read(&mut input)?;
@@ -155,6 +172,14 @@ impl Rw for Cmd {
                 write!(output, " ")?;
                 ptr.write(&mut output)?;
             }
+            Self::Overwrite(bytes, src, dst) => {
+                write!(output, "ovw ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                src.write(&mut output)?;
+                write!(output, " ")?;
+                dst.write(&mut output)?;
+            }
             Self::Store(prim) => {
                 write!(output, "str ")?;
                 prim.write(&mut output)?;
@@ -167,6 +192,10 @@ impl Rw for Cmd {
                 write!(output, "sgp ")?;
                 ptr.write(&mut output)?;
             }
+            Self::Shrink(ptr) => {
+                write!(output, "srk ")?;
+                ptr.write(&mut output)?;
+            }
             Self::Wrap(bytes, ptr) => {
                 write!(output, "wrp ")?;
                 bytes.write(&mut output)?;
@@ -175,7 +204,6 @@ impl Rw for Cmd {
             }
             Self::Not(bytes, opd) => {
                 write!(output, "not{} ", char::from(*bytes))?;
-                write!(output, " ")?;
                 opd.write(&mut output)?;
             }
             Self::Add(bytes, lhs, rhs) => arithmetic!(write "add", bytes, lhs, rhs, output),

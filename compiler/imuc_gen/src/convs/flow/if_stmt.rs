@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ast::flow::IfElse;
-use convs::expr::ExprSolver;
+use convs::ExprSolver;
 
 pub struct IfElseConv {
     pub solver: ExprSolver,
@@ -13,12 +13,12 @@ impl Converter for IfElseConv {
 impl Convert<Value> for IfElseConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         // TODO: Use this solver
-        let Self { solver } = self;
+        let Self { solver: _solver } = self;
         let ty = std::cell::OnceCell::<Ty>::default();
         let mut final_placeholders = Vec::new();
 
         ctx.body_mut().push_stack_record();
-        let revert_stack_and_dupli = |ctx: &mut Ctx| -> Result<()> {
+        let revert_stack_and_dupli = |ctx: &mut Ctx, ptr: Ptr| -> Result<()> {
             let size = ty
                 .get()
                 .expect("When stack is reverted, a type should be present")
@@ -27,8 +27,8 @@ impl Convert<Value> for IfElseConv {
                 .body()
                 .stack_record()
                 .expect("A stack record should be present in ifelse conversion");
-            ctx.body_mut().push(Cmd::Dupli(size, stack_record));
-            ctx.body_mut().revert_stack_record();
+            ctx.body_mut().push(Cmd::Overwrite(size, stack_record, ptr));
+            ctx.body_mut().revert_stack_record(size);
             Ok(())
         };
 
@@ -94,12 +94,12 @@ impl Convert<Value> for IfElseConv {
                 ),
             );
 
-            revert_stack_and_dupli(ctx)?;
+            revert_stack_and_dupli(ctx, value.ptr)?;
         }
         let prev_type = ty
             .get()
             .expect("The ifs is a nonempty vector, thus a type should exist when it reaches else");
-        let prev_type_size = prev_type.size_or(input.span())?;
+        let ret_type_size = prev_type.size_or(input.span())?;
 
         // Convert final else stmt, if any
         if let Some(else_stmt) = &input.end {
@@ -111,7 +111,7 @@ impl Convert<Value> for IfElseConv {
                 ));
                 return Err(SendError::new_error());
             }
-            revert_stack_and_dupli(ctx)?;
+            revert_stack_and_dupli(ctx, value.ptr)?;
             let final_ptr = Bytes::new_usize(ctx.body().len());
             for index in final_placeholders.into_iter() {
                 *ctx.body_mut()
@@ -120,8 +120,9 @@ impl Convert<Value> for IfElseConv {
             }
         }
 
+        ctx.body_mut().pop_stack_record(ret_type_size);
         // Locate the final result ptr
-        let ptr = ctx.body_mut().push_stack(prev_type_size);
+        let ptr = ctx.body_mut().stack() - ret_type_size;
         Ok(Value {
             ptr,
             ty: prev_type.clone(),

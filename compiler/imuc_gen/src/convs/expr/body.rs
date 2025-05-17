@@ -41,7 +41,8 @@ impl Convert<Value> for BodyConv {
             .pop_locals()
             .expect("context should contain a set of locals after expression body");
         // Adjust return value pointer
-        debug_assert!(ctx.body_mut().pop_stack_record());
+        let ty_size = result.ty.size_or(input.span())?;
+        debug_assert!(ctx.body_mut().pop_stack_record(ty_size));
         let size = result.ty.size_or(input.span())?;
         // NOTE: This may be a overlapping duplicate
         ctx.body_mut().push(Cmd::Dupli(size, result.ptr));

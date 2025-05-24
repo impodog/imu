@@ -1,5 +1,5 @@
 use crate::expr::Body;
-use crate::module::Public;
+use crate::module::{Import, Public};
 use crate::pat::{Pat, Type};
 use crate::prim::Prim;
 
@@ -26,6 +26,7 @@ pub enum ItemKind {
     Cus(Cus),
     For(For),
     Val(Val),
+    Use(Import),
 }
 
 /// A function definition with arguments and body

@@ -6,7 +6,8 @@ lazy_tokens!(
     Keyword::Fun,
     Keyword::Cus,
     Keyword::For,
-    Keyword::Val
+    Keyword::Val,
+    Keyword::Use
 );
 
 lazy_tokens!(ValueTokens, Ident::Value, Ident::Unused);
@@ -70,6 +71,20 @@ impl Rule for ItemRule {
                         }))
                     }
                     Keyword::Val => todo!(),
+                    Keyword::Use => {
+                        let import = rules::ImportRule.parse(parser)?.ok_or_else(|| {
+                            parser.map_err(errors::SyntaxError::ExpectedIn {
+                                expect: "Import".to_owned(),
+                                context: "use statement".to_owned(),
+                            })
+                        })?;
+                        Ok(Some(item::Item {
+                            public,
+                            name: StrRef::default(),
+                            kind: item::ItemKind::Use(import),
+                        }))
+                    }
+
                     _ => filtered!(),
                 },
                 _ => filtered!(),

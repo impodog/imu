@@ -84,7 +84,6 @@ impl Convert<()> for FunConv {
             .take_cmd();
 
         if !ret.test_eq(&value.ty) {
-            // TODO: Should this be warn?
             ctx.push_error(ConvError::new(Severity::Warn, input.span()).with_text(
                 "Fun return types mismatch",
                 format!("Expected {}, but returned {}", ret.name, value.ty.name),

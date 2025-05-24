@@ -3,7 +3,6 @@ use imuc_derive::Spanned;
 
 /// The syntax tree entry point for modules
 pub struct Module {
-    pub import: Vec<Import>,
     pub items: Vec<Item>,
 }
 
@@ -30,7 +29,9 @@ pub struct ImportItem {
 }
 
 /// A single import from the module
+#[derive(Spanned)]
 pub struct Import {
     pub file: imuc_path::File,
     pub item: Vec<ImportItem>,
+    pub span: imuc_lexer::Span,
 }

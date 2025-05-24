@@ -37,6 +37,11 @@ impl Convert<()> for ItemConv {
             ItemKind::Val(_val) => {
                 todo!("global value conversion")
             }
+            ItemKind::Use(import) => {
+                let conv = convs::UseConv;
+                conv.convert(ctx, import)?;
+                Ok(())
+            }
         }
     }
 }

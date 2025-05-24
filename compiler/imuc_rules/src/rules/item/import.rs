@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use imuc_ast::module::Import;
 use imuc_lexer::token::{Ident, Keyword, Pair, Symbol};
 use std::path::PathBuf;
 
@@ -42,7 +43,6 @@ impl ImportItemRule {
 
 impl Rule for ImportItemRule {
     type Output = Vec<module::ImportItem>;
-
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
@@ -71,9 +71,7 @@ impl Rule for ImportItemRule {
                 list.push(module::ImportItem {
                     kind,
                     alias,
-                    span: parser
-                        .file_info()
-                        .into_span(cursor_begin),
+                    span: parser.file_info().into_span(cursor_begin),
                 });
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
@@ -86,9 +84,7 @@ impl Rule for ImportItemRule {
                 Ok(Some(vec![module::ImportItem {
                     kind: Self::into_item(item, parser.look_up.insert(item.value)),
                     alias,
-                    span: parser
-                        .file_info()
-                        .into_span(cursor_begin),
+                    span: parser.file_info().into_span(cursor_begin),
                 }]))
             } else {
                 Ok(None)
@@ -98,64 +94,60 @@ impl Rule for ImportItemRule {
 }
 
 /// Imports a single "use" statement from the parser
-pub struct ImportRule<'a> {
-    pub import: &'a mut Vec<module::Import>,
-}
+pub struct ImportRule;
 
-impl Rule for ImportRule<'_> {
-    type Output = ();
+impl Rule for ImportRule {
+    type Output = Import;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {
-        if parser.next_if(&TokenKind::Keyword(Keyword::Use))?.is_some() {
-            let module = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
-            let module = imuc_path::Module::new(PathBuf::from(module.value)).resolve();
+        let cursor_begin = parser.relative_cursor();
 
-            let mut module_ref = &module;
-            let file = loop {
-                let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
-                let next = parser.next_if(&TokenKind::Ident(Ident::Value))?;
-                if let Some(next) = next {
-                    let sub = module_ref.get(next.value).ok_or_else(|| {
-                        parser.map_err(errors::PathError::ModuleNotFound(next.value.to_owned()))
-                    })?;
-                    match sub {
-                        imuc_path::SubModule::File(file) => {
-                            break Some(file);
-                        }
-                        imuc_path::SubModule::Module(module) => {
-                            module_ref = module;
-                        }
+        let module = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
+        let module = imuc_path::Module::new(PathBuf::from(module.value)).resolve();
+
+        let mut module_ref = &module;
+        let file = loop {
+            let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
+            let next = parser.next_if(&TokenKind::Ident(Ident::Value))?;
+            if let Some(next) = next {
+                let sub = module_ref.get(next.value).ok_or_else(|| {
+                    parser.map_err(errors::PathError::ModuleNotFound(next.value.to_owned()))
+                })?;
+                match sub {
+                    imuc_path::SubModule::File(file) => {
+                        break Some(file);
                     }
-                } else {
-                    break None;
+                    imuc_path::SubModule::Module(module) => {
+                        module_ref = module;
+                    }
                 }
-            };
-            match file {
-                Some(file) => {
-                    let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
-                    let item = ImportItemRule.parse(parser)?.ok_or_else(|| {
-                        parser.map_err(errors::SyntaxError::ExpectedIn {
-                            expect: "Item".to_owned(),
-                            context: "import statement".to_owned(),
-                        })
-                    })?;
-                    self.import.push(module::Import {
-                        file: file.clone(),
-                        item,
-                    });
-                    let _ = parser.next_expected(&TokenKind::Semicolon);
-                }
-                None => {
-                    // TODO: Add reference alias
-                    return Err(parser.map_err(errors::PathError::BrokenPath));
-                }
+            } else {
+                break None;
             }
-            Ok(Some(()))
-        } else {
-            Ok(None)
+        };
+        match file {
+            Some(file) => {
+                let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
+                let item = ImportItemRule.parse(parser)?.ok_or_else(|| {
+                    parser.map_err(errors::SyntaxError::ExpectedIn {
+                        expect: "Item".to_owned(),
+                        context: "import statement".to_owned(),
+                    })
+                })?;
+                let _ = parser.next_expected(&TokenKind::Semicolon);
+                Ok(Some(module::Import {
+                    file: file.clone(),
+                    item,
+                    span: parser.file_info().into_span(cursor_begin),
+                }))
+            }
+            None => {
+                // TODO: Add reference alias
+                Err(parser.map_err(errors::PathError::BrokenPath))
+            }
         }
     }
 }

@@ -15,19 +15,29 @@ pub struct Ctx {
     pub fun: super::Funs,
     pub globs: super::GlobsHandle,
     pub error_queue: Arc<RwLock<VecDeque<Error>>>,
+    pub import_pool: super::ImportPoolHandle,
     body: NonEmpty<super::Body>,
+}
+
+impl Drop for Ctx {
+    fn drop(&mut self) {
+        // NOTE: Ensures safe behavior, dropping imports from the top of the stack first
+        while self.body.pop().is_some() {}
+    }
 }
 
 impl Ctx {
     /// Creates a new empty context of IR conversion
     pub fn new(base_name: String) -> Self {
         let glob = super::GlobsHandle::default();
+        let imports = super::Imports::default();
         Self {
             ty: Default::default(),
             fun: Default::default(),
             globs: glob.clone(),
             error_queue: Default::default(),
-            body: NonEmpty::new(super::Body::new(glob, base_name, None)),
+            import_pool: Default::default(),
+            body: NonEmpty::new(super::Body::new(glob, base_name, None, imports)),
         }
     }
 
@@ -55,9 +65,11 @@ impl Ctx {
     pub fn push_body(&mut self, name: &str, self_ty: Option<Ty>) -> &mut super::Body {
         let base_name = self.body.last().name();
         let name = format!("{base_name}.{name}");
+        // NOTE: This ensures safe behavior where imports are only removed by stack order
+        let imports = super::Imports::new_under(&mut self.body.last_mut().imports);
 
         self.body
-            .push(super::Body::new(self.globs.clone(), name, self_ty));
+            .push(super::Body::new(self.globs.clone(), name, self_ty, imports));
         self.body.last_mut()
     }
 

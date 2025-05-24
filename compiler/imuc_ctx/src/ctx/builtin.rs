@@ -1,4 +1,6 @@
 use super::Body;
 use crate::prelude::*;
 
-impl Body {}
+impl Body {
+    // TODO: Add builtins
+}

@@ -15,6 +15,7 @@ pub struct Body {
     /// Pointers to the loop quit handle command
     loop_record: Vec<LoopRecord>,
     locals: NonEmpty<super::Locals>,
+    pub(super) imports: super::Imports,
 }
 
 impl Deref for Body {
@@ -32,7 +33,12 @@ impl DerefMut for Body {
 
 impl Body {
     /// Creates an empty function body
-    pub fn new(globs: super::GlobsHandle, name: String, self_ty: Option<Ty>) -> Self {
+    pub(crate) fn new(
+        globs: super::GlobsHandle,
+        name: String,
+        self_ty: Option<Ty>,
+        imports: super::Imports,
+    ) -> Self {
         Self {
             globs,
             name,
@@ -46,6 +52,7 @@ impl Body {
             stack_record: Default::default(),
             loop_record: Default::default(),
             locals: Default::default(),
+            imports,
         }
     }
 
@@ -180,6 +187,18 @@ impl Body {
             }
         }
         None
+    }
+
+    /// Gets the name from the alias of an imported item, from most recent imports to outer bodies
+    pub fn get_import(&self, name: &str) -> Option<StrRef> {
+        // NOTE: Because Body can only be created by Ctx, it is guaranteed to have safe order of
+        // imports stack pointers, so this function is not unsafe
+        unsafe { self.imports.query(name) }
+    }
+
+    /// Inserts a import value into the map, if not already.
+    pub fn insert_import(&mut self, alias: StrRef, value: StrRef) -> bool {
+        self.imports.insert(alias, value)
     }
 
     /// Gets the self type context, if any

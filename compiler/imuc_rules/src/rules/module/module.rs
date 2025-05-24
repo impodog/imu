@@ -9,20 +9,6 @@ impl Rule for ModuleRules {
     where
         I: ParserSequence<'s>,
     {
-        // Consumes imports
-        let import = {
-            let mut import = Vec::new();
-            loop {
-                let rule = rules::ImportRule {
-                    import: &mut import,
-                };
-                if rule.parse(parser)?.is_none() {
-                    break;
-                }
-                while parser.next_if(&TokenKind::Semicolon)?.is_some() {}
-            }
-            import
-        };
         let items = {
             let mut items = Vec::new();
             while let Some(item) = rules::ItemRule.parse(parser)? {
@@ -30,6 +16,6 @@ impl Rule for ModuleRules {
             }
             items
         };
-        Ok(Some(module::Module { import, items }))
+        Ok(Some(module::Module { items }))
     }
 }

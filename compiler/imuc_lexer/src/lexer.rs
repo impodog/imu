@@ -1,40 +1,40 @@
 use super::*;
 use crate::token::*;
+use std::sync::LazyLock;
 
 type TokenAC = AhoCorasick<TokenKind>;
-lazy_static::lazy_static! {
-    static ref KEYWORDS: TokenAC = {
-        let mut ac = AhoCorasickBuilder::default();
-        ac.insert("pub", TokenKind::Keyword(Keyword::Pub));
-        ac.insert("mut", TokenKind::Keyword(Keyword::Mut));
-        ac.insert("let", TokenKind::Keyword(Keyword::Let));
-        ac.insert("fun", TokenKind::Keyword(Keyword::Fun));
-        ac.insert("cus", TokenKind::Keyword(Keyword::Cus));
-        ac.insert("val", TokenKind::Keyword(Keyword::Val));
-        ac.insert("for", TokenKind::Keyword(Keyword::For));
-        ac.insert("use", TokenKind::Keyword(Keyword::Use));
-        ac.insert("as", TokenKind::Keyword(Keyword::As));
-        ac.insert("if", TokenKind::Keyword(Keyword::If));
-        ac.insert("else", TokenKind::Keyword(Keyword::Else));
-        ac.insert("loop", TokenKind::Keyword(Keyword::Loop));
-        ac.insert("mit", TokenKind::Keyword(Keyword::Mit));
-        ac.insert("true", TokenKind::ResVal(ResVal::True));
-        ac.insert("false", TokenKind::ResVal(ResVal::False));
-        ac.insert("Self", TokenKind::ResTy(ResTy::SelfType));
-        ac.insert("Unit", TokenKind::ResTy(ResTy::Unit));
-        ac.insert("Bool", TokenKind::ResTy(ResTy::Bool));
-        ac.insert("I8", TokenKind::ResTy(ResTy::I8));
-        ac.insert("I16", TokenKind::ResTy(ResTy::I16));
-        ac.insert("I32", TokenKind::ResTy(ResTy::I32));
-        ac.insert("I64", TokenKind::ResTy(ResTy::I64));
-        ac.insert("Ptr", TokenKind::ResTy(ResTy::Ptr));
-        ac.insert("F32", TokenKind::ResTy(ResTy::F32));
-        ac.insert("F64", TokenKind::ResTy(ResTy::F64));
-        ac.insert("Str", TokenKind::ResTy(ResTy::Str));
-        ac.insert("inf", TokenKind::Literal(Literal::Float));
-        ac.build()
-    };
-}
+static KEYWORDS: LazyLock<TokenAC> = LazyLock::new(|| {
+    let mut ac = AhoCorasickBuilder::default();
+    ac.insert("mod", TokenKind::Keyword(Keyword::Mod));
+    ac.insert("pub", TokenKind::Keyword(Keyword::Pub));
+    ac.insert("mut", TokenKind::Keyword(Keyword::Mut));
+    ac.insert("let", TokenKind::Keyword(Keyword::Let));
+    ac.insert("fun", TokenKind::Keyword(Keyword::Fun));
+    ac.insert("cus", TokenKind::Keyword(Keyword::Cus));
+    ac.insert("val", TokenKind::Keyword(Keyword::Val));
+    ac.insert("for", TokenKind::Keyword(Keyword::For));
+    ac.insert("use", TokenKind::Keyword(Keyword::Use));
+    ac.insert("as", TokenKind::Keyword(Keyword::As));
+    ac.insert("if", TokenKind::Keyword(Keyword::If));
+    ac.insert("else", TokenKind::Keyword(Keyword::Else));
+    ac.insert("loop", TokenKind::Keyword(Keyword::Loop));
+    ac.insert("mit", TokenKind::Keyword(Keyword::Mit));
+    ac.insert("true", TokenKind::ResVal(ResVal::True));
+    ac.insert("false", TokenKind::ResVal(ResVal::False));
+    ac.insert("Self", TokenKind::ResTy(ResTy::SelfType));
+    ac.insert("Unit", TokenKind::ResTy(ResTy::Unit));
+    ac.insert("Bool", TokenKind::ResTy(ResTy::Bool));
+    ac.insert("I8", TokenKind::ResTy(ResTy::I8));
+    ac.insert("I16", TokenKind::ResTy(ResTy::I16));
+    ac.insert("I32", TokenKind::ResTy(ResTy::I32));
+    ac.insert("I64", TokenKind::ResTy(ResTy::I64));
+    ac.insert("Ptr", TokenKind::ResTy(ResTy::Ptr));
+    ac.insert("F32", TokenKind::ResTy(ResTy::F32));
+    ac.insert("F64", TokenKind::ResTy(ResTy::F64));
+    ac.insert("Str", TokenKind::ResTy(ResTy::Str));
+    ac.insert("inf", TokenKind::Literal(Literal::Float));
+    ac.build()
+});
 
 impl<I> Iterator for Reader<I>
 where

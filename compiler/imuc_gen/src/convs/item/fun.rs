@@ -70,7 +70,7 @@ impl Convert<()> for FunConv {
             .clone();
 
         // Work to compile body expression
-        ctx.push_body(name.as_str(), self_ty);
+        ctx.push_body(name.as_str(), self_ty, false);
         // Assign arguments to current namespace
         convert_let(
             ctx,

@@ -1,8 +1,10 @@
 use crate::item::Item;
 use imuc_derive::Spanned;
+use std::sync::Arc;
 
 /// The syntax tree entry point for modules
 pub struct Module {
+    pub sub_nodes: Vec<SubNode>,
     pub items: Vec<Item>,
 }
 
@@ -13,6 +15,11 @@ pub enum Public {
     // TODO: Add keywords corresponding to this, if necessary
     Module,
     Priv,
+}
+
+pub struct SubNode {
+    pub module: Module,
+    pub span: imuc_lexer::Span,
 }
 
 /// An item of the import statement, either a type or a value

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::{collections::HashMap, os::unix::ffi::OsStrExt};
+use std::collections::HashMap;
 use walkdir::WalkDir;
 
 pub enum SubModule {
@@ -28,11 +28,13 @@ impl Module {
             .filter_map(|entry| entry.ok())
         {
             if entry.path().is_dir() {
-                let name = String::from_utf8_lossy(entry.file_name().as_bytes()).into_owned();
+                let name =
+                    String::from_utf8_lossy(entry.file_name().as_encoded_bytes()).into_owned();
                 let module = Module::new(entry.into_path()).resolve();
                 self.sub.insert(name, SubModule::Module(module));
             } else if entry.path().is_file() {
-                let name = String::from_utf8_lossy(entry.file_name().as_bytes()).into_owned();
+                let name =
+                    String::from_utf8_lossy(entry.file_name().as_encoded_bytes()).into_owned();
                 let file = crate::File::new(
                     entry
                         .into_path()

@@ -61,12 +61,21 @@ impl Ctx {
         self.body.first_mut()
     }
 
-    /// Pushes a new body of function when entering inner functions
-    pub fn push_body(&mut self, name: &str, self_ty: Option<Ty>) -> &mut super::Body {
+    /// Pushes a new body of function when entering inner functions or modules
+    pub fn push_body(
+        &mut self,
+        name: &str,
+        self_ty: Option<Ty>,
+        is_module: bool,
+    ) -> &mut super::Body {
         let base_name = self.body.last().name();
         let name = format!("{base_name}.{name}");
-        // NOTE: This ensures safe behavior where imports are only removed by stack order
-        let imports = super::Imports::new_under(&mut self.body.last_mut().imports);
+        let imports = if is_module {
+            super::Imports::default()
+        } else {
+            // NOTE: This ensures safe behavior where imports are only removed by stack order
+            super::Imports::new_under(&mut self.body.last_mut().imports)
+        };
 
         self.body
             .push(super::Body::new(self.globs.clone(), name, self_ty, imports));

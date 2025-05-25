@@ -45,7 +45,7 @@ impl Convert<()> for UseConv {
                         SendError::new_error()
                     })?;
                     if !ctx.body_mut().insert_import(alias, name.clone()) {
-                        ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same name within one function body is not allowed. This statement has no effect"));
+                        ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one function body is not allowed. This statement has no effect"));
                     } else {
                         ctx.merge_fun([(name, fun)]);
                     }
@@ -60,7 +60,7 @@ impl Convert<()> for UseConv {
                         SendError::new_error()
                     })?;
                     if !ctx.body_mut().insert_import(alias, name.clone()) {
-                        ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same name within one function body is not allowed. This statement has no effect"));
+                        ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one function body is not allowed. This statement has no effect"));
                     } else {
                         ctx.body_mut().locals_mut().ty.insert(ty.clone());
                     }

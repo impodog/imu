@@ -54,6 +54,7 @@ pub enum Ident {
 /// A part of [`TokenKind`] for keywords
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Keyword {
+    Mod,
     Pub,
     Mut,
     Let,

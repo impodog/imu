@@ -86,6 +86,7 @@ impl Rule for ModuleRules<'_> {
                             )
                             .map_err(|err| parser.map_err(err))?;
                             sub_nodes.push(SubNode {
+                                name: name.value.into(),
                                 module,
                                 span: parser.file_info().into_span(cursor_begin),
                             });
@@ -103,6 +104,7 @@ impl Rule for ModuleRules<'_> {
                                 )
                                 .map_err(|err| parser.map_err(err))?;
                                 sub_nodes.push(SubNode {
+                                    name: name.value.into(),
                                     module,
                                     span: parser.file_info().into_span(cursor_begin),
                                 });

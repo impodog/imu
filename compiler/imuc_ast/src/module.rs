@@ -1,6 +1,5 @@
 use crate::item::Item;
 use imuc_derive::Spanned;
-use std::sync::Arc;
 
 /// The syntax tree entry point for modules
 pub struct Module {
@@ -18,6 +17,7 @@ pub enum Public {
 }
 
 pub struct SubNode {
+    pub name: imuc_lexer::StrRef,
     pub module: Module,
     pub span: imuc_lexer::Span,
 }

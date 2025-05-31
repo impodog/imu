@@ -1,0 +1,16 @@
+[package]
+name = "imuc_comp"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+imuc_lexer = { path = "../imuc_lexer" }
+imuc_ast = { path = "../imuc_ast" }
+imuc_parser = { path = "../imuc_parser" }
+imuc_ctx = { path = "../imuc_ctx" }
+imuc_gen = { path = "../imuc_gen" }
+imuc_ir = { path = "../imuc_ir" }
+imuc_error = { path = "../imuc_error" }
+log = "0.4.27"
+serde = { version = "1.0.219", features = ["derive"] }
+toml = "0.8.22"

@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use imuc_ast::module::Import;
 use imuc_lexer::token::{Ident, Keyword, Pair, Symbol};
-use std::path::PathBuf;
 
 lazy_tokens!(ImportTokens, Ident::Value, Ident::Type);
 
@@ -106,9 +105,11 @@ impl Rule for ImportRule {
         let cursor_begin = parser.relative_cursor();
 
         let module = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
-        let module = imuc_path::Module::new(PathBuf::from(module.value)).resolve();
+        let module = parser
+            .resolver
+            .query(std::borrow::Cow::Borrowed(module.value))?;
 
-        let mut module_ref = &module;
+        let mut module_ref = module.as_ref();
         let file = loop {
             let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
             let next = parser.next_if(&TokenKind::Ident(Ident::Value))?;

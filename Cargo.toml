@@ -18,6 +18,7 @@ imuc_parser = { path = "compiler/imuc_parser", optional = true }
 imuc_path = { path = "compiler/imuc_path", optional = true }
 imuc_rules = { path = "compiler/imuc_rules", optional = true }
 imuc_derive = { path = "compiler/imuc_derive", optional = true }
+imuc_comp = { path = "compiler/imuc_comp", optional = true }
 
 [features]
 compiler = [
@@ -31,4 +32,5 @@ compiler = [
     "imuc_path",
     "imuc_rules",
     "imuc_derive",
+    "imuc_comp",
 ]

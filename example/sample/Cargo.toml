@@ -1,0 +1,11 @@
+[package]
+name = "sample"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+imuc_lexer = { path = "../../compiler/imuc_lexer/" }
+imuc_comp = { path = "../../compiler/imuc_comp/" }
+toml = "0.8.22"
+env_logger = "0.11.8"
+log = "0.4.27"

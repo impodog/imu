@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::comp::config;
 use crate::prelude::*;
 use imuc_lexer::Filename;
@@ -6,7 +8,6 @@ use imuc_lexer::Filename;
 #[derive(Default)]
 pub struct CompInst {
     pub config: config::Comp,
-    filename: Filename,
 
     req: Vec<CompInst>,
     req_loaded: bool,
@@ -15,10 +16,9 @@ pub struct CompInst {
 
 impl CompInst {
     /// Creates a compiler instance with the given config, and delays reading in actual content
-    pub fn new(config: config::Comp, filename: Filename) -> Self {
+    pub fn new(config: config::Comp) -> Self {
         Self {
             config,
-            filename,
             ..Default::default()
         }
     }
@@ -31,7 +31,10 @@ impl CompInst {
     /// Loads requirements from the config, if not previously done.
     pub fn load_req(&mut self) {
         if !self.req_loaded {
-            info!("Loading requirements from module");
+            info!(
+                "Loading requirements from module {}...",
+                self.config.target.module
+            );
             self.req = self
                 .config
                 .req
@@ -41,13 +44,14 @@ impl CompInst {
                         .path
                         .to_owned()
                         .or_else(|| crate::env::PATH_VAR.query(&req.name))
+                        .map(|path| self.config.env.change_cwd(path.as_path()))
                         .filter(|path| path.exists() && path.is_file());
                     info!("Requirement name is {:?}, path is {:?}", req.name, path);
                     if let Some(path) = path {
                         let mut config = config::Comp::read_file(path.as_path())
                             .inspect_err(|err| {
                                 error!(
-                                    "Error when reading module config from file {:?}: {}",
+                                    "Error when reading module config from file {:?}: {:?}",
                                     path, err
                                 );
                             })
@@ -59,14 +63,7 @@ impl CompInst {
                             );
                         }
                         config.target.output = self.config.target.output.clone();
-                        Some(CompInst::new(
-                            config,
-                            Filename::new(
-                                path.into_os_string()
-                                    .into_string()
-                                    .expect("Expected valid utf-8 path"),
-                            ),
-                        ))
+                        Some(CompInst::new(config))
                     } else {
                         if let Some(path) = req.path.as_ref() {
                             error!("Unable to find required path {:?}", path);
@@ -81,6 +78,18 @@ impl CompInst {
         }
     }
 
+    /// Creates self.config.target.output directory, if not already
+    fn create_output(&self) -> Result<()> {
+        if !self.config.target.output.exists() {
+            std::fs::create_dir(self.config.target.output.as_path())?;
+            Ok(())
+        } else if self.config.target.output.is_file() {
+            Err(NotADir(self.config.target.output.clone()).into())
+        } else {
+            Ok(())
+        }
+    }
+
     /// Reads in file content and parse the module, returning the parse result
     pub fn parse(&mut self) -> Option<ast::module::Module> {
         self.load_req();
@@ -92,13 +101,16 @@ impl CompInst {
             }
         }
 
+        let filename = Filename::new(self.config.target.root.as_os_str().to_string_lossy());
         let work = || -> Result<ast::module::Module> {
             use imuc_parser::Rule;
 
-            let content = crate::file::FILE_MAP.query(self.filename)?;
+            let content = crate::file::FILE_MAP
+                .query(filename)
+                .map_err(|err| err.context(filename.get()))?;
+
             let reader = imuc_lexer::Reader::new(content.content().chars());
-            let file_reader =
-                imuc_parser::FileReader::new(self.filename, content.content(), reader);
+            let file_reader = imuc_parser::FileReader::new(filename, content.content(), reader);
             let mut parser = imuc_parser::Parser::new(file_reader);
             parser.resolver.insert(&self.config.target.output)?;
             let module = imuc_rules::rules::ModuleRules::default()
@@ -109,7 +121,7 @@ impl CompInst {
         work()
             .inspect_err(|err| {
                 self.failed = true;
-                error!("When parsing {:?}, {}", self.filename.get(), err)
+                error!("In parsing details of {:?}, {:?}", filename.get(), err)
             })
             .ok()
     }
@@ -120,7 +132,14 @@ impl CompInst {
         use imuc_gen::Convert;
         use imuc_ir::io::Rw;
 
-        debug!("Compiling {}", self.config.target.module);
+        info!("Compiling {}", self.config.target.module);
+
+        if let Err(err) = self.create_output() {
+            error!(
+                "Unable to create output path {:?}: {:?}",
+                self.config.target.output, err
+            );
+        }
 
         let ast = self.parse()?;
         let mut ctx = ctx::ctx::Ctx::new(self.config.target.module.clone());
@@ -132,19 +151,25 @@ impl CompInst {
             ty: ctx.ty.to_map(),
             fun: std::mem::take(&mut ctx.fun).into_map(),
         };
+
+        debug!("Compilation done. Now exporting...");
+        // Output header & functions separately
         let (header, funs) = module.split();
         let header_path = self
             .config
             .target
             .output
-            .join(self.config.target.root.with_extension("iuh"));
+            .join(self.config.target.module.as_str())
+            .with_extension("iuh");
         let source_path = self
             .config
             .target
             .output
-            .join(self.config.target.root.with_extension("iuc"));
+            .join(self.config.target.module.as_str())
+            .with_extension("iuc");
 
         match std::fs::OpenOptions::new()
+            .create(true)
             .write(true)
             .truncate(true)
             .open(&header_path)
@@ -152,7 +177,7 @@ impl CompInst {
             Ok(header_file) => {
                 if let Err(err) = header.write(header_file) {
                     error!(
-                        "When writing header of {}, {}",
+                        "When writing header of {}, {:?}",
                         self.config.target.module, err
                     );
                     self.failed = true;
@@ -160,13 +185,14 @@ impl CompInst {
                 }
             }
             Err(err) => {
-                error!("When opening header file {:?}, {}", header_path, err);
+                error!("When opening header file {:?}, {:?}", header_path, err);
                 self.failed = true;
                 return None;
             }
         }
 
         match std::fs::OpenOptions::new()
+            .create(true)
             .write(true)
             .truncate(true)
             .open(&source_path)
@@ -175,7 +201,7 @@ impl CompInst {
                 for fun in funs.into_iter() {
                     if let Err(err) = fun.write(&mut source_file) {
                         error!(
-                            "When writing source of {}, {}",
+                            "When writing source of {}, {:?}",
                             self.config.target.module, err
                         );
                         self.failed = true;
@@ -184,7 +210,7 @@ impl CompInst {
                 }
             }
             Err(err) => {
-                error!("When opening source file {:?}, {}", source_path, err);
+                error!("When opening source file {:?}, {:?}", source_path, err);
                 self.failed = true;
                 return None;
             }
@@ -193,3 +219,12 @@ impl CompInst {
         Some(())
     }
 }
+
+#[derive(Debug)]
+struct NotADir(PathBuf);
+impl std::fmt::Display for NotADir {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Output path {:?} is not a dir", self.0)
+    }
+}
+impl std::error::Error for NotADir {}

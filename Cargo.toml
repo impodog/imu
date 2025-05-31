@@ -5,7 +5,7 @@ edition = "2024"
 
 [workspace]
 resolver = "2"
-members = ["compiler/*"]
+members = ["compiler/*", "example/*"]
 
 [dependencies]
 imuc_lexer = { path = "compiler/imuc_lexer", optional = true }

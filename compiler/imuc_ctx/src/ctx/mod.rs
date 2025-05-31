@@ -12,6 +12,6 @@ pub use body::Body;
 pub use ctx::Ctx;
 pub use fun::Funs;
 pub use glob::{Glob, GlobKind, Globs, GlobsHandle};
-pub(crate) use import::{ImportCache, ImportPool, ImportPoolHandle, Imports};
+pub(crate) use import::{ImportPoolHandle, Imports};
 pub use local::{Locals, Value};
 pub use ty::Types;

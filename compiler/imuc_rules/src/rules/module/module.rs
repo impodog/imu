@@ -1,10 +1,7 @@
 use crate::prelude::*;
 use imuc_ast::module::SubNode;
 use imuc_lexer::token::{Ident, Keyword};
-use std::{
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 enum LocalRef<'a, T> {
     Borrowed(&'a T),

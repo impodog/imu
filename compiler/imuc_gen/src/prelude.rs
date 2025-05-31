@@ -9,4 +9,4 @@ pub(crate) use imuc_error::{errors::ctx::*, *};
 pub(crate) use imuc_ir as ir;
 pub(crate) use imuc_lexer::StrRef;
 pub(crate) use ir::cmd::{Bytes, Cmd, NumBytes, Ptr};
-pub(crate) use ir::sym::{Fun, Ty};
+pub(crate) use ir::sym::Ty;

@@ -4,7 +4,7 @@ use imuc_ir::{
     module::Header,
 };
 use std::collections::{hash_map::Entry, HashMap};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
 

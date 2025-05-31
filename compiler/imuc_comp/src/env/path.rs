@@ -34,13 +34,13 @@ impl PathVar {
         {
             let path = Path::new(name);
             if path.exists() {
-                return Some(path.to_path_buf());
+                return path.canonicalize().ok();
             }
         }
         for dir in self.modules.iter() {
             let path = dir.join(name);
             if path.exists() {
-                return Some(path);
+                return path.canonicalize().ok();
             }
         }
         None

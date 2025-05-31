@@ -26,7 +26,7 @@ impl FileHandle {
 
             let content = fs::read_to_string(file.as_str())
                 .inspect_err(|err| {
-                    error!("Unable to open file {}, {}", file, err);
+                    error!("Unable to open file {}, {:?}", file, err);
                 })
                 .unwrap_or_default();
             FileContent::new(content)

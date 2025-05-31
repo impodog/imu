@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use ast::expr::Mit;
-use convs::ExprSolver;
 
 pub struct MitConv;
 

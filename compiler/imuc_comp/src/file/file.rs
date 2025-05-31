@@ -58,6 +58,7 @@ impl FileContent {
     fn new(content: String) -> Self {
         let mut lines = Vec::new();
         let mut index = 0;
+        lines.push(0);
         for ch in content.chars() {
             if ch == '\n' {
                 lines.push(index);
@@ -71,6 +72,7 @@ impl FileContent {
     fn query(&self, cursor: imuc_lexer::Cursor) -> Option<usize> {
         // Convert start with 1 line numbers to indices that start with 0
         let line = cursor.line.checked_sub(1)?;
+        let column = cursor.column.checked_sub(1)?;
         if let Some(start) = self.lines.get(line).copied() {
             let end = self
                 .lines
@@ -78,10 +80,10 @@ impl FileContent {
                 .copied()
                 .unwrap_or(self.content.len());
             let diff = end.saturating_sub(start);
-            if cursor.column > diff {
+            if column > diff {
                 None
             } else {
-                Some(start + cursor.column)
+                Some(start + column)
             }
         } else {
             None

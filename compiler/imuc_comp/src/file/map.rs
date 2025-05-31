@@ -50,7 +50,7 @@ impl FileMap {
 
                 // Fills spaces to align, skip is used to avoid column = 0 inputs
                 for _ in (0..err.span.start.column).skip(1) {
-                    result.push(' ');
+                    result.push('.');
                 }
                 let start = handle.query(err.span.start);
                 let end = handle.query(err.span.end);

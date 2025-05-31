@@ -3,7 +3,7 @@ use imuc_lexer::{Cursor, Filename, Span, Token, TokenKind};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Clonable information of [`FileReader`] holding the file string and cursor position
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct FileInfo {
     pub file: Filename,
     pub line: usize,
@@ -77,14 +77,8 @@ where
     type Item = crate::ParserInput<'s>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(item) = self.advance() {
-            // This filters the unneeded elements for parsing
-            if let TokenKind::Comment(_) | TokenKind::Spacing(_) | TokenKind::Stray = item.kind {
-            } else {
-                return Some(item);
-            }
-        }
-        None
+        // NOTE: The filtering of useless tokens is ported to parser
+        self.advance()
     }
 }
 
@@ -93,11 +87,11 @@ where
     I: Iterator<Item = Token> + Send + Sync,
 {
     fn map_error(&self, err: Error) -> Error {
-        err.context(self.info.clone())
+        err.context(self.info)
     }
 
     fn file_info(&self) -> crate::file::FileInfo {
-        self.info.clone()
+        self.info
     }
 
     fn relative_cursor(&self) -> Cursor {

@@ -22,6 +22,7 @@ struct ExprItem {
 }
 
 /// A local struct that holds both the operator and its beginning cursor
+#[derive(Debug)]
 struct OpItem {
     op: TokenKind,
     cursor: Cursor,
@@ -125,35 +126,42 @@ where
             } else {
                 prev_is_expr = false;
 
-                let input = parser.next_some()?;
-                match input.kind {
-                    TokenKind::UnOp(_) | TokenKind::BinOp(_) => {
-                        while op.last().is_some_and(|op| {
-                            if op.op.is_right() {
-                                op.op.priority() < input.kind.priority()
-                            } else {
-                                op.op.priority() <= input.kind.priority()
+                let input = parser.peek()?;
+                if let Some(input) = input {
+                    match input.kind {
+                        TokenKind::UnOp(_) | TokenKind::BinOp(_) => {
+                            while op.last().is_some_and(|op| {
+                                if op.op.is_right() {
+                                    op.op.priority() < input.kind.priority()
+                                } else {
+                                    op.op.priority() <= input.kind.priority()
+                                }
+                            }) {
+                                let op = op.pop().expect("op should not be empty after checking");
+                                merge_symbols(parser, op, &mut stack)
+                                    .map_err(|err| parser.map_err(err))?;
                             }
-                        }) {
-                            let op = op.pop().expect("op should not be empty after checking");
-                            merge_symbols(parser, op, &mut stack)
-                                .map_err(|err| parser.map_err(err))?;
-                        }
-                        op.push(OpItem {
-                            op: input.kind,
-                            cursor: cursor_begin,
-                        });
-                    }
-                    _ => {
-                        if end.contains(&input.kind) {
-                            break;
-                        } else {
-                            return parser.error(errors::SyntaxError::ExpectedIn {
-                                expect: "Expr or Op".to_owned(),
-                                context: "expression".to_owned(),
+                            op.push(OpItem {
+                                op: input.kind,
+                                cursor: cursor_begin,
                             });
                         }
+                        _ => {
+                            if end.contains(&input.kind) {
+                                break;
+                            } else {
+                                return parser.error(errors::SyntaxError::ExpectedIn {
+                                    expect: "Expr or Op".to_owned(),
+                                    context: "expression".to_owned(),
+                                });
+                            }
+                        }
                     }
+                    let _ = parser
+                        .next_some()
+                        .expect("parser should not be EOF after peeking a symbol");
+                } else {
+                    break;
                 }
             }
         }

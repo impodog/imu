@@ -24,7 +24,7 @@ pub fn mangle_ty_item(ty_name: &str, name: &str) -> String {
 
 /// Mangles the name of the ty related to a function
 pub fn mangle_fun_ty(fun_name: &str) -> String {
-    format!("#FTY{}", fun_name)
+    format!("#PAR{}", fun_name)
 }
 
 /// Mangles the name of function signature

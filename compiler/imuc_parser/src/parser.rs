@@ -8,10 +8,16 @@ where
     I: ParserSequence<'s>,
 {
     seq: I,
-    stack: Option<ParserInput<'s>>,
+    stack: Option<ParserStack<'s>>,
     pub look_up: imuc_ast::name::LookUp,
     pub resolver: imuc_path::Resolver,
     _phantom: std::marker::PhantomData<&'s str>,
+}
+
+struct ParserStack<'s> {
+    input: ParserInput<'s>,
+    cursor: imuc_lexer::Cursor,
+    file_info: crate::file::FileInfo,
 }
 
 impl<'s, I> Parser<'s, I>
@@ -32,13 +38,13 @@ where
     /// Returns the next pending result of [`Self::next_token`] without consuming the token
     ///
     /// Errors are only caused by lexer errors
+    /// Note that peeking does not change current [`Self::relative_cursor`] and [`Self::file_info`]
     pub fn peek(&mut self) -> Result<Option<ParserInput<'s>>> {
         if let Some(ref input) = self.stack {
-            Ok(Some(*input))
+            Ok(Some(input.input))
         } else {
-            let input = self.next_token()?;
-            self.stack = input;
-            Ok(input)
+            self.stack = self.next_token_unfiltered()?;
+            Ok(self.stack.as_ref().map(|stack| stack.input))
         }
     }
 
@@ -52,6 +58,7 @@ where
         let input = self.peek()?;
         if input.is_some_and(|input| kind.contains(&input.kind)) {
             self.stack = None;
+            self.peek()?;
             Ok(input)
         } else {
             Ok(None)
@@ -61,19 +68,58 @@ where
     /// Gets the next token, if any, while mapping the possible errors
     /// If the token is an error, an [`Err`] result is returned
     pub fn next_token(&mut self) -> Result<Option<ParserInput<'s>>> {
-        if let Some(input) = std::mem::take(&mut self.stack) {
-            return Ok(Some(input));
+        self.filter_useless()?;
+        let result = self.next_token_unfiltered()?;
+        self.filter_useless()?;
+        Ok(result.map(|result| result.input))
+    }
+
+    /// Internal function of [`Self::next_token`], filters any useless tokens
+    fn filter_useless(&mut self) -> Result<()> {
+        while self.peek()?.is_some_and(|input| {
+            matches!(
+                input.kind,
+                TokenKind::Spacing(_) | TokenKind::Comment(_) | TokenKind::Stray
+            )
+        }) {
+            self.stack = None;
+        }
+        Ok(())
+    }
+
+    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens
+    fn next_token_unfiltered(&mut self) -> Result<Option<ParserStack<'s>>> {
+        if let Some(stack) = std::mem::take(&mut self.stack) {
+            return Ok(Some(stack));
         }
 
-        let input = self.seq.next();
-        if let Some(input) = input {
-            if let TokenKind::LexError(error) = input.kind {
-                self.error(errors::LexerError(error))
+        let mut cursor = self.seq.relative_cursor();
+        let mut file_info = self.seq.file_info();
+        loop {
+            let input = self.seq.next();
+            if let Some(input) = input {
+                if let TokenKind::LexError(error) = input.kind {
+                    return self.error(errors::LexerError(error));
+                } else if matches!(
+                    input.kind,
+                    TokenKind::Spacing(_) | TokenKind::Comment(_) | TokenKind::Stray
+                ) {
+                    cursor = self.seq.relative_cursor();
+                    file_info = self.seq.file_info();
+                } else {
+                    return Ok(Some(ParserStack {
+                        input,
+                        cursor,
+                        file_info,
+                    }));
+                }
             } else {
-                Ok(Some(input))
+                return Ok(input.map(move |input| ParserStack {
+                    input,
+                    cursor,
+                    file_info,
+                }));
             }
-        } else {
-            Ok(input)
         }
     }
 
@@ -116,14 +162,24 @@ where
         self.seq.map_error(err.into())
     }
 
-    /// Gets the current file info
+    /// Gets the current file info, with the cursor same as [`Self::relative_cursor`]
     pub fn file_info(&self) -> crate::file::FileInfo {
-        self.seq.file_info()
+        if let Some(ref stack) = self.stack {
+            stack.file_info
+        } else {
+            self.seq.file_info()
+        }
     }
 
     /// Gets the current relative pointer, which is guaranteed to be increasing in position
+    /// Note that this is different from what internal seq returns, as the parser can peek one
+    /// token ahead
     pub fn relative_cursor(&self) -> imuc_lexer::Cursor {
-        self.seq.relative_cursor()
+        if let Some(ref stack) = self.stack {
+            stack.cursor
+        } else {
+            self.seq.relative_cursor()
+        }
     }
 
     /// Maps the error then output a [`Result`] of [`Err`]

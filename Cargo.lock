@@ -68,6 +68,7 @@ dependencies = [
  "imuc_ir",
  "imuc_lexer",
  "imuc_parser",
+ "imuc_rules",
  "log",
  "serde",
  "toml",

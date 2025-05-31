@@ -174,4 +174,16 @@ impl Types {
     {
         self.map.entry(name).or_insert_with(f)
     }
+
+    /// Extracts local types from the type map, and store them in a [`BTreeMap`] suitable for
+    /// ir module representation
+    pub fn to_map(&self) -> BTreeMap<StrRef, Ty> {
+        let mut map = BTreeMap::new();
+        for (name, ty) in self.iter() {
+            if !ty.external {
+                map.insert(name.clone(), ty.clone());
+            }
+        }
+        map
+    }
 }

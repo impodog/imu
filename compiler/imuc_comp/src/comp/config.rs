@@ -8,19 +8,20 @@ pub struct Requirement {
     pub path: Option<PathBuf>,
 }
 
-fn lib() -> PathBuf {
+fn root() -> PathBuf {
     "lib.iu".into()
 }
-fn target() -> PathBuf {
+fn output() -> PathBuf {
     "target".into()
 }
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Target {
-    #[serde(default = "lib")]
-    pub lib: PathBuf,
-    #[serde(default = "target")]
-    pub output_dir: PathBuf,
+    pub module: String,
+    #[serde(default = "root")]
+    pub root: PathBuf,
+    #[serde(default = "output")]
+    pub output: PathBuf,
 }
 
 #[derive(Default, Serialize, Deserialize)]

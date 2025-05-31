@@ -7,10 +7,6 @@ impl Converter for BodyConv {
     type Input = Body;
 }
 
-pub fn handle_body_errors(ctx: &mut Ctx, prev_error_len: usize) {
-    todo!()
-}
-
 impl Convert<Value> for BodyConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         ctx.body_mut().push_locals();
@@ -19,14 +15,15 @@ impl Convert<Value> for BodyConv {
             convs::BindConv.convert(ctx, bind)?;
         }
         let mut result = None;
-        let prev_error_len = ctx.error_queue.read().unwrap().len();
         for expr in input.body.iter() {
             match convs::ExprConv::default().convert(ctx, expr) {
                 Ok(value) => {
                     result = value;
                 }
                 Err(_) => {
-                    handle_body_errors(ctx, prev_error_len);
+                    if ctx.error_queue.read().unwrap().len() >= crate::conv::ERROR_QUEUE_LIMIT {
+                        return Err(SendError::new_error());
+                    }
                 }
             }
         }

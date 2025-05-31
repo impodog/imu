@@ -7,6 +7,7 @@ edition = "2024"
 imuc_lexer = { path = "../imuc_lexer" }
 imuc_ast = { path = "../imuc_ast" }
 imuc_parser = { path = "../imuc_parser" }
+imuc_rules = { path = "../imuc_rules" }
 imuc_ctx = { path = "../imuc_ctx" }
 imuc_gen = { path = "../imuc_gen" }
 imuc_ir = { path = "../imuc_ir" }

@@ -14,7 +14,7 @@ pub struct Ctx {
     pub ty: super::Types,
     pub fun: super::Funs,
     pub globs: super::GlobsHandle,
-    pub error_queue: Arc<RwLock<VecDeque<Error>>>,
+    pub error_queue: Arc<RwLock<VecDeque<errors::ctx::ConvError>>>,
     pub import_pool: super::ImportPoolHandle,
     body: NonEmpty<super::Body>,
 }
@@ -121,19 +121,16 @@ impl Ctx {
     }
 
     /// Accesses [`Self::error_queue`] and pushes back an error
-    pub fn push_error(&self, error: impl Into<Error>) {
-        self.error_queue.write().unwrap().push_back(error.into());
+    pub fn push_error(&self, error: errors::ctx::ConvError) {
+        self.error_queue.write().unwrap().push_back(error);
     }
 
     /// Returns a function applicable to [`Result::map_err`] that grabs the stored error
     /// and replaces it with a [`SendError`]
-    pub fn push_error_fn<E>(&self) -> impl Fn(E) -> SendError + 'static
-    where
-        E: Into<Error>,
-    {
+    pub fn push_error_fn(&self) -> impl Fn(errors::ctx::ConvError) -> SendError + 'static {
         let error_queue = self.error_queue.clone();
-        move |error: E| {
-            error_queue.write().unwrap().push_back(error.into());
+        move |error| {
+            error_queue.write().unwrap().push_back(error);
             SendError::default()
         }
     }

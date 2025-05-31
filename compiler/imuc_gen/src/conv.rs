@@ -12,3 +12,5 @@ where
 {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Output>;
 }
+
+pub const ERROR_QUEUE_LIMIT: usize = 16;

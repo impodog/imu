@@ -9,7 +9,7 @@ mod tests {
         (parse $name: literal, $content: expr) => {{
             let content = $content;
             let mut parser = Parser::new(FileReader::new(
-                $name,
+                Filename::new($name),
                 content,
                 Reader::new(content.chars()),
             ));

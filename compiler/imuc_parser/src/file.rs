@@ -29,13 +29,13 @@ where
     /// You should ensure that the reader is corresponding to the content, or the behavior may be
     /// unexpected
     pub fn new(
-        file: impl Into<String>,
+        file: Filename,
         content: &'s str,
         reader: impl IntoIterator<Item = Token, IntoIter = I>,
     ) -> Self {
         Self {
             info: FileInfo {
-                file: Filename::new(file),
+                file,
                 line: 1,
                 column: 1,
             },

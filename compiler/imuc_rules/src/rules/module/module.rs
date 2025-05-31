@@ -31,11 +31,11 @@ pub struct ModuleRules<'module> {
 
 /// Opens the file, creates a parser and parse its contents
 fn parse_file(rules: ModuleRules<'_>, path: &Path) -> Result<module::Module> {
-    let mut file = std::fs::OpenOptions::new().read(true).open(path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    let content = std::fs::read_to_string(path)?;
+    let filename =
+        imuc_lexer::Filename::new(String::from_utf8_lossy(path.as_os_str().as_encoded_bytes()));
     let reader = imuc_parser::FileReader::new(
-        String::from_utf8_lossy(path.as_os_str().as_encoded_bytes()),
+        filename,
         content.as_str(),
         imuc_lexer::Reader::new(content.chars()),
     );

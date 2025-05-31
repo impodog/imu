@@ -25,7 +25,7 @@ impl Convert<()> for FunConv {
         let FunConv {
             name,
             // TODO: Add publicity handling
-            public,
+            public: _public,
             self_ty,
         } = self;
 
@@ -39,11 +39,11 @@ impl Convert<()> for FunConv {
         let param = convs::PatConv {
             requires_ty: true,
             discard_name_warn: false,
-            name: Some(ctx::mangle::mangle_fun_sig(name.as_str()).into()),
+            name: Some(ctx::mangle::mangle_fun_ty(name.as_str()).into()),
         }
         .convert(ctx, &input.param)?
         .expect("PatConv should not return None when requires_ty is enabled");
-        let fun_ty_name = StrRef::from(ctx::mangle::mangle_fun_ty(name.as_str()));
+        let fun_ty_name = StrRef::from(ctx::mangle::mangle_fun_sig(name.as_str()));
         let fun_ty = ctx
             .ty
             .or_insert_with(fun_ty_name.clone(), || {

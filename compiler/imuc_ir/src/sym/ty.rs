@@ -212,6 +212,7 @@ impl Rw for ResTy {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = input.read_until(' ')?;
         let res = match name {
+            "Unit" => ResTy::Unit,
             "I8" => ResTy::I8,
             "I16" => ResTy::I16,
             "I32" => ResTy::I32,
@@ -226,6 +227,7 @@ impl Rw for ResTy {
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         let str = match self {
+            ResTy::Unit => "Unit",
             ResTy::I8 => "I8",
             ResTy::I16 => "I16",
             ResTy::I32 => "I32",
@@ -271,7 +273,7 @@ impl Rw for Ty {
         let external = input.external();
         let content = input.read_line()?;
         match content.chars().next().ok_or(errors::IrError::Eof)? {
-            ',' => {
+            '!' => {
                 let mut reader = LineReader::new(&content[1..], external);
                 let param = TyItem::read(&mut reader)?;
                 let ret = TyItem::read(&mut reader)?;
@@ -350,10 +352,9 @@ impl Rw for Ty {
         }
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        if self.external {
-            return Err(errors::IrError::InternalRequired.into());
-        }
-        write!(output, "{} ", &*self.name)?;
+        // if self.external {
+        //     return Err(errors::IrError::InternalRequired.into());
+        // }
         match &self.kind {
             TyKind::Res(res) => (*res).write(output)?,
             TyKind::Fun { param, ret } => {

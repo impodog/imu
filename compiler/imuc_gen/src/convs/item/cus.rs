@@ -12,7 +12,10 @@ impl Converter for CusConv {
 
 impl Convert<()> for CusConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<()> {
-        let CusConv { name, public } = self;
+        let CusConv {
+            name,
+            public: _public,
+        } = self;
         let ty = convs::PatConv {
             requires_ty: true,
             discard_name_warn: true,

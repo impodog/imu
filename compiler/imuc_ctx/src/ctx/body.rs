@@ -75,7 +75,7 @@ impl Body {
 
     /// Reverts to the given stack pointer, asserting it is lower than or equal to current stack
     pub fn revert_stack_record_to(&mut self, stack: cmd::Ptr) {
-        assert!(self.stack > stack);
+        assert!(self.stack >= stack);
         self.push(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }

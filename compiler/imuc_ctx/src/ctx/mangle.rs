@@ -4,7 +4,7 @@ use imuc_lexer::token::ResTy;
 impl Ctx {
     /// Mangles a local name to a global name according to current body
     pub fn mangle_body(&self, name: &str) -> String {
-        format!("{}-{}", self.body().name(), name)
+        format!("{}:{}", self.body().name(), name)
     }
 
     /// Mangles a local name to a global name according to current body or the self body it is in
@@ -19,17 +19,27 @@ impl Ctx {
 
 /// Mangles the name of an item related to the type
 pub fn mangle_ty_item(ty_name: &str, name: &str) -> String {
-    format!("{}@{}", ty_name, name)
+    format!("{}#ITM{}", ty_name, name)
 }
 
-/// Mangles the name of the ty of a function related to the type
+/// Mangles the name of the ty related to a function
 pub fn mangle_fun_ty(fun_name: &str) -> String {
-    format!("%{}", fun_name)
+    format!("#FTY{}", fun_name)
+}
+
+/// Mangles the name of function signature
+pub fn mangle_fun_sig(fun_name: &str) -> String {
+    format!("#FUN{}", fun_name)
+}
+
+/// Mangles the name of a reference
+pub fn mangle_ref(name: &str) -> String {
+    format!("#REF{}", name)
 }
 
 /// Mangles the name of a pointer
 pub fn mangle_ptr(name: &str) -> String {
-    format!("*{}", name)
+    format!("#PTR{}", name)
 }
 
 /// Mangles the name of a tupled type, such that types A, B, ... become "(A,B,...)"
@@ -64,9 +74,4 @@ pub fn mangle_builtin_fun(ty: &str, res_ty: ResTy) -> String {
     let res_name = imuc_ast::builtin::associated_fun_name(res_ty);
     let name = tuple_name([res_name, ty]);
     mangle_ty_item(&name, res_name)
-}
-
-/// Mangles the function name into its signature type name
-pub fn mangle_fun_sig(fun_name: &str) -> String {
-    format!("@{}", fun_name)
 }

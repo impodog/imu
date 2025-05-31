@@ -117,7 +117,7 @@ impl Globs {
             // Only unassigned names are used
             if !self.contains_key(name) {
                 let ty = Ty::new(TyInner::new(
-                    StrRef::from(crate::ctx::mangle::mangle_fun_sig(name)),
+                    name.clone(),
                     TyKind::Fun {
                         param: sig.param.clone().into(),
                         ret: sig.ret.clone().into(),

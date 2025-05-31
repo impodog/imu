@@ -35,12 +35,15 @@ impl Rw for Header {
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         for ty in self.ty.values() {
+            write!(output, "{} ", &*ty.name)?;
             ty.write(&mut output)?;
+            writeln!(output)?;
         }
         writeln!(output, "%")?;
         for (name, fun) in self.fun.iter() {
             writeln!(output, "{}", &**name)?;
             fun.write(&mut output)?;
+            writeln!(output)?;
         }
         writeln!(output, "%")?;
         Ok(())

@@ -68,9 +68,7 @@ impl Rw for FunSig {
         Ok(Self { param, ret })
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        self.param.write(&mut output)?;
-        write!(output, " ")?;
-        self.ret.write(&mut output)?;
+        write!(output, "{} {}", self.param.name, self.ret.name)?;
         Ok(())
     }
 }

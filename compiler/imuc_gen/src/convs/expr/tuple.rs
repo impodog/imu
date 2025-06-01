@@ -36,6 +36,9 @@ impl Convert<Value> for TupleConv {
             name.push(',');
             tuple_ty.push(ir::sym::ty::TyItem::Solid(value.ty.clone()));
         }
+        if name.chars().last().is_some_and(|ch| ch == ',') {
+            name.pop().expect("There should be a comma at the end");
+        }
         name.push(')');
 
         let ptr = ctx.body_mut().push_stack(size);

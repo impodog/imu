@@ -76,4 +76,5 @@ pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),
     Single(imuc_lexer::StrRef),
+    Tuple(Vec<Type>),
 }

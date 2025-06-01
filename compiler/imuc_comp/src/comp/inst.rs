@@ -142,11 +142,27 @@ impl CompInst {
         }
 
         let ast = self.parse()?;
+
+        info!("AST is generated, now doing middle-end");
+
         let mut ctx = ctx::ctx::Ctx::new(self.config.target.module.clone());
         imuc_gen::convs::SubmoduleConv.convert(&mut ctx, &ast).ok();
-        for err in std::mem::take(&mut *ctx.error_queue.write().unwrap()).into_iter() {
-            crate::file::FILE_MAP.report_error(err);
+
+        let any_error = {
+            let mut lock = ctx.error_queue.write().unwrap();
+            let any_error = !lock.is_empty();
+            for err in std::mem::take(&mut *lock).into_iter() {
+                crate::file::FILE_MAP.report_error(err);
+            }
+            any_error
+        };
+        if any_error {
+            self.failed = true;
+            return None;
         }
+
+        info!("Middle-end done without errors, now generating module");
+
         let module = ir::module::Module {
             ty: ctx.ty.to_map(),
             fun: std::mem::take(&mut ctx.fun).into_map(),

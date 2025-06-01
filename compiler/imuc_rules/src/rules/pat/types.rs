@@ -108,6 +108,37 @@ impl Rule for TypeRule {
                 kind: pat::TypeKind::Res(res),
                 span: parser.file_info().into_span(cursor_begin),
             }))
+        } else if parser.next_if(&TokenKind::Pair(Pair::LeftParen))?.is_some() {
+            let mut list = Vec::new();
+            let mut comma = false;
+            loop {
+                if parser
+                    .next_if(&TokenKind::Pair(Pair::RightParen))?
+                    .is_some()
+                {
+                    break;
+                } else if !list.is_empty() && !comma {
+                    return Err(parser.map_err(errors::SyntaxError::ExpectedToken {
+                        expect: TokenKind::Pair(Pair::RightParen),
+                    }));
+                }
+
+                let pat = rules::TypeRule.parse(parser)?.ok_or_else(|| {
+                    parser.map_err(errors::SyntaxError::ExpectedIn {
+                        expect: "Ty pat".to_owned(),
+                        context: "tuple type".to_owned(),
+                    })
+                })?;
+
+                comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
+
+                list.push(pat);
+            }
+            Ok(Some(pat::Type {
+                flags,
+                kind: pat::TypeKind::Tuple(list),
+                span: parser.file_info().into_span(cursor_begin),
+            }))
         } else if flags != pat::PatFlags::Unique {
             Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
                 expect: "Type".to_owned(),

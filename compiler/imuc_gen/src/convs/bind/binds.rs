@@ -42,11 +42,14 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                 None
             };
             let value = val.with_hint(ty).into_value(ctx)?;
-            let _body = ctx.body_mut();
             match &ident.ident {
                 IdentKind::Unused => Ok(()),
-                IdentKind::Value(_name) => {
-                    if let Some(_value) = value {
+                IdentKind::Value(name) => {
+                    if let Some(value) = value {
+                        ctx.body_mut()
+                            .locals_mut()
+                            .value
+                            .insert(name.clone(), value);
                         Ok(())
                     } else {
                         ctx.push_error(

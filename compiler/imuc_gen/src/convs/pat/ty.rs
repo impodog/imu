@@ -46,29 +46,54 @@ impl Convert<Option<Ty>> for TypeConv {
                 ResTy::Str => Ty::str(),
                 ResTy::Ptr => Ty::ptr(),
             },
+            TypeKind::Tuple(tuple) => {
+                let mut list = Vec::new();
+                for pat in tuple.iter() {
+                    list.push(TypeConv.convert(ctx, pat)?.ok_or_else(|| {
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, pat.span())
+                                .with_head("Wildcard types not allowed in solid type"),
+                        );
+                        SendError::new_error()
+                    })?);
+                }
+                let name: StrRef =
+                    ctx::mangle::tuple_name(list.iter().map(|ty| ty.name.as_str())).into();
+                ctx.ty
+                    .or_insert_with(name.clone(), move || {
+                        Ty::new(ir::sym::ty::TyInner {
+                            name,
+                            kind: ir::sym::ty::TyKind::Tuple(ir::sym::ty::Tuple(
+                                list.into_iter().map(ir::sym::ty::TyItem::Solid).collect(),
+                            )),
+                            external: false,
+                        })
+                    })
+                    .clone()
+            }
         };
         let ty = match input.flags {
             PatFlags::Unique => ty,
             PatFlags::Shared => {
-                let name: StrRef = format!("@{}", ty.name).into();
+                let name: StrRef = ctx::mangle::mangle_ptr(ty.name.as_str()).into();
                 ctx.ty
                     .or_insert_with(name.clone(), || {
                         Ty::new(ir::sym::ty::TyInner {
                             name,
                             kind: ir::sym::ty::TyKind::Ref(ir::sym::ty::TyItem::Solid(ty)),
-                            external: true,
+                            external: false,
                         })
                     })
                     .clone()
             }
             PatFlags::Stack => {
-                let name: StrRef = format!("${}", ty.name).into();
+                let name: StrRef = ctx::mangle::mangle_ref(ty.name.as_str()).into();
                 ctx.ty
                     .or_insert_with(name.clone(), || {
                         Ty::new(ir::sym::ty::TyInner {
                             name,
                             kind: ir::sym::ty::TyKind::Ptr(ir::sym::ty::TyItem::Solid(ty)),
-                            external: true,
+                            external: false,
                         })
                     })
                     .clone()

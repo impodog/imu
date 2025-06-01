@@ -1,8 +1,6 @@
-fun flip(t: (I64, I64)) -> (I64, I64) {
-    let (a, b) = t;
-    (b, a)
+fun unit() -> Unit {
+
 }
 fun main() {
-    let tuple = (1, 2);
-    flip (tuple);
+    unit()
 }

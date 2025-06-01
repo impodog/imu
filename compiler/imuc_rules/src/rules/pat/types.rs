@@ -47,6 +47,8 @@ pub struct TypeRule;
 lazy_tokens!(TypeNameTokens, Ident::Type, Ident::Unused);
 lazy_tokens!(
     ResTyTokens,
+    ResTy::Unit,
+    ResTy::Bool,
     ResTy::I8,
     ResTy::I16,
     ResTy::I32,
@@ -134,11 +136,20 @@ impl Rule for TypeRule {
 
                 list.push(pat);
             }
-            Ok(Some(pat::Type {
-                flags,
-                kind: pat::TypeKind::Tuple(list),
-                span: parser.file_info().into_span(cursor_begin),
-            }))
+            // Return Unit type if it is an empty pair of parentheses
+            if list.is_empty() {
+                Ok(Some(pat::Type {
+                    flags,
+                    kind: pat::TypeKind::Res(ResTy::Unit),
+                    span: parser.file_info().into_span(cursor_begin),
+                }))
+            } else {
+                Ok(Some(pat::Type {
+                    flags,
+                    kind: pat::TypeKind::Tuple(list),
+                    span: parser.file_info().into_span(cursor_begin),
+                }))
+            }
         } else if flags != pat::PatFlags::Unique {
             Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
                 expect: "Type".to_owned(),

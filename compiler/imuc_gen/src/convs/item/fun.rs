@@ -10,7 +10,10 @@ use ir::{
 };
 
 pub struct FunConv {
+    /// The complete unique name of the function
     pub name: StrRef,
+    /// An alias of the function, only the user-defined name
+    pub alias: StrRef,
     pub public: Public,
     pub self_ty: Option<Ty>,
 }
@@ -24,6 +27,7 @@ impl Convert<()> for FunConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<()> {
         let FunConv {
             name,
+            alias,
             // TODO: Add publicity handling
             public: _public,
             self_ty,
@@ -91,20 +95,28 @@ impl Convert<()> for FunConv {
             return Err(SendError::default().into());
         }
 
+        // Add to function exports
+        ctx.fun.insert(
+            name.clone(),
+            IrFun {
+                name: name.clone(),
+                sig: FunSig { ret, param },
+                body: CmdBody::new(body),
+            },
+        );
+        // Add to globals so that it can be called locally
         let globs = ctx.globs.clone();
         globs
             .write()
             .unwrap()
             .load_fun(ctx.bottom_mut(), name.clone(), ptr_ty);
-
-        ctx.fun.insert(
-            name.clone(),
-            IrFun {
-                name,
-                sig: FunSig { ret, param },
-                body: CmdBody::new(body),
-            },
-        );
+        // Add to import aliases
+        if !ctx.body_mut().insert_import(alias, name) {
+            ctx.push_error(
+                ConvError::new(Severity::Warn, input.span())
+                    .with_head("Functions with the same name"),
+            );
+        }
 
         Ok(())
     }

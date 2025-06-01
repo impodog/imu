@@ -192,7 +192,7 @@ impl Body {
     /// Gets the name from the alias of an imported item, from most recent imports to outer bodies
     pub fn get_import(&self, name: &str) -> Option<StrRef> {
         // NOTE: Because Body can only be created by Ctx, it is guaranteed to have safe order of
-        // imports stack pointers, so this function is not unsafe
+        // imports stack pointers, so this function is safe
         unsafe { self.imports.query(name) }
     }
 

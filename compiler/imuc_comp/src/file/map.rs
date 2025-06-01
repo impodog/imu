@@ -12,6 +12,15 @@ pub struct FileMap {
     map: RwLock<HashMap<PathBuf, Arc<FileHandle>>>,
 }
 
+fn count_digits(mut value: usize) -> usize {
+    let mut result = 0;
+    while value > 0 {
+        value /= 10;
+        result += 1;
+    }
+    result
+}
+
 impl FileMap {
     /// Queries a file name from the map, or creates one if not already created,
     /// returning any file access errors
@@ -48,20 +57,33 @@ impl FileMap {
                 // be valid utf-8
                 writeln!(&mut result, "{}", err.span).unwrap();
 
-                // Fills spaces to align, skip is used to avoid column = 0 inputs
-                for _ in (0..err.span.start.column).skip(1) {
-                    result.push('.');
-                }
-                let start = handle.query(err.span.start);
+                let start = handle.query(err.span.start.with_column(1));
                 let end = handle.query(err.span.end);
-                let str = if let Some((start, end)) =
-                    start.and_then(|start| end.map(|end| (start, end)))
-                {
-                    &handle.content()[start..end]
+                if let Some((start, end)) = start.and_then(|start| end.map(|end| (start, end))) {
+                    let current_line = err.span.start.line;
+                    let align = count_digits(err.span.end.line);
+                    let mut line_break = true;
+                    for ch in handle.content()[start..end].chars() {
+                        if line_break {
+                            let number = current_line.to_string();
+                            let mut current_digits = number.len();
+                            while current_digits < align {
+                                result.push(' ');
+                                current_digits += 1;
+                            }
+                            result.push_str(number.as_str());
+                            result.push(' ');
+                            result.push('|');
+                            line_break = false;
+                        }
+                        if ch == '\n' {
+                            line_break = true;
+                        }
+                        result.push(ch);
+                    }
                 } else {
-                    "<missing content>"
+                    result.push_str("<missing content>");
                 };
-                result.push_str(str);
                 result.push('\n');
 
                 match err.message {

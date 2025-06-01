@@ -17,7 +17,12 @@ impl Rule for FunRule {
             })
         })?;
         let ret = if parser.next_if(&TokenKind::Symbol(Symbol::Arrow))?.is_some() {
-            rules::TypeRule.parse(parser)?
+            Some(rules::TypeRule.parse(parser)?.ok_or_else(|| {
+                parser.map_err(errors::SyntaxError::ExpectedAfter {
+                    expect: "Type".to_owned(),
+                    after: TokenKind::Symbol(Symbol::Arrow),
+                })
+            })?)
         } else {
             None
         };

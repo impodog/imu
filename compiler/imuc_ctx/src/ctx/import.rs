@@ -48,6 +48,8 @@ impl Imports {
     /// Inserts a new alias to the current layer of imports, if the key is not occupied, or no
     /// action will be done. Returns whether insertion is successful
     pub(crate) fn insert(&mut self, alias: StrRef, value: StrRef) -> bool {
+        debug!("Insert alias: {} -> {}", alias, value);
+
         match self.map.entry(alias) {
             Entry::Occupied(_) => false,
             Entry::Vacant(vacant) => {

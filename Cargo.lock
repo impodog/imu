@@ -170,6 +170,7 @@ dependencies = [
  "imuc_error",
  "imuc_ir",
  "imuc_lexer",
+ "log",
  "nonempty",
 ]
 
@@ -200,6 +201,7 @@ dependencies = [
  "imuc_error",
  "imuc_ir",
  "imuc_lexer",
+ "log",
 ]
 
 [[package]]

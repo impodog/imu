@@ -24,10 +24,38 @@ impl Default for StrRef {
 /// When the string is smaller than [`SMALL_STRING_THRESHOLD`], the Small variant is used and the
 /// string is cloned completely. Otherwise the Big variant is used and the string is stored in
 /// an Arc
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
+#[derive(Clone, Debug)]
 enum StrRefInner {
     Small(String),
     Big(Arc<String>),
+}
+impl StrRefInner {
+    fn as_str(&self) -> &str {
+        self
+    }
+}
+
+// Custom implementations of std traits
+impl std::cmp::PartialOrd for StrRefInner {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl std::cmp::Ord for StrRefInner {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+impl std::cmp::PartialEq for StrRefInner {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str().eq(other.as_str())
+    }
+}
+impl std::cmp::Eq for StrRefInner {}
+impl std::hash::Hash for StrRefInner {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.as_str().hash(state);
+    }
 }
 impl fmt::Display for StrRefInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -70,7 +98,8 @@ where
     T: Into<String>,
 {
     fn from(value: T) -> Self {
-        let value: String = value.into();
+        let mut value: String = value.into();
+        value.shrink_to_fit();
         if value.len() < SMALL_STRING_THRESHOLD {
             Self::Small(value)
         } else {
@@ -128,6 +157,15 @@ pub struct Cursor {
     pub column: usize,
 }
 
+impl Cursor {
+    pub fn with_column(self, column: usize) -> Self {
+        Self {
+            line: self.line,
+            column,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 /// A span containing file name, cursor position(left inclusive, right non-inclusive),
 /// useful for error reporting
@@ -142,20 +180,15 @@ pub struct Span {
 
 impl fmt::Display for Span {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if f.sign_plus() {
-            // FIXME: Read the file content, seek the cursor location
-            todo!()
-        } else {
-            write!(
-                f,
-                "{}@[{}:{}~{}:{}]",
-                self.file.get(),
-                self.start.line,
-                self.start.column,
-                self.end.line,
-                self.end.column
-            )?;
-        }
+        write!(
+            f,
+            "{}@[{}:{}~{}:{}]",
+            self.file.get(),
+            self.start.line,
+            self.start.column,
+            self.end.line,
+            self.end.column
+        )?;
         Ok(())
     }
 }

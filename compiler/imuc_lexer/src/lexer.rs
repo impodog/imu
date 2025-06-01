@@ -91,8 +91,13 @@ where
 
                 '@' => Token::new(TokenKind::UnOp(UnOp::Ref), self.diff(begin)),
                 '$' => Token::new(TokenKind::UnOp(UnOp::Ptr), self.diff(begin)),
-                '!' => Token::new(TokenKind::UnOp(UnOp::Not), self.diff(begin)),
-
+                '!' => match self.first() {
+                    '=' => {
+                        self.advance();
+                        Token::new(TokenKind::BinOp(BinOp::Ne), self.diff(begin))
+                    }
+                    _ => Token::new(TokenKind::UnOp(UnOp::Not), self.diff(begin)),
+                },
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
                     if self.first().is_ascii_digit() {
@@ -114,10 +119,30 @@ where
                 '|' => Token::new(TokenKind::BinOp(BinOp::Or), self.diff(begin)),
                 '&' => Token::new(TokenKind::BinOp(BinOp::And), self.diff(begin)),
                 '^' => Token::new(TokenKind::BinOp(BinOp::Xor), self.diff(begin)),
+                '=' => match self.first() {
+                    '=' => {
+                        self.advance();
+                        Token::new(TokenKind::BinOp(BinOp::Eq), self.diff(begin))
+                    }
+                    _ => Token::new(TokenKind::Symbol(Symbol::Assign), self.diff(begin)),
+                },
+                '<' => match self.first() {
+                    '=' => {
+                        self.advance();
+                        Token::new(TokenKind::BinOp(BinOp::Le), self.diff(begin))
+                    }
+                    _ => Token::new(TokenKind::BinOp(BinOp::Lt), self.diff(begin)),
+                },
+                '>' => match self.first() {
+                    '=' => {
+                        self.advance();
+                        Token::new(TokenKind::BinOp(BinOp::Ge), self.diff(begin))
+                    }
+                    _ => Token::new(TokenKind::BinOp(BinOp::Gt), self.diff(begin)),
+                },
                 ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
                 ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
                 '.' => Token::new(TokenKind::Symbol(Symbol::Dot), self.diff(begin)),
-                '=' => Token::new(TokenKind::Symbol(Symbol::Assign), self.diff(begin)),
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }

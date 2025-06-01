@@ -4,7 +4,7 @@ use imuc_lexer::token::{Pair, Symbol};
 pub struct TuplePatRule;
 
 impl Rule for TuplePatRule {
-    type Output = pat::TuplePat;
+    type Output = pat::PatInner;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
@@ -36,7 +36,16 @@ impl Rule for TuplePatRule {
 
                 list.push(pat);
             }
-            Ok(Some(pat::TuplePat(list)))
+            if list.len() == 1 && !comma {
+                let pat = list
+                    .pop()
+                    .expect("list should contain a value since its len is 1");
+                Ok(Some(pat.into_inner()))
+            } else {
+                // NOTE: This does not consider empty tuples, but the pattern will be extracted
+                // as unit by the converter
+                Ok(Some(pat::PatInner::Tuple(pat::TuplePat(list))))
+            }
         } else {
             Ok(None)
         }

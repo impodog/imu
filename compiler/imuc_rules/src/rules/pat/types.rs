@@ -143,6 +143,11 @@ impl Rule for TypeRule {
                     kind: pat::TypeKind::Res(ResTy::Unit),
                     span: parser.file_info().into_span(cursor_begin),
                 }))
+            } else if list.len() == 1 && !comma {
+                let ty = list
+                    .pop()
+                    .expect("list should contain a value since its len is 1");
+                Ok(Some(ty))
             } else {
                 Ok(Some(pat::Type {
                     flags,

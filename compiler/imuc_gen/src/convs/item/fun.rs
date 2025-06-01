@@ -43,7 +43,7 @@ impl Convert<()> for FunConv {
         let param = convs::PatConv {
             requires_ty: true,
             discard_name_warn: false,
-            name: Some(ctx::mangle::mangle_fun_ty(name.as_str()).into()),
+            name: None,
         }
         .convert(ctx, &input.param)?
         .expect("PatConv should not return None when requires_ty is enabled");
@@ -73,15 +73,38 @@ impl Convert<()> for FunConv {
             })
             .clone();
 
+        // This part pre-adds the function, so that it can be used recursively
+
+        // Add to globals so that it can be called locally
+        let globs = ctx.globs.clone();
+        globs
+            .write()
+            .unwrap()
+            .load_fun(ctx.bottom_mut(), name.clone(), ptr_ty);
+        // Add to import aliases
+        if !ctx.body_mut().insert_import(alias, name.clone()) {
+            ctx.push_error(
+                ConvError::new(Severity::Warn, input.span())
+                    .with_head("Functions with the same name"),
+            );
+        }
+
         // Work to compile body expression
         ctx.push_body(name.as_str(), self_ty, false);
+        // We push stack record here to also include the added arguments
+        ctx.body_mut().push_stack_record();
+        // Reserve memory for arguments
+        let start = ctx.body_mut().push_stack(param.size_or(input.span())?);
         // Assign arguments to current namespace
         convert_let(
             ctx,
             &input.param,
-            Conversion::Value(Some(Value::new(param.clone(), Bytes::start()))),
+            Conversion::Value(Some(Value::new(param.clone(), start))),
         )?;
-        let value = convs::BodyConv.convert(ctx, &input.body)?;
+        let value = convs::BodyConv {
+            pre_stack_record: true,
+        }
+        .convert(ctx, &input.body)?;
         let body = ctx
             .pop_body()
             .expect("a body should exist after pushing")
@@ -99,24 +122,11 @@ impl Convert<()> for FunConv {
         ctx.fun.insert(
             name.clone(),
             IrFun {
-                name: name.clone(),
+                name,
                 sig: FunSig { ret, param },
                 body: CmdBody::new(body),
             },
         );
-        // Add to globals so that it can be called locally
-        let globs = ctx.globs.clone();
-        globs
-            .write()
-            .unwrap()
-            .load_fun(ctx.bottom_mut(), name.clone(), ptr_ty);
-        // Add to import aliases
-        if !ctx.body_mut().insert_import(alias, name) {
-            ctx.push_error(
-                ConvError::new(Severity::Warn, input.span())
-                    .with_head("Functions with the same name"),
-            );
-        }
 
         Ok(())
     }

@@ -10,7 +10,7 @@ use std::sync::OnceLock;
 /// A clonable immutable handle to [`TyInner`], representing a type
 ///
 /// This should not cause looped reference when creating
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Ty(Arc<(TyInner, OnceLock<Option<Bytes>>)>);
 impl Deref for Ty {
     type Target = TyInner;
@@ -146,7 +146,7 @@ impl Ty {
 }
 
 /// The inner contents of a type, containing name, sources, and memory info
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TyInner {
     pub name: StrRef,
     pub kind: TyKind,
@@ -165,7 +165,7 @@ impl TyInner {
 }
 
 /// A part of [`TyInner`], holding the memory layout and features of the type
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum TyKind {
     Res(ResTy),
     Fun { param: TyItem, ret: TyItem },
@@ -176,7 +176,7 @@ pub enum TyKind {
 }
 
 /// A type item included in the definition of another type
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum TyItem {
     Solid(Ty),
     Pending(StrRef),
@@ -201,11 +201,11 @@ impl TyItem {
 }
 
 /// A tuple type, which is an array of inner types
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Tuple(pub Vec<TyItem>);
 
 /// A struct type, which is a map from names to field types
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Cus(pub BTreeMap<StrRef, TyItem>);
 
 impl Rw for ResTy {

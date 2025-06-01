@@ -17,6 +17,11 @@ impl Pat {
             span,
         }
     }
+
+    /// Extracts the [`PatInner`], panics if the inner is borrowed
+    pub fn into_inner(self) -> PatInner {
+        Arc::into_inner(self.inner).expect("inner pattern should not be borrowed")
+    }
 }
 
 impl Deref for Pat {

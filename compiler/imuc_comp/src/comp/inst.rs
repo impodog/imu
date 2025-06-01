@@ -147,11 +147,15 @@ impl CompInst {
 
         let mut ctx = ctx::ctx::Ctx::new(self.config.target.module.clone());
         imuc_gen::convs::SubmoduleConv.convert(&mut ctx, &ast).ok();
+        ctx.make_start_fun("#START");
 
         let any_error = {
             let mut lock = ctx.error_queue.write().unwrap();
-            let any_error = !lock.is_empty();
+            let mut any_error = false;
             for err in std::mem::take(&mut *lock).into_iter() {
+                if err.severity >= errors::ctx::Severity::Error {
+                    any_error = true;
+                }
                 crate::file::FILE_MAP.report_error(err);
             }
             any_error
@@ -164,7 +168,7 @@ impl CompInst {
         info!("Middle-end done without errors, now generating module");
 
         let module = ir::module::Module {
-            ty: ctx.ty.to_map(),
+            ty: ctx.ty.extract_map(),
             fun: std::mem::take(&mut ctx.fun).into_map(),
         };
 

@@ -26,10 +26,10 @@ impl Priority for BinOp {
         match self {
             Self::Mul | Self::Div => 7,
             Self::Add | Self::Sub => 8,
-            Self::And => 10,
-            Self::Xor => 11,
-            Self::Or => 12,
-            Self::Eq | Self::Lt | Self::Le | Self::Gt | Self::Ge => 13,
+            Self::Eq | Self::Ne | Self::Lt | Self::Le | Self::Gt | Self::Ge => 13,
+            Self::And => 14,
+            Self::Xor => 15,
+            Self::Or => 16,
         }
     }
 

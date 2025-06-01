@@ -83,7 +83,12 @@ impl FileContent {
             if column > diff {
                 None
             } else {
-                Some(start + column + 1)
+                // No need to plus 1 because line 0 starts with 0
+                if line == 0 {
+                    Some(start + column)
+                } else {
+                    Some(start + column + 1)
+                }
             }
         } else {
             None

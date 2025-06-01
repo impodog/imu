@@ -2,6 +2,7 @@ use crate::prelude::*;
 use ast::bind::{Bind, Let};
 use ast::expr::Expr;
 use ast::pat::{IdentKind, IdentPat, Pat, PatInner};
+use imuc_lexer::token::ResTy;
 use ir::sym::ty::TyKind;
 
 pub struct BindConv;
@@ -41,11 +42,22 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
             } else {
                 None
             };
-            let value = val.with_hint(ty).into_value(ctx)?;
+            let value = val.with_hint(ty.clone()).into_value(ctx)?;
             match &ident.ident {
                 IdentKind::Unused => Ok(()),
                 IdentKind::Value(name) => {
                     if let Some(value) = value {
+                        if let Some(ref ty) = ty {
+                            if !value.ty.test_eq(ty) {
+                                ctx.push_error(
+                                    ConvError::new(Severity::Error, pat.span()).with_text(
+                                        "Let required type and actual type mismatch",
+                                        format!("Specified {}, but got {}", ty.name, value.ty.name),
+                                    ),
+                                );
+                                return Err(SendError::new_error());
+                            }
+                        }
                         ctx.body_mut()
                             .locals_mut()
                             .value
@@ -70,6 +82,9 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                 SendError::default()
             })?;
             match &value.ty.kind {
+                // NOTE: An edge case that the pattern is an empty tuple, then the value should always
+                // be a unit value
+                TyKind::Res(ResTy::Unit) if tuple.0.is_empty() => Ok(()),
                 TyKind::Tuple(tuple_ty) => {
                     if tuple.0.len() != tuple_ty.0.len() {
                         ctx.push_error(ConvError::new(Severity::Error, pat.span()).with_text(

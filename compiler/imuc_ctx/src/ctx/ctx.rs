@@ -69,7 +69,7 @@ impl Ctx {
         is_module: bool,
     ) -> &mut super::Body {
         let base_name = self.body.last().name();
-        let name = format!("{base_name}.{name}");
+        let name = super::mangle::mangle_inside_body(base_name, name);
         let imports = if is_module {
             super::Imports::default()
         } else {
@@ -133,5 +133,51 @@ impl Ctx {
             error_queue.write().unwrap().push_back(error);
             SendError::default()
         }
+    }
+
+    /// Creates the entry point function for the module with given name.
+    /// This takes the bottom body and pushes the function into current map
+    pub fn make_start_fun(&mut self, name: &'static str) {
+        let name = StrRef::from(self.mangle_body(name));
+        let cmd = self.bottom_mut().take_cmd();
+
+        let param_ty = Ty::unit();
+        let ret_ty = Ty::unit();
+
+        let fun_ty_name = StrRef::from(super::mangle::mangle_fun_sig(name.as_str()));
+        let fun_ty = self
+            .ty
+            .or_insert_with(fun_ty_name.clone(), || {
+                Ty::new(sym::ty::TyInner::new(
+                    fun_ty_name,
+                    sym::ty::TyKind::Fun {
+                        param: param_ty.clone().into(),
+                        ret: ret_ty.clone().into(),
+                    },
+                ))
+            })
+            .clone();
+
+        let fun_ptr_ty_name = StrRef::from(super::mangle::mangle_ptr(fun_ty.name.as_str()));
+        let _fun_ptr_ty = self
+            .ty
+            .or_insert_with(fun_ptr_ty_name.clone(), move || {
+                Ty::new(sym::ty::TyInner::new(
+                    fun_ptr_ty_name,
+                    sym::ty::TyKind::Ptr(fun_ty.into()),
+                ))
+            })
+            .clone();
+        self.fun.insert(
+            name.clone(),
+            sym::Fun {
+                body: cmd::CmdBody::new(cmd),
+                name,
+                sig: sym::FunSig {
+                    param: param_ty,
+                    ret: ret_ty,
+                },
+            },
+        );
     }
 }

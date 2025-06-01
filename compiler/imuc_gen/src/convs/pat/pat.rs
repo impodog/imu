@@ -63,6 +63,11 @@ impl Convert<Option<Ty>> for PatConv {
                 }
             }
             PatInner::Tuple(tuple) => {
+                if tuple.0.is_empty() {
+                    // NOTE: Patterns can be empty, because parser did not handle this edge case
+                    return Ok(Some(Ty::unit()));
+                }
+
                 let mut tuple_ty = Vec::new();
                 let mut name = String::new();
                 name.push('(');
@@ -81,7 +86,10 @@ impl Convert<Option<Ty>> for PatConv {
                         return wildcard(&sub_pat.span);
                     }
                 }
-                name.pop();
+                // Only pop trailing commas if any
+                if name != "(" {
+                    name.pop();
+                }
                 name.push(')');
                 let name = if let Some(given_name) = given_name {
                     given_name

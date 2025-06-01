@@ -12,7 +12,7 @@ impl Converter for BinExprConv {
 enum BinOpKind {
     Arithmetic(fn(NumBytes, Bytes, Ptr) -> Cmd, Bytes),
     Compare(i8),
-    CompareEq(i8),
+    CompareNot(i8),
 }
 
 impl Convert<Value> for BinExprConv {
@@ -78,10 +78,11 @@ impl Convert<Value> for BinExprConv {
             BinOp::And => BinOpKind::Arithmetic(Cmd::And, opd_bytes),
             BinOp::Xor => BinOpKind::Arithmetic(Cmd::Xor, opd_bytes),
             BinOp::Eq => BinOpKind::Compare(0),
+            BinOp::Ne => BinOpKind::CompareNot(0),
             BinOp::Lt => BinOpKind::Compare(-1),
             BinOp::Gt => BinOpKind::Compare(1),
-            BinOp::Le => BinOpKind::CompareEq(-1),
-            BinOp::Ge => BinOpKind::CompareEq(1),
+            BinOp::Le => BinOpKind::CompareNot(1),
+            BinOp::Ge => BinOpKind::CompareNot(-1),
         };
 
         match kind {
@@ -109,11 +110,10 @@ impl Convert<Value> for BinExprConv {
                     ty: Ty::bool(),
                 })
             }
-            BinOpKind::CompareEq(target) => {
+            BinOpKind::CompareNot(target) => {
                 let body = ctx.body_mut();
                 let compare_ptr = body.push_stack(Bytes::byte());
-                let compare_lhs = body.push_stack(Bytes::byte());
-                let compare_rhs = body.push_stack(Bytes::byte());
+                let inverse_ptr = body.push_stack(Bytes::byte());
                 let ptr = body.push_stack(Bytes::byte());
                 if is_float {
                     body.push(Cmd::Testf(bytes, lhs.ptr, rhs.ptr));
@@ -121,8 +121,7 @@ impl Convert<Value> for BinExprConv {
                     body.push(Cmd::Test(bytes, lhs.ptr, rhs.ptr));
                 }
                 body.push(Cmd::EqI8(compare_ptr, target));
-                body.push(Cmd::EqI8(compare_ptr, 0));
-                body.push(Cmd::Or(NumBytes::I8, compare_lhs, compare_rhs));
+                body.push(Cmd::Not(NumBytes::I8, inverse_ptr));
                 Ok(Value {
                     ptr,
                     ty: Ty::bool(),

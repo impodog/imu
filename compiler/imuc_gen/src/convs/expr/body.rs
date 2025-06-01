@@ -1,7 +1,12 @@
 use crate::prelude::*;
 use ast::expr::Body;
 
-pub struct BodyConv;
+#[derive(Default)]
+pub struct BodyConv {
+    /// Determines if the stack record has been previously set. This is useful when you want to add
+    /// some manual commands before the body, such as loading function arguments
+    pub pre_stack_record: bool,
+}
 
 impl Converter for BodyConv {
     type Input = Body;
@@ -11,7 +16,9 @@ impl Convert<Value> for BodyConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         // Push internal body
         ctx.body_mut().push_locals();
-        ctx.body_mut().push_stack_record();
+        if !self.pre_stack_record {
+            ctx.body_mut().push_stack_record();
+        }
         for bind in input.bind.iter() {
             convs::BindConv.convert(ctx, bind)?;
         }
@@ -25,6 +32,7 @@ impl Convert<Value> for BodyConv {
                     if ctx.error_queue.read().unwrap().len() >= crate::conv::ERROR_QUEUE_LIMIT {
                         return Err(SendError::new_error());
                     }
+                    result = None;
                 }
             }
         }

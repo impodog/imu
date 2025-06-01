@@ -97,6 +97,11 @@ impl Bytes {
         Self(1)
     }
 
+    /// Creates a representation of bytes with zero length
+    pub const fn null() -> Self {
+        Self(0)
+    }
+
     /// Creates a stack ptr to init position
     pub const fn start() -> Self {
         Self(0)

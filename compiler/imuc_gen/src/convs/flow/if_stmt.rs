@@ -46,15 +46,16 @@ impl Convert<Value> for IfElseConv {
                                 .span()
                                 .expect("expected valueless expression to return None"),
                         )
-                        .with_head("If expression requires a bool condition"),
+                        .with_head("If condition requires a Bool condition"),
                     );
                     SendError::new_error()
                 })?;
             if !cond.ty.test_eq(&Ty::bool()) {
                 ctx.push_error(ConvError::new(Severity::Error, if_stmt.span()).with_text(
                     "If expression requires a bool condition",
-                    format!("Found {}", cond.ty.name),
+                    format!("Expected Bool for if condition, found {}", cond.ty.name),
                 ));
+                assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
                 return Err(SendError::new_error());
             }
 
@@ -66,7 +67,7 @@ impl Convert<Value> for IfElseConv {
             ctx.body_mut().push(Cmd::End);
 
             // Convert the if body, and add a placeholder that jumps to the end of everything
-            let value = convs::BodyConv.convert(ctx, &if_stmt.body)?;
+            let value = convs::BodyConv::default().convert(ctx, &if_stmt.body)?;
             let final_jump_index = ctx.body().len();
             ctx.body_mut().push(Cmd::End);
             final_placeholders.push(final_jump_index);
@@ -78,6 +79,7 @@ impl Convert<Value> for IfElseConv {
                     "Chained ifs type mismatch",
                     format!("Required {}, found {}", prev_type.name, value.ty.name),
                 ));
+                assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
                 return Err(SendError::new_error());
             }
 
@@ -94,6 +96,7 @@ impl Convert<Value> for IfElseConv {
                 ),
             );
 
+            // Revert stack location before the next if/else branch
             revert_stack_and_dupli(ctx, value.ptr)?;
         }
         let prev_type = ty
@@ -103,12 +106,13 @@ impl Convert<Value> for IfElseConv {
 
         // Convert final else stmt, if any
         if let Some(else_stmt) = &input.end {
-            let value = convs::BodyConv.convert(ctx, else_stmt)?;
+            let value = convs::BodyConv::default().convert(ctx, else_stmt)?;
             if !prev_type.test_eq(&value.ty) {
                 ctx.push_error(ConvError::new(Severity::Error, else_stmt.span()).with_text(
                     "Chained ifs type mismatch with else",
                     format!("Required {}, found {}", prev_type.name, value.ty.name),
                 ));
+                assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
                 return Err(SendError::new_error());
             }
             revert_stack_and_dupli(ctx, value.ptr)?;
@@ -118,6 +122,14 @@ impl Convert<Value> for IfElseConv {
                     .get_mut(index)
                     .expect("Cmd placeholder index should exist") = Cmd::Jump(final_ptr);
             }
+        } else if !prev_type.test_eq(&Ty::unit()) {
+            // If there is no else branch and there is an return value, an error is thrown
+            ctx.push_error(ConvError::new(Severity::Error, input.span()).with_text(
+                "Expected returned value on all pathes, but there is no else branch",
+                format!("Expected {}, but else branch is missing", prev_type.name),
+            ));
+            assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
+            return Err(SendError::new_error());
         }
 
         ctx.body_mut().pop_stack_record(ret_type_size);

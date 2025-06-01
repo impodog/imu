@@ -70,12 +70,14 @@ impl Body {
 
     /// Memorize the current stack pointer, to be reverted later
     pub fn push_stack_record(&mut self) {
+        debug!("Push stack record: {:?}", self.stack());
         self.stack_record.push(self.stack());
     }
 
     /// Reverts to the given stack pointer, asserting it is lower than or equal to current stack
     pub fn revert_stack_record_to(&mut self, stack: cmd::Ptr) {
-        assert!(self.stack >= stack);
+        debug!("Revert stack record: {:?} to {:?}", self.stack(), stack);
+        debug_assert!(self.stack >= stack);
         self.push(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }
@@ -226,8 +228,8 @@ impl Body {
     }
 
     /// Takes the list of cmd of the body when exporting as a function
-    pub fn take_cmd(self) -> Vec<cmd::Cmd> {
-        self.list
+    pub fn take_cmd(&mut self) -> Vec<cmd::Cmd> {
+        std::mem::take(&mut self.list)
     }
 
     /// Adds a list of commands into current list. This is not commonly used

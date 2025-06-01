@@ -60,7 +60,7 @@ impl FileMap {
                 let start = handle.query(err.span.start.with_column(1));
                 let end = handle.query(err.span.end);
                 if let Some((start, end)) = start.and_then(|start| end.map(|end| (start, end))) {
-                    let current_line = err.span.start.line;
+                    let mut current_line = err.span.start.line;
                     let align = count_digits(err.span.end.line);
                     let mut line_break = true;
                     for ch in handle.content()[start..end].chars() {
@@ -74,10 +74,12 @@ impl FileMap {
                             result.push_str(number.as_str());
                             result.push(' ');
                             result.push('|');
+                            result.push(' ');
                             line_break = false;
                         }
                         if ch == '\n' {
                             line_break = true;
+                            current_line += 1;
                         }
                         result.push(ch);
                     }

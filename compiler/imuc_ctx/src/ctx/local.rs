@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::collections::BTreeMap;
 
 /// Information required to compile a value object
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Value {
     pub ty: sym::Ty,
     pub ptr: cmd::Ptr,

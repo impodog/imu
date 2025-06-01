@@ -29,7 +29,11 @@ impl Convert<Value> for LoopConv {
         // Placeholder for a pointer out of the loop
         body.push(Cmd::End);
 
-        let value = convs::BodyConv.convert(ctx, &input.body)?;
+        let value = convs::BodyConv::default()
+            .convert(ctx, &input.body)
+            .inspect_err(|_err| {
+                assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
+            })?;
         if !value.ty.test_eq(&Ty::unit()) {
             ctx.push_error(
                 ConvError::new(Severity::Warn, input.body.span)

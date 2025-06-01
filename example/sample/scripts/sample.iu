@@ -1,6 +1,7 @@
-fun unit() -> Unit {
-
-}
-fun main() {
-    unit()
+fun test(value: I64) -> Bool {
+    let a: Bool = 123;
+    // Errors above(type mismatch) & below(no returning else branch)
+    if 120 == 123 {
+        true
+    }
 }

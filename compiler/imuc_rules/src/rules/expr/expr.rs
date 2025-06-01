@@ -96,6 +96,16 @@ where
         let mut prev_is_expr = false;
         loop {
             let cursor_begin = parser.relative_cursor();
+
+            // FIXME: Special test used by if ... `{`, should we make it more uniform?
+            if prev_is_expr
+                && parser
+                    .peek()?
+                    .is_some_and(|input| end.contains(&input.kind))
+            {
+                break;
+            }
+
             if let Some(expr) = rules::ElemExprRule.parse(parser)? {
                 if prev_is_expr {
                     let ExprItem {

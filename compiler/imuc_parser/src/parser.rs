@@ -141,8 +141,12 @@ where
                 let expect = {
                     use std::fmt::Write;
                     let mut expect = String::new();
-                    kind.to_iter().for_each(|token| {
-                        write!(&mut expect, "{:?},", token)
+                    kind.to_iter().enumerate().for_each(|(index, token)| {
+                        if index > 0 {
+                            write!(&mut expect, ",")
+                                .expect("formatting error message should not fail");
+                        }
+                        write!(&mut expect, "{:?}", token)
                             .expect("formatting error message should not fail");
                     });
                     expect

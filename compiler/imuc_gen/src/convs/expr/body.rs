@@ -4,7 +4,8 @@ use ast::expr::Body;
 #[derive(Default)]
 pub struct BodyConv {
     /// Determines if the stack record has been previously set. This is useful when you want to add
-    /// some manual commands before the body, such as loading function arguments
+    /// some manual commands before/after the body, such as loading function arguments,
+    /// or loop mit handling
     pub pre_stack_record: bool,
 }
 
@@ -56,6 +57,7 @@ impl Convert<Value> for BodyConv {
             .expect("a stack record should exist after body conversion");
         ctx.body_mut()
             .push(Cmd::Overwrite(size, stack_record, result.ptr));
+
         debug_assert!(ctx.body_mut().pop_stack_record(size));
 
         let ptr = ctx.body_mut().stack() - size;

@@ -78,6 +78,14 @@ impl Body {
     pub fn revert_stack_record_to(&mut self, stack: cmd::Ptr) {
         debug!("Revert stack record: {:?} to {:?}", self.stack(), stack);
         debug_assert!(self.stack >= stack);
+        self.force_stack_to(stack);
+    }
+
+    /// Forces to revert stack to the given pointer, given that the current stack should be larger
+    /// than the stack pointer. This is only used after loop statements since there are special jump
+    /// commands by mit
+    pub fn force_stack_to(&mut self, stack: cmd::Ptr) {
+        debug!("Force stack to {:?}", stack);
         self.push(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }

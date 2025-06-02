@@ -1,7 +1,10 @@
 fun test(value: I64) -> Bool {
-    let a: Bool = 123;
-    // Errors above(type mismatch) & below(no returning else branch)
-    if 120 == 123 {
-        true
-    }
+    let x = 1;
+    loop {
+        if x == 1 {
+            mit 1;
+        } else {
+            mit 0;
+        };
+    } == 0
 }

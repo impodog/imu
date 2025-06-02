@@ -32,7 +32,8 @@ impl Convert<Value> for LoopConv {
         let value = convs::BodyConv::default()
             .convert(ctx, &input.body)
             .inspect_err(|_err| {
-                assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
+                debug_assert!(ctx.body_mut().pop_stack_record(Bytes::null()));
+                debug_assert!(ctx.body_mut().pop_loop_record().is_some());
             })?;
         if !value.ty.test_eq(&Ty::unit()) {
             ctx.push_error(
@@ -68,7 +69,7 @@ impl Convert<Value> for LoopConv {
                 Ty::unit()
             });
         let ty_size = ty.size_or(input.span())?;
-        body.revert_stack_record_to(loop_record.stack + ty_size);
+        body.force_stack_to(loop_record.stack + ty_size);
         // Calculate the return value pointer
         let ptr = body.stack() - ty_size;
         Ok(Value { ty, ptr })

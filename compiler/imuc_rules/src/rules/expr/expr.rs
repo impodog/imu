@@ -179,7 +179,7 @@ where
             merge_symbols(parser, op, &mut stack).map_err(|err| parser.map_err(err))?;
         }
         match stack.len() {
-            0 => unreachable!("stack should be empty at this point"),
+            0 => Ok(Some(expr::Expr::Prim(prim::Prim::Unit))),
             1 => Ok(Some(stack.into_iter().next().unwrap().expr)),
             _ => parser.error(errors::SyntaxError::TooFewOp),
         }

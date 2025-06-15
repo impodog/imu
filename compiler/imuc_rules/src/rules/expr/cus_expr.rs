@@ -2,9 +2,9 @@ use crate::prelude::*;
 use imuc_lexer::token::{Ident, Pair, Symbol};
 use std::collections::BTreeMap;
 
-pub struct StructExprRule;
+pub struct CusExprRule;
 
-impl Rule for StructExprRule {
+impl Rule for CusExprRule {
     type Output = expr::Cus;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
@@ -28,20 +28,28 @@ impl Rule for StructExprRule {
                     }));
                 }
 
+                // Used by shorthand field init
+                let cursor_begin = parser.relative_cursor();
+
                 let name = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
 
-                parser.next_expected(&TokenKind::Symbol(Symbol::Colon))?;
-
-                let expr = rules::ExprRule {
-                    end: TokenKind::Symbol(Symbol::Comma),
-                }
-                .parse(parser)?
-                .ok_or_else(|| {
-                    parser.map_err(errors::SyntaxError::ExpectedIn {
-                        expect: "Expr".to_owned(),
-                        context: "tuple expression".to_owned(),
+                let expr = if parser.next_if(&TokenKind::Symbol(Symbol::Colon))?.is_some() {
+                    rules::ExprRule {
+                        end: TokenKind::Symbol(Symbol::Comma),
+                    }
+                    .parse(parser)?
+                    .ok_or_else(|| {
+                        parser.map_err(errors::SyntaxError::ExpectedIn {
+                            expect: "Expr".to_owned(),
+                            context: "tuple expression".to_owned(),
+                        })
+                    })?
+                } else {
+                    expr::Expr::Value(expr::Value {
+                        value: expr::ValueInner::Name(name.value.into()),
+                        span: parser.file_info().into_span(cursor_begin),
                     })
-                })?;
+                };
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
 

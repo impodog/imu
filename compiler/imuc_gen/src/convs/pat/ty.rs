@@ -13,8 +13,15 @@ impl Convert<Option<Ty>> for TypeConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Ty>> {
         let ty = match &input.kind {
             TypeKind::Wildcard => return Ok(None),
-            TypeKind::Single(name) => {
-                let ty = ctx.get_type(name).ok_or_else(|| {
+            TypeKind::Single(ref name) => {
+                // To make name a immutable reference that can be altered
+                let mut name = name;
+                // extract alias
+                let original = ctx.body().get_import(name.as_str());
+                if let Some(ref original) = original {
+                    name = original;
+                }
+                let ty = ctx.get_type(name.as_str()).ok_or_else(|| {
                     ctx.push_error(
                         ConvError::new(Severity::Error, input.span)
                             .with_text("Undefined type", format!("Undefined type: {}", name)),
@@ -75,7 +82,7 @@ impl Convert<Option<Ty>> for TypeConv {
         let ty = match input.flags {
             PatFlags::Unique => ty,
             PatFlags::Shared => {
-                let name: StrRef = ctx::mangle::mangle_ptr(ty.name.as_str()).into();
+                let name: StrRef = ctx::mangle::mangle_ref(ty.name.as_str()).into();
                 ctx.ty
                     .or_insert_with(name.clone(), || {
                         Ty::new(ir::sym::ty::TyInner {
@@ -87,7 +94,7 @@ impl Convert<Option<Ty>> for TypeConv {
                     .clone()
             }
             PatFlags::Stack => {
-                let name: StrRef = ctx::mangle::mangle_ref(ty.name.as_str()).into();
+                let name: StrRef = ctx::mangle::mangle_ptr(ty.name.as_str()).into();
                 ctx.ty
                     .or_insert_with(name.clone(), || {
                         Ty::new(ir::sym::ty::TyInner {

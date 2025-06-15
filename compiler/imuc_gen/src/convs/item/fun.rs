@@ -85,7 +85,7 @@ impl Convert<()> for FunConv {
         if !ctx.body_mut().insert_import(alias, name.clone()) {
             ctx.push_error(
                 ConvError::new(Severity::Warn, input.span())
-                    .with_head("Functions with the same name"),
+                    .with_head("Functions with the same name, this one will not have an alias"),
             );
         }
 

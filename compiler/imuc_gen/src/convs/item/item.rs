@@ -25,6 +25,7 @@ impl Convert<()> for ItemConv {
                 let name = ctx.mangle_with_self(input.name.as_str());
                 let conv = convs::CusConv {
                     name: name.into(),
+                    alias: input.name.clone(),
                     public: input.public,
                 };
                 conv.convert(ctx, cus)?;

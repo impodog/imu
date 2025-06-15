@@ -283,7 +283,7 @@ impl Rw for Ty {
                     external: input.external(),
                 }))
             }
-            '&' => {
+            '@' => {
                 let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
                     name,
@@ -291,7 +291,7 @@ impl Rw for Ty {
                     external: input.external(),
                 }))
             }
-            '@' => {
+            '$' => {
                 let item = TyItem::read(LineReader::new(&content[1..], external))?;
                 Ok(Ty::new(TyInner {
                     name,
@@ -364,11 +364,11 @@ impl Rw for Ty {
                 ret.write(&mut output)?;
             }
             TyKind::Ref(ty) => {
-                write!(output, "&")?;
+                write!(output, "@")?;
                 ty.write(output)?;
             }
             TyKind::Ptr(ty) => {
-                write!(output, "@")?;
+                write!(output, "$")?;
                 ty.write(output)?;
             }
             TyKind::Tuple(tuple) => {

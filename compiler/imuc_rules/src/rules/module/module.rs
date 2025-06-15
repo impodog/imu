@@ -66,6 +66,7 @@ impl Rule for ModuleRules<'_> {
                 LocalRef::Owned(local)
             };
 
+            // Add submodules started with "mod"
             let mut sub_nodes = Vec::new();
             while parser.next_if(&TokenKind::Keyword(Keyword::Mod))?.is_some() {
                 let cursor_begin = parser.relative_cursor();
@@ -126,6 +127,12 @@ impl Rule for ModuleRules<'_> {
             let mut items = Vec::new();
             while let Some(item) = rules::ItemRule.parse(parser)? {
                 items.push(item);
+            }
+            if let Some(remain) = parser.peek()? {
+                return Err(parser.map_err(errors::SyntaxError::Expected {
+                    expect: "Item".to_owned(),
+                    found: remain.kind,
+                }));
             }
             items
         };

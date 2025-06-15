@@ -22,7 +22,7 @@ impl Rule for ElemExprRule {
             Some(expr::Expr::Flow(flow))
         } else if let Some(tuple) = rules::TupleExprRule.parse(parser)? {
             Some(tuple)
-        } else if let Some(struct_stmt) = rules::StructExprRule.parse(parser)? {
+        } else if let Some(struct_stmt) = rules::CusExprRule.parse(parser)? {
             Some(expr::Expr::Cus(struct_stmt))
         } else if parser.next_if(&TokenKind::Keyword(Keyword::Mit))?.is_some() {
             let mut index = 0;

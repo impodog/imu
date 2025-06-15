@@ -1,10 +1,12 @@
-fun test(value: I64) -> Bool {
-    let x = 1;
-    loop {
-        if x == 1 {
-            mit 1;
-        } else {
-            mit 0;
-        };
-    } == 0
+cus Dog {
+    age: I64,
+    name: $Str
 }
+
+fun main() {
+    let dog = Dog (
+        age: -1,
+        name: $"Good"
+    );
+}
+

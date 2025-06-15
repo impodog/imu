@@ -156,9 +156,9 @@ impl Rule for TypeRule {
                 }))
             }
         } else if flags != pat::PatFlags::Unique {
-            Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
+            Err(parser.map_err(errors::SyntaxError::ExpectedIn {
                 expect: "Type".to_owned(),
-                after: TokenKind::UnOp(UnOp::Ref),
+                context: "Ref/Ptr".to_owned(),
             }))
         } else {
             Ok(None)

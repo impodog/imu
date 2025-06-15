@@ -2,7 +2,10 @@ use crate::prelude::*;
 use ast::{item::Cus, module::Public};
 
 pub struct CusConv {
+    /// The complete unique name of the cus type
     pub name: StrRef,
+    /// An alias of the type implied in current module
+    pub alias: StrRef,
     pub public: Public,
 }
 
@@ -14,6 +17,7 @@ impl Convert<()> for CusConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<()> {
         let CusConv {
             name,
+            alias,
             public: _public,
         } = self;
         let ty = convs::PatConv {
@@ -30,6 +34,14 @@ impl Convert<()> for CusConv {
             );
         }
         ctx.ty.insert(ty);
+
+        // Add to import aliases
+        if !ctx.body_mut().insert_import(alias, name) {
+            ctx.push_error(
+                ConvError::new(Severity::Warn, input.elem.span())
+                    .with_head("Cus with the same name, this one will not have an alias"),
+            );
+        }
         Ok(())
     }
 }

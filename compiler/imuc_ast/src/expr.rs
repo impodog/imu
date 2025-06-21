@@ -64,6 +64,7 @@ pub struct Call {
 pub enum ValueInner {
     Unused,
     Name(imuc_lexer::StrRef),
+    Nested(nonempty::NonEmpty<imuc_lexer::StrRef>),
     Res(imuc_lexer::token::ResVal),
 }
 

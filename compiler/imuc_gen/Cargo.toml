@@ -10,3 +10,4 @@ imuc_error = { path = "../imuc_error", features = ["ctx"] }
 imuc_ir = { path = "../imuc_ir" }
 imuc_ctx = { path = "../imuc_ctx" }
 log = "0.4.27"
+nonempty = "0.11.0"

@@ -10,9 +10,9 @@ impl Rule for ForRule {
     where
         I: ParserSequence<'s>,
     {
-        let ty = rules::PatRule.parse(parser)?.ok_or_else(|| {
+        let ty = rules::TypeRule.parse(parser)?.ok_or_else(|| {
             parser.map_err(errors::SyntaxError::ExpectedIn {
-                expect: "Pat".to_owned(),
+                expect: "Type".to_owned(),
                 context: "type implementation".to_owned(),
             })
         })?;

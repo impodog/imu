@@ -1,12 +1,21 @@
-cus Dog {
-    age: I64,
-    name: $Str
+cus Cute {
+    d: I32,
 }
+cus Dog {
+    a: I64,
+    b: @Str,
+    c: Cute,
+}
+for Dog {
+    fun cute(self: Self) -> I32 {
+        let b = self.b;
+        self.c.d
+    }
 
+    fun hello(self: Self) {
+        let ans = Dog.cute(self);
+    }
+}
 fun main() {
-    let dog = Dog (
-        age: -1,
-        name: $"Good"
-    );
 }
 

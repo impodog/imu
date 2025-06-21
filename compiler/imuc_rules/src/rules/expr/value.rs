@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Ident, ResVal, Symbol};
+use imuc_lexer::token::{Ident, ResVal};
 
 lazy_tokens!(ResValTokens, ResVal::True, ResVal::False);
 
@@ -14,16 +14,7 @@ impl Rule for ValueRule {
     {
         let cursor_begin = parser.relative_cursor();
         let value = if let Some(input) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
-            let mut rest = nonempty::NonEmpty::new(parser.look_up.insert(input.value));
-            while parser.next_if(&TokenKind::Symbol(Symbol::Dot))?.is_some() {
-                let input = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
-                rest.push(parser.look_up.insert(input.value));
-            }
-            if rest.len() == 1 {
-                expr::ValueInner::Name(rest.head)
-            } else {
-                expr::ValueInner::Nested(rest)
-            }
+            expr::ValueInner::Name(parser.look_up.insert(input.value))
         } else if let Some(_input) = parser.next_if(&TokenKind::Ident(Ident::Unused))? {
             expr::ValueInner::Unused
         } else if let Some(input) = parser.next_if(&ResValTokens)? {

@@ -1,9 +1,102 @@
 use crate::prelude::*;
 use ast::expr::BinExpr;
 
+use imuc_ast::expr::Expr;
 use imuc_lexer::token::{BinOp, ResTy};
+use ir::sym::ty::TyKind;
 
-pub struct BinExprConv;
+use super::ExprSolver;
+
+fn resolve_function(ctx: &mut Ctx, head: &Value, nest: &str) -> Option<Value> {
+    let item = ctx::mangle::mangle_ty_item(&head.ty.name, nest);
+    crate::convs::expr::value::get_glob(ctx, item.as_str())
+}
+
+fn resolve_member(
+    ctx: &mut Ctx,
+    head: &Value,
+    nest: &str,
+    span: imuc_lexer::Span,
+) -> Result<Option<Value>> {
+    // NOTE: This function only returns Err because of type resolution, which is not possible in a
+    // normal parsing file
+    match &head.ty.kind {
+        TyKind::Cus(cus) => {
+            // FIXME: Anyway to prevent iterating?
+            let mut ptr = Ptr::default();
+            for (name, ty) in cus.0.iter() {
+                if name.as_str() == nest {
+                    return Ok(Some(Value {
+                        ptr: head.ptr + ptr,
+                        ty: ctx
+                            .ty
+                            .resolve_or(ty, span)
+                            .map_err(|err| {
+                                ctx.push_error(err);
+                                SendError::new_error()
+                            })?
+                            .clone(),
+                    }));
+                }
+                ptr += ty.size().ok_or_else(|| {
+                    ctx.push_error(
+                        ConvError::new(Severity::Fatal, span)
+                            .with_head("Resolved type required in member resolution"),
+                    );
+                    SendError::new_error()
+                })?;
+            }
+            Ok(None)
+        }
+        _ => Ok(None),
+    }
+}
+
+#[allow(clippy::collapsible_else_if)]
+fn resolve_nest(
+    ctx: &mut Ctx,
+    mut head: Value,
+    nest: &str,
+    span: imuc_lexer::Span,
+) -> Result<Value> {
+    let is_self = ctx
+        .body()
+        .self_ty()
+        .is_some_and(|self_ty| self_ty.test_eq(&head.ty));
+    let resolved = if is_self {
+        if let Some(value) = resolve_member(ctx, &head, nest, span)? {
+            head = value;
+            true
+        } else if let Some(value) = resolve_function(ctx, &head, nest) {
+            head = value;
+            true
+        } else {
+            false
+        }
+    } else {
+        if let Some(value) = resolve_function(ctx, &head, nest) {
+            head = value;
+            true
+        } else if let Some(value) = resolve_member(ctx, &head, nest, span)? {
+            head = value;
+            true
+        } else {
+            false
+        }
+    };
+    if !resolved {
+        ctx.push_error(ConvError::new(Severity::Error, span).with_text(
+            "Unable to resolve member or function",
+            format!("Unable to resolve {} of type {}", nest, head.ty.name),
+        ));
+        return Err(SendError::new_error());
+    }
+    Ok(head)
+}
+
+pub struct BinExprConv {
+    pub solver: ExprSolver,
+}
 
 impl Converter for BinExprConv {
     type Input = BinExpr;
@@ -18,6 +111,18 @@ enum BinOpKind {
 impl Convert<Value> for BinExprConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Value> {
         // TODO: Hint the type with values solved
+        let Self { solver } = self;
+
+        // Special case: Call operator
+        if input.op == BinOp::Call {
+            return crate::convs::expr::call::convert_call(
+                ctx,
+                &input.rhs,
+                &input.lhs,
+                input.span(),
+            );
+        }
+
         let lhs: Value = convs::ExprConv::default()
             .convert(ctx, input.lhs.as_ref())?
             .ok_or_else(|| {
@@ -27,6 +132,29 @@ impl Convert<Value> for BinExprConv {
                 );
                 SendError::default()
             })?;
+
+        // Special case: Dot is not an arithmetic operator
+        if input.op == BinOp::Dot {
+            match input.rhs.as_ref() {
+                Expr::Value(ast::expr::Value {
+                    value: ast::expr::ValueInner::Name(name),
+                    ..
+                }) => {
+                    if let Some(self_value) = solver.self_value {
+                        self_value.get_or_init(|| lhs.clone());
+                    }
+                    return resolve_nest(ctx, lhs, name.as_str(), input.span);
+                }
+                _ => {
+                    ctx.push_error(
+                        ConvError::new(Severity::Error, input.span())
+                            .with_head("Value name required after dot operator"),
+                    );
+                    return Err(SendError::new_error());
+                }
+            }
+        }
+
         let rhs: Value = convs::ExprConv::default()
             .convert(ctx, input.rhs.as_ref())?
             .ok_or_else(|| {
@@ -83,6 +211,8 @@ impl Convert<Value> for BinExprConv {
             BinOp::Gt => BinOpKind::Compare(1),
             BinOp::Le => BinOpKind::CompareNot(1),
             BinOp::Ge => BinOpKind::CompareNot(-1),
+            BinOp::Call => unreachable!("Call operator is filtered"),
+            BinOp::Dot => unreachable!("Dot operator is filtered"),
         };
 
         match kind {

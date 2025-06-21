@@ -110,6 +110,8 @@ pub enum Pair {
 /// A part of [`TokenKind`] for binary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BinOp {
+    Dot,
+    Call,
     Add,
     Sub,
     Mul,
@@ -138,7 +140,6 @@ pub enum UnOp {
 pub enum Symbol {
     Colon,
     Comma,
-    Dot,
     Arrow,
     Assign,
 }

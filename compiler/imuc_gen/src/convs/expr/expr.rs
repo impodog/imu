@@ -27,9 +27,10 @@ impl Convert<Option<Value>> for ExprConv {
         match input {
             Expr::Prim(prim) => convs::PrimConv.convert(ctx, prim).map(Some),
             Expr::Value(value) => convs::ValueConv.convert(ctx, value),
-            Expr::Call(call) => convs::CallConv { solver }.convert(ctx, call).map(Some),
             Expr::UnExpr(un_expr) => convs::UnExprConv.convert(ctx, un_expr).map(Some),
-            Expr::BinExpr(bin_expr) => convs::BinExprConv.convert(ctx, bin_expr).map(Some),
+            Expr::BinExpr(bin_expr) => convs::BinExprConv { solver }
+                .convert(ctx, bin_expr)
+                .map(Some),
             Expr::Body(body) => convs::BodyConv::default().convert(ctx, body).map(Some),
             Expr::Flow(flow) => convs::FlowConv { solver }.convert(ctx, flow).map(Some),
             Expr::Tuple(tuple) => convs::TupleConv.convert(ctx, tuple).map(Some),

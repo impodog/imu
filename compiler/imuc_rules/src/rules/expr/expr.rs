@@ -1,6 +1,8 @@
 use crate::prelude::*;
 use crate::Priority;
+use imuc_lexer::token::BinOp;
 use imuc_lexer::token::Pair;
+use imuc_parser::ParserInput;
 use imuc_parser::TokenKindSet;
 
 lazy_tokens!(EndTokens, Pair::RightParen, Pair::RightBracket, Pair::RightBrace and Semicolon);
@@ -53,13 +55,14 @@ where
             });
         }
         TokenKind::BinOp(op) => {
-            let ExprItem {
-                expr: lhs_expr,
-                cursor: lhs_cursor,
-            } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            // NOTE: RHS comes first on top of the stack
             let ExprItem {
                 expr: rhs_expr,
                 cursor: _rhs_cursor,
+            } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
+            let ExprItem {
+                expr: lhs_expr,
+                cursor: lhs_cursor,
             } = stack.pop().ok_or(errors::SyntaxError::TooManyOp)?;
             let expr = expr::Expr::BinExpr(expr::BinExpr {
                 op,
@@ -79,6 +82,33 @@ where
     Ok(())
 }
 
+fn push_symbol<'s, I>(
+    parser: &mut Parser<'s, I>,
+    op: &mut Vec<OpItem>,
+    stack: &mut Vec<ExprItem>,
+    cursor: Cursor,
+    input: ParserInput<'s>,
+) -> Result<()>
+where
+    I: ParserSequence<'s>,
+{
+    while op.last().is_some_and(|op| {
+        if op.op.is_right() {
+            op.op.priority() < input.kind.priority()
+        } else {
+            op.op.priority() <= input.kind.priority()
+        }
+    }) {
+        let op = op.pop().expect("op should not be empty after checking");
+        merge_symbols(parser, op, stack).map_err(|err| parser.map_err(err))?;
+    }
+    op.push(OpItem {
+        op: input.kind,
+        cursor,
+    });
+    Ok(())
+}
+
 impl<T> Rule for ExprRule<T>
 where
     T: for<'a> TokenKindSet<'a>,
@@ -92,13 +122,13 @@ where
         let end = (self.end, EndTokens);
         let mut stack: Vec<ExprItem> = Vec::new();
         let mut op: Vec<OpItem> = Vec::new();
-        // Determines whether to parse the expression as function call
+        // Used by call to check whether the expression directly follows another
         let mut prev_is_expr = false;
         loop {
             let cursor_begin = parser.relative_cursor();
 
             // FIXME: Special test used by if ... `{`, should we make it more uniform?
-            if prev_is_expr
+            if !stack.is_empty()
                 && parser
                     .peek()?
                     .is_some_and(|input| end.contains(&input.kind))
@@ -114,32 +144,24 @@ where
             {
                 match rules::ElemExprRule.parse(parser)? {
                     Some(expr) => {
+                        let expr = ExprItem {
+                            expr,
+                            cursor: cursor_begin,
+                        };
                         if prev_is_expr {
-                            let ExprItem {
-                                expr: prev_expr,
-                                cursor: prev_cursor,
-                            } = stack
-                                .pop()
-                                .expect("when prev_is_expr, stack should not be empty");
-                            let call = ExprItem {
-                                expr: expr::Expr::Call(expr::Call {
-                                    func: Box::new(prev_expr),
-                                    args: Box::new(expr),
-                                    span: parser.file_info().into_span(prev_cursor),
-                                }),
-                                cursor: prev_cursor,
-                            };
-                            stack.push(call);
-                            // No need to update prev_is_expr since it is already true
-                            // This also allows chained function calls
-                        } else {
-                            let expr = ExprItem {
-                                expr,
-                                cursor: cursor_begin,
-                            };
-                            stack.push(expr);
-                            prev_is_expr = true;
+                            push_symbol(
+                                parser,
+                                &mut op,
+                                &mut stack,
+                                cursor_begin,
+                                ParserInput {
+                                    kind: TokenKind::BinOp(BinOp::Call),
+                                    value: "#CALL",
+                                },
+                            )?;
                         }
+                        stack.push(expr);
+                        prev_is_expr = true;
                         true
                     }
                     _ => false,
@@ -151,27 +173,11 @@ where
             // Uses the condition returned by the previous if,
             // if not a element, operators are parsed
             if !is_elem {
-                prev_is_expr = false;
-
                 let input = parser.peek()?;
                 if let Some(input) = input {
                     match input.kind {
                         TokenKind::UnOp(_) | TokenKind::BinOp(_) => {
-                            while op.last().is_some_and(|op| {
-                                if op.op.is_right() {
-                                    op.op.priority() < input.kind.priority()
-                                } else {
-                                    op.op.priority() <= input.kind.priority()
-                                }
-                            }) {
-                                let op = op.pop().expect("op should not be empty after checking");
-                                merge_symbols(parser, op, &mut stack)
-                                    .map_err(|err| parser.map_err(err))?;
-                            }
-                            op.push(OpItem {
-                                op: input.kind,
-                                cursor: cursor_begin,
-                            });
+                            push_symbol(parser, &mut op, &mut stack, cursor_begin, input)?;
                         }
                         _ => {
                             if end.contains(&input.kind) {
@@ -187,6 +193,7 @@ where
                     let _ = parser
                         .next_some()
                         .expect("parser should not be EOF after peeking a symbol");
+                    prev_is_expr = false;
                 } else {
                     break;
                 }

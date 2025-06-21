@@ -12,7 +12,6 @@ mod value;
 
 pub use bin_expr::BinExprConv;
 pub use body::BodyConv;
-pub use call::CallConv;
 pub use cus::CusExprConv;
 pub use expr::ExprConv;
 pub use mit::MitConv;

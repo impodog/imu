@@ -2,18 +2,17 @@ cus Cute {
     d: I32,
 }
 cus Dog {
-    a: I64,
+    a: I32,
     b: @Str,
     c: Cute,
 }
 for Dog {
-    fun cute(self: Self) -> I32 {
-        let b = self.b;
-        self.c.d
+    fun plus(self: Self, x: I32, y: I32) -> I32 {
+        self.c.d + x * y
     }
 
-    fun hello(self: Self) {
-        let ans = Dog.cute(self);
+    fun speak(self: Self) {
+        self.plus(self.c.d, self.a);
     }
 }
 fun main() {

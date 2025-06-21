@@ -98,6 +98,7 @@ where
                     }
                     _ => Token::new(TokenKind::UnOp(UnOp::Not), self.diff(begin)),
                 },
+                '.' => Token::new(TokenKind::BinOp(BinOp::Dot), self.diff(begin)),
                 '+' => Token::new(TokenKind::BinOp(BinOp::Add), self.diff(begin)),
                 '-' => {
                     if self.first().is_ascii_digit() {
@@ -142,7 +143,6 @@ where
                 },
                 ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
                 ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
-                '.' => Token::new(TokenKind::Symbol(Symbol::Dot), self.diff(begin)),
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }

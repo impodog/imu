@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use imuc_ast::module::Import;
-use imuc_lexer::token::{Ident, Keyword, Pair, Symbol};
+use imuc_lexer::token::{BinOp, Ident, Keyword, Pair, Symbol};
 
 lazy_tokens!(ImportTokens, Ident::Value, Ident::Type);
 
@@ -111,7 +111,7 @@ impl Rule for ImportRule {
 
         let mut module_ref = module.as_ref();
         let file = loop {
-            let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
+            let _ = parser.next_expected(&TokenKind::BinOp(BinOp::Dot))?;
             let next = parser.next_if(&TokenKind::Ident(Ident::Value))?;
             if let Some(next) = next {
                 let sub = module_ref.get(next.value).ok_or_else(|| {
@@ -131,7 +131,7 @@ impl Rule for ImportRule {
         };
         match file {
             Some(file) => {
-                let _ = parser.next_expected(&TokenKind::Symbol(Symbol::Dot))?;
+                let _ = parser.next_expected(&TokenKind::BinOp(BinOp::Dot))?;
                 let item = ImportItemRule.parse(parser)?.ok_or_else(|| {
                     parser.map_err(errors::SyntaxError::ExpectedIn {
                         expect: "Item".to_owned(),

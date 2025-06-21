@@ -6,7 +6,6 @@ use std::collections::BTreeMap;
 pub enum Expr {
     Prim(crate::prim::Prim),
     Value(Value),
-    Call(Call),
     UnExpr(UnExpr),
     BinExpr(BinExpr),
     Body(Body),
@@ -24,7 +23,6 @@ impl Expr {
         let span = match self {
             Self::Prim(_prim) => return None,
             Self::Value(value) => value.span(),
-            Self::Call(call) => call.span(),
             Self::UnExpr(un_expr) => un_expr.span(),
             Self::BinExpr(bin_expr) => bin_expr.span(),
             Self::Body(body) => body.span(),
@@ -54,17 +52,9 @@ pub struct Value {
     pub span: imuc_lexer::Span,
 }
 
-#[derive(Spanned)]
-pub struct Call {
-    pub func: Box<Expr>,
-    pub args: Box<Expr>,
-    pub span: imuc_lexer::Span,
-}
-
 pub enum ValueInner {
     Unused,
     Name(imuc_lexer::StrRef),
-    Nested(nonempty::NonEmpty<imuc_lexer::StrRef>),
     Res(imuc_lexer::token::ResVal),
 }
 

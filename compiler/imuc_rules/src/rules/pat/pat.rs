@@ -11,7 +11,7 @@ impl Rule for PatRule {
         I: ParserSequence<'s>,
     {
         let cursor_begin = parser.relative_cursor();
-        let first = if let Some(named) = rules::NamedPatRule.parse(parser)? {
+        let first = if let Some(named) = rules::CusPatRule.parse(parser)? {
             pat::PatInner::Cus(named)
         } else if let Some(first) = rules::TuplePatRule.parse(parser)? {
             // NOTE: Tuple pat returns [`PatInner`] because it can be without comma

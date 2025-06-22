@@ -141,8 +141,14 @@ where
                     }
                     _ => Token::new(TokenKind::BinOp(BinOp::Gt), self.diff(begin)),
                 },
-                ':' => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
                 ',' => Token::new(TokenKind::Symbol(Symbol::Comma), self.diff(begin)),
+                ':' => match self.first() {
+                    ':' => {
+                        self.advance();
+                        Token::new(TokenKind::Symbol(Symbol::DblColon), self.diff(begin))
+                    }
+                    _ => Token::new(TokenKind::Symbol(Symbol::Colon), self.diff(begin)),
+                },
                 ';' => Token::new(TokenKind::Semicolon, self.diff(begin)),
                 _ => Token::new(TokenKind::LexError(LexError::UnknownChar), self.diff(begin)),
             }

@@ -4,7 +4,7 @@ use imuc_lexer::token::ResTy;
 impl Ctx {
     /// Mangles a local name to a global name according to current body
     pub fn mangle_body(&self, name: &str) -> String {
-        format!("{}:{}", self.body().name(), name)
+        mangle_body_item(self.body().name(), name)
     }
 
     /// Mangles a local name to a global name according to current body or the self body it is in
@@ -15,6 +15,10 @@ impl Ctx {
             self.mangle_body(name)
         }
     }
+}
+
+pub fn mangle_body_item(body_name: &str, name: &str) -> String {
+    format!("{}:{}", body_name, name)
 }
 
 /// Mangles the name of a body inside of another body

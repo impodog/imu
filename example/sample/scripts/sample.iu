@@ -1,5 +1,18 @@
 mod sub;
-mod dir;
+
+cus Hello {
+    x: I32,
+}
+
+for Hello {
+    fun say(self) -> I32 {
+        self.x * self.x
+    }
+
+    fun foo(self) {
+        let x = self.say();
+    }
+}
 
 fun main() {
 }

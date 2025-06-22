@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Ident, Symbol};
+use imuc_lexer::token::{Ident, ResTy, Symbol};
 
 pub struct IdentPatRule;
 
@@ -12,6 +12,7 @@ impl Rule for IdentPatRule {
     where
         I: ParserSequence<'s>,
     {
+        let cursor_begin = parser.relative_cursor();
         let input = parser.next_if(&IdentTokens)?;
         if let Some(input) = input {
             let ty = if parser.next_if(&TokenKind::Symbol(Symbol::Colon))?.is_some() {
@@ -22,6 +23,13 @@ impl Rule for IdentPatRule {
                     })
                 })?;
                 Some(ty)
+            } else if input.value == "self" {
+                // FIXME: Special case used by "self" and it is not a keyword. Fix?
+                Some(pat::Type {
+                    flags: pat::PatFlags::Unique,
+                    kind: pat::TypeKind::Res(ResTy::SelfType),
+                    span: parser.file_info().into_span(cursor_begin),
+                })
             } else {
                 None
             };

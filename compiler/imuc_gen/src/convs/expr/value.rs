@@ -20,7 +20,7 @@ pub(crate) fn get_glob(ctx: &mut Ctx, name: &str) -> Option<Value> {
     }
 }
 
-fn search_name(
+pub(crate) fn search_name(
     ctx: &mut Ctx,
     name: &StrRef,
     alias: Option<&StrRef>,

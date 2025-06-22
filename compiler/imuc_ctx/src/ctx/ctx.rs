@@ -69,7 +69,7 @@ impl Ctx {
         is_module: bool,
     ) -> &mut super::Body {
         let base_name = self.body.last().name();
-        let name = super::mangle::mangle_inside_body(base_name, name);
+        let body_name = super::mangle::mangle_inside_body(base_name, name);
         let imports = if is_module {
             super::Imports::default()
         } else {
@@ -77,8 +77,12 @@ impl Ctx {
             super::Imports::new_under(&mut self.body.last_mut().imports)
         };
 
-        self.body
-            .push(super::Body::new(self.globs.clone(), name, self_ty, imports));
+        self.body.push(super::Body::new(
+            self.globs.clone(),
+            body_name,
+            self_ty,
+            imports,
+        ));
         self.body.last_mut()
     }
 

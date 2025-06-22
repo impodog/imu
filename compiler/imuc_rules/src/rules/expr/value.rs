@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Ident, ResVal};
+use imuc_lexer::token::{Ident, ResVal, Symbol};
 
 lazy_tokens!(ResValTokens, ResVal::True, ResVal::False);
 

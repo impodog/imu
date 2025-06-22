@@ -2,9 +2,9 @@ use crate::prelude::*;
 use imuc_lexer::token::{Ident, Pair, Symbol};
 use std::collections::BTreeMap;
 
-pub struct NamedPatRule;
+pub struct CusPatRule;
 
-impl Rule for NamedPatRule {
+impl Rule for CusPatRule {
     type Output = pat::CusPat;
 
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>

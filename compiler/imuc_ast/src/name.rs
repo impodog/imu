@@ -26,3 +26,13 @@ impl LookUp {
         self.set.remove(s)
     }
 }
+
+/// Prefix connected by double colons used before values and types to specify the namespace
+#[derive(Default, Debug)]
+pub struct Prefix(pub Vec<StrRef>);
+
+impl Prefix {
+    pub fn new(prefix: Vec<StrRef>) -> Self {
+        Self(prefix)
+    }
+}

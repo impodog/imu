@@ -211,8 +211,8 @@ impl Convert<Value> for BinExprConv {
             BinOp::Gt => BinOpKind::Compare(1),
             BinOp::Le => BinOpKind::CompareNot(1),
             BinOp::Ge => BinOpKind::CompareNot(-1),
-            BinOp::Call => unreachable!("Call operator is filtered"),
             BinOp::Dot => unreachable!("Dot operator is filtered"),
+            BinOp::Call => unreachable!("Call operator is filtered"),
         };
 
         match kind {

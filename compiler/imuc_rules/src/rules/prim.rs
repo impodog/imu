@@ -18,13 +18,13 @@ impl PrimRule {
         let second = iter.next();
         let options = lexical::ParseIntegerOptions::new();
         let value = match (first, second) {
-            (Some('0'), Some('x')) => {
+            (Some('0'), Some('x' | 'X')) => {
                 const FORMAT: u128 = lexical::NumberFormatBuilder::new().radix(16).build();
                 let value: i64 =
                     lexical::parse_with_options::<_, _, FORMAT>(&value[2..], &options)?;
                 prim::Integer::I64(value)
             }
-            (Some('0'), Some('b')) => {
+            (Some('0'), Some('b' | 'B')) => {
                 const FORMAT: u128 = lexical::NumberFormatBuilder::new().radix(2).build();
                 let value: i64 =
                     lexical::parse_with_options::<_, _, FORMAT>(&value[2..], &options)?;

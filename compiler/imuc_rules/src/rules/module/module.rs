@@ -90,28 +90,22 @@ impl Rule for ModuleRules<'_> {
                             });
                         }
                         imuc_path::SubModule::Module(module) => {
-                            let sub_dir = dir.join(name.value);
-                            let sub_file_path = sub_dir.join("mod.rs");
-                            if sub_file_path.exists() {
-                                let module = parse_file(
-                                    ModuleRules {
-                                        local: Some(module),
-                                        is_file: false,
-                                    },
-                                    sub_file_path.as_path(),
-                                )
-                                .map_err(|err| parser.map_err(err))?;
-                                sub_nodes.push(SubNode {
-                                    name: name.value.into(),
-                                    module,
-                                    span: parser.file_info().into_span(cursor_begin),
-                                });
-                            } else {
-                                return Err(errors::PathError::ModuleNotFound(
-                                    name.value.to_owned(),
-                                )
-                                .into());
-                            }
+                            let file_name = module.base().join("mod.iu");
+                            // Existence is guaranteed by the module
+                            debug_assert!(file_name.exists());
+                            let module = parse_file(
+                                ModuleRules {
+                                    local: Some(module),
+                                    is_file: false,
+                                },
+                                file_name.as_path(),
+                            )
+                            .map_err(|err| parser.map_err(err))?;
+                            sub_nodes.push(SubNode {
+                                name: name.value.into(),
+                                module,
+                                span: parser.file_info().into_span(cursor_begin),
+                            });
                         }
                     },
                     None => {

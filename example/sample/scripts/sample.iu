@@ -1,20 +1,6 @@
-cus Cute {
-    d: I32,
-}
-cus Dog {
-    a: I32,
-    b: @Str,
-    c: Cute,
-}
-for Dog {
-    fun plus(self: Self, x: I32, y: I32) -> I32 {
-        self.c.d + x * y
-    }
+mod sub;
+mod dir;
 
-    fun speak(self: Self) {
-        self.plus(self.c.d, self.a);
-    }
-}
 fun main() {
 }
 

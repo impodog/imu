@@ -28,13 +28,33 @@ impl Module {
             .filter_map(|entry| entry.ok())
         {
             if entry.path().is_dir() {
-                let name =
-                    String::from_utf8_lossy(entry.file_name().as_encoded_bytes()).into_owned();
-                let module = Module::new(entry.into_path()).resolve();
-                self.sub.insert(name, SubModule::Module(module));
-            } else if entry.path().is_file() {
-                let name =
-                    String::from_utf8_lossy(entry.file_name().as_encoded_bytes()).into_owned();
+                let subdir_entry = entry.path().join("mod.iu");
+                if subdir_entry.exists() {
+                    let name = String::from_utf8_lossy(
+                        entry
+                            .path()
+                            .file_name()
+                            .expect("Should be a dir after checking")
+                            .as_encoded_bytes(),
+                    )
+                    .into_owned();
+                    let module = Module::new(entry.path().to_path_buf()).resolve();
+                    self.sub.insert(name, SubModule::Module(module));
+                }
+            } else if entry.path().is_file()
+                && entry
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "iu")
+            {
+                let name = String::from_utf8_lossy(
+                    entry
+                        .path()
+                        .file_stem()
+                        .expect("should be a file after checking")
+                        .as_encoded_bytes(),
+                )
+                .into_owned();
                 let file = crate::File::new(
                     entry
                         .into_path()

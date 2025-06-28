@@ -153,7 +153,7 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                                 ctx.push_error(
                                     ConvError::new(Severity::Error, pat.span()).with_text(
                                         "Unexpected field in Cus binding",
-                                        format!("Unexpected field: {}", name),
+                                        format!("Unexpected field: {name}"),
                                     ),
                                 );
                                 return Err(SendError::default().into());

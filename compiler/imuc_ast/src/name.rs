@@ -28,11 +28,33 @@ impl LookUp {
 }
 
 /// Prefix connected by double colons used before values and types to specify the namespace
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Prefix(pub Vec<StrRef>);
 
 impl Prefix {
     pub fn new(prefix: Vec<StrRef>) -> Self {
         Self(prefix)
+    }
+}
+
+/// A compound type with both the namespace prefix and the name
+#[derive(Debug, Clone)]
+pub struct PrefixedName {
+    pub prefix: Prefix,
+    pub name: StrRef,
+}
+
+impl PrefixedName {
+    /// Creates a new prefixed name
+    pub fn new(prefix: Prefix, name: StrRef) -> Self {
+        Self { prefix, name }
+    }
+
+    /// Creates a name pointing to local variables (aka without prefix)
+    pub fn local(name: StrRef) -> Self {
+        Self {
+            prefix: Default::default(),
+            name,
+        }
     }
 }

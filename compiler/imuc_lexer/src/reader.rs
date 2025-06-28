@@ -2,7 +2,7 @@ pub const EOF: char = 0 as char;
 
 /// A queue of 2 chars used store peeked chars
 ///
-/// Only 2 elements are supported, thus is optimized for this usage
+/// Only 2 elements are stored, thus the queue is optimized for this usage
 #[derive(Debug, Clone, Copy)]
 struct PeekQueue {
     first: char,

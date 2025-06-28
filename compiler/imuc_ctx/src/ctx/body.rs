@@ -85,7 +85,7 @@ impl Body {
     /// than the stack pointer. This is only used after loop statements since there are special jump
     /// commands by mit
     pub fn force_stack_to(&mut self, stack: cmd::Ptr) {
-        debug!("Force stack to {:?}", stack);
+        debug!("Force stack to {stack:?}");
         self.push(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }

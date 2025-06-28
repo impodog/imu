@@ -12,7 +12,7 @@ impl PathVar {
     pub fn read() -> Self {
         let modules = std::env::var("IMUC_PATH")
             .unwrap_or_else(|err| {
-                warn!("When reading env var \"IMUC_PATH\", {}", err);
+                warn!("When reading env var \"IMUC_PATH\", {err}");
                 Default::default()
             })
             .split(':')
@@ -21,7 +21,7 @@ impl PathVar {
                 if path.exists() {
                     Some(path.to_path_buf())
                 } else {
-                    warn!("In env var \"IMUC_PATH\", path {:?} does not exist", path);
+                    warn!("In env var \"IMUC_PATH\", path {path:?} does not exist");
                     None
                 }
             })

@@ -18,32 +18,32 @@ impl Ctx {
 }
 
 pub fn mangle_body_item(body_name: &str, name: &str) -> String {
-    format!("{}:{}", body_name, name)
+    format!("{body_name}:{name}")
 }
 
 /// Mangles the name of a body inside of another body
 pub fn mangle_inside_body(prev_name: &str, name: &str) -> String {
-    format!("({}.{})", prev_name, name)
+    format!("({prev_name}.{name})")
 }
 
 /// Mangles the name of an item related to the type
 pub fn mangle_ty_item(ty_name: &str, name: &str) -> String {
-    format!("{}#ITM{}", ty_name, name)
+    format!("{ty_name}#ITM{name}")
 }
 
 /// Mangles the name of function signature
 pub fn mangle_fun_sig(fun_name: &str) -> String {
-    format!("#FUN{}", fun_name)
+    format!("#FUN{fun_name}")
 }
 
 /// Mangles the name of a reference
 pub fn mangle_ref(name: &str) -> String {
-    format!("#REF{}", name)
+    format!("#REF{name}")
 }
 
 /// Mangles the name of a pointer
 pub fn mangle_ptr(name: &str) -> String {
-    format!("#PTR{}", name)
+    format!("#PTR{name}")
 }
 
 /// Mangles the name of a tupled type, such that types A, B, ... become "(A,B,...)"

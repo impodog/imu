@@ -236,9 +236,9 @@ impl Rw for ResTy {
             ResTy::F64 => "F64",
             ResTy::Str => "Str",
             ResTy::Ptr => "Ptr",
-            _ => return Err(errors::IrError::TypeNotAllowed(format!("{:?}", self)).into()),
+            _ => return Err(errors::IrError::TypeNotAllowed(format!("{self:?}")).into()),
         };
-        write!(output, "{}", str)?;
+        write!(output, "{str}")?;
         Ok(())
     }
 }

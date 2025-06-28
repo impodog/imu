@@ -76,28 +76,28 @@ impl Rw for Prim {
             }
             Prim::Integer(integer) => match integer {
                 Integer::I8(value) => {
-                    write!(output, "b{}", value)?;
+                    write!(output, "b{value}")?;
                 }
                 Integer::I16(value) => {
-                    write!(output, "d{}", value)?;
+                    write!(output, "d{value}")?;
                 }
                 Integer::I32(value) => {
-                    write!(output, "q{}", value)?;
+                    write!(output, "q{value}")?;
                 }
                 Integer::I64(value) => {
-                    write!(output, "o{}", value)?;
+                    write!(output, "o{value}")?;
                 }
             },
             Prim::Float(float) => match float {
                 Float::F32(value) => {
-                    write!(output, "f{:.6}", value)?;
+                    write!(output, "f{value:.6}")?;
                 }
                 Float::F64(value) => {
-                    write!(output, ";{:.10}", value)?;
+                    write!(output, ";{value:.10}")?;
                 }
             },
             Prim::String(value) => {
-                write!(output, "{:?}", value)?;
+                write!(output, "{value:?}")?;
             }
         }
         Ok(())

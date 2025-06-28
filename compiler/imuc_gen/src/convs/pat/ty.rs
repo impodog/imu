@@ -24,7 +24,7 @@ impl Convert<Option<Ty>> for TypeConv {
                 let ty = ctx.get_type(name.as_str()).ok_or_else(|| {
                     ctx.push_error(
                         ConvError::new(Severity::Error, input.span)
-                            .with_text("Undefined type", format!("Undefined type: {}", name)),
+                            .with_text("Undefined type", format!("Undefined type: {name}")),
                     );
                     SendError::default()
                 })?;

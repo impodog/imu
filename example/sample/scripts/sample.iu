@@ -1,7 +1,7 @@
 mod sub;
 
 cus Hello {
-    x: I32,
+    x: sub::I32,
 }
 
 for Hello {

@@ -51,8 +51,7 @@ impl CompInst {
                         let mut config = config::Comp::read_file(path.as_path())
                             .inspect_err(|err| {
                                 error!(
-                                    "Error when reading module config from file {:?}: {:?}",
-                                    path, err
+                                    "Error when reading module config from file {path:?}: {err:?}",
                                 );
                             })
                             .ok()?;
@@ -66,7 +65,7 @@ impl CompInst {
                         Some(CompInst::new(config))
                     } else {
                         if let Some(path) = req.path.as_ref() {
-                            error!("Unable to find required path {:?}", path);
+                            error!("Unable to find required path {path:?}");
                         } else {
                             error!("Unable to find required module with name {:?}", req.name);
                         }
@@ -230,7 +229,7 @@ impl CompInst {
                 }
             }
             Err(err) => {
-                error!("When opening source file {:?}, {:?}", source_path, err);
+                error!("When opening source file {source_path:?}, {err:?}");
                 self.failed = true;
                 return None;
             }

@@ -99,7 +99,7 @@ impl FileMap {
                 }
             }
             Err(err) => {
-                error!("Error when reporting errors: {}", err);
+                error!("Error when reporting errors: {err}");
             }
         }
 
@@ -109,7 +109,7 @@ impl FileMap {
             Severity::Error => log::Level::Error,
             Severity::Fatal => log::Level::max(),
         };
-        log::log!(level, "{}", result);
+        log::log!(level, "{result}");
     }
 }
 

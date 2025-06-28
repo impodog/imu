@@ -22,11 +22,11 @@ impl FileHandle {
         self.content.get_or_init(|| {
             let file = self.file.get();
 
-            debug!("Reading file content from {}", file);
+            debug!("Reading file content from {file}");
 
             let content = fs::read_to_string(file.as_str())
                 .inspect_err(|err| {
-                    error!("Unable to open file {}, {:?}", file, err);
+                    error!("Unable to open file {file}, {err:?}");
                 })
                 .unwrap_or_default();
             FileContent::new(content)

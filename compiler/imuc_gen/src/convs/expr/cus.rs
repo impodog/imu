@@ -51,7 +51,7 @@ impl Convert<Value> for CusExprConv {
                         TyItem::Pending(name) => {
                             ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
                                 "Type is undefined in Cus field instantiation (FIXME)",
-                                format!("Type {} is undefined", name),
+                                format!("Type {name} is undefined"),
                             ));
                             return Err(SendError::default().into());
                         }
@@ -59,7 +59,7 @@ impl Convert<Value> for CusExprConv {
                 } else {
                     ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
                         "Unknown field in Cus field instantiation",
-                        format!("Unknown field: {}", key),
+                        format!("Unknown field: {key}"),
                     ));
                     return Err(SendError::default().into());
                 }
@@ -69,7 +69,7 @@ impl Convert<Value> for CusExprConv {
                 if !map.contains_key(key) {
                     ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
                         "Missing field int Cus field instantiation",
-                        format!("Missing field: {}", key),
+                        format!("Missing field: {key}"),
                     ));
                     return Err(SendError::default().into());
                 }

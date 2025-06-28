@@ -153,7 +153,7 @@ impl TryFrom<ResTy> for NumBytes {
             ResTy::I32 | ResTy::F32 => Ok(NumBytes::I32),
             ResTy::I64 | ResTy::F64 => Ok(NumBytes::I64),
             ResTy::Ptr | ResTy::Str => Ok(PTR_BYTES),
-            _ => Err(errors::IrError::NotSized(format!("{:?}", value)).into()),
+            _ => Err(errors::IrError::NotSized(format!("{value:?}")).into()),
         }
     }
 }

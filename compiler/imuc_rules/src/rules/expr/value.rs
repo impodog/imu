@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Ident, ResVal, Symbol};
+use imuc_lexer::token::{Ident, ResVal};
 
 lazy_tokens!(ResValTokens, ResVal::True, ResVal::False);
 
@@ -13,8 +13,21 @@ impl Rule for ValueRule {
         I: ParserSequence<'s>,
     {
         let cursor_begin = parser.relative_cursor();
+        let has_prefix = rules::PrefixRule.parse(parser)?.is_some();
         let value = if let Some(input) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
-            expr::ValueInner::Name(parser.look_up.insert(input.value))
+            if has_prefix {
+                let prefix = parser
+                    .pop_prefix()
+                    .expect("Should contains a prefix after checking");
+                expr::ValueInner::Name(name::PrefixedName::new(
+                    prefix,
+                    parser.look_up.insert(input.value),
+                ))
+            } else {
+                expr::ValueInner::Name(name::PrefixedName::local(
+                    parser.look_up.insert(input.value),
+                ))
+            }
         } else if let Some(_input) = parser.next_if(&TokenKind::Ident(Ident::Unused))? {
             expr::ValueInner::Unused
         } else if let Some(input) = parser.next_if(&ResValTokens)? {
@@ -26,6 +39,12 @@ impl Rule for ValueRule {
         } else {
             return Ok(None);
         };
+        if has_prefix && !matches!(value, expr::ValueInner::Name(_)) {
+            return Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
+                expect: "name".to_owned(),
+                after: TokenKind::Prefix,
+            }));
+        }
         Ok(Some(expr::Value {
             value,
             span: parser.file_info().into_span(cursor_begin),

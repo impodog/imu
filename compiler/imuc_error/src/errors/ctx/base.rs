@@ -75,7 +75,7 @@ impl fmt::Display for ConvError {
             Message::Text(text) => {
                 write!(f, "{}", text.head)?;
                 if let Some(ref note) = text.note {
-                    write!(f, "\n\t{}", note)?;
+                    write!(f, "\n\t{note}")?;
                 }
             }
         }

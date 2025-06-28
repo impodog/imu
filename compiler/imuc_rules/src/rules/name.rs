@@ -1,49 +1,48 @@
 use crate::prelude::*;
-use imuc_ast::name::Prefix;
 use imuc_lexer::token::{Ident, Symbol};
 
-/// Outputs the prefix and the value/type name after the prefix
+/// Outputs the prefix to type/value names. This rule is lazy, it only consumes the prefix from the
+/// parser, store it in the queue and return whether it is successful by [`Option`]. If the rule is
+/// called multiple times without popping the prefix with [`Parser::pop_prefix`], no action will be
+/// done.
+///
+/// This rule does not output anything, because it inserts the prefix into the parser queue
 pub struct PrefixRule;
 
-lazy_tokens!(AfterPrefixTokens, Ident::Value, Ident::Type, Ident::Unused);
-
 impl Rule for PrefixRule {
-    type Output = (Prefix, TokenKind, StrRef);
+    type Output = ();
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
     where
         I: ParserSequence<'s>,
     {
-        let mut prefix = Vec::new();
-        loop {
-            if let Some(value) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
-                if parser
-                    .next_if(&TokenKind::Symbol(Symbol::DblColon))?
-                    .is_some()
-                {
-                    prefix.push(parser.look_up.insert(value.value));
-                } else {
-                    return Ok(Some((
-                        Prefix::new(prefix),
-                        value.kind,
-                        parser.look_up.insert(value.value),
-                    )));
-                }
-            } else if let Some(value) = parser.next_if(&AfterPrefixTokens)? {
-                return Ok(Some((
-                    Prefix::new(prefix),
-                    value.kind,
-                    parser.look_up.insert(value.value),
-                )));
-            } else if prefix.is_empty() {
-                // No tokens are consumed, and nothing is matched
-                return Ok(None);
+        // Test if a prefix already exists
+        if parser
+            .peek()?
+            .is_some_and(|input| matches!(input.kind, TokenKind::Prefix))
+        {
+            return Ok(Some(()));
+        }
+
+        let cursor = parser.relative_cursor();
+        let file_info = parser.file_info();
+        let mut prefix: Vec<StrRef> = Vec::new();
+        while let Some(next) = parser.peek_nth(1)? {
+            if next.kind == TokenKind::Symbol(Symbol::DblColon) {
+                let name = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
+                // Remove double colon
+                parser
+                    .next_token()?
+                    .expect("Should contain a token after peeking");
+                prefix.push(parser.look_up.insert(name.value));
             } else {
-                return Err(errors::SyntaxError::ExpectedAfter {
-                    expect: "Name".to_owned(),
-                    after: TokenKind::Symbol(Symbol::DblColon),
-                }
-                .into());
+                break;
             }
+        }
+        if prefix.is_empty() {
+            Ok(None)
+        } else {
+            parser.push_prefix(name::Prefix::new(prefix), cursor, file_info);
+            Ok(Some(()))
         }
     }
 }

@@ -216,7 +216,7 @@ impl Rw for Cmd {
             Self::EqI8(opd, value) => {
                 write!(output, "eql ")?;
                 opd.write(&mut output)?;
-                write!(output, " {}", value)?;
+                write!(output, " {value}")?;
             }
             Self::Addf(bytes, lhs, rhs) => arithmetic!(write "adf", bytes, lhs, rhs, output),
             Self::Subf(bytes, lhs, rhs) => arithmetic!(write "sbf", bytes, lhs, rhs, output),
@@ -239,7 +239,7 @@ impl Rw for Cmd {
                 bytes.write(&mut output)?;
             }
             Self::Link(name) => {
-                write!(output, "lnk {}", name)?;
+                write!(output, "lnk {name}")?;
             }
             Self::End => {
                 write!(output, "end")?;

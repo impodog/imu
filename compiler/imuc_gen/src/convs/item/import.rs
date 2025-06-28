@@ -40,7 +40,7 @@ impl Convert<()> for UseConv {
                     let fun = cache.header.fun.get(name).ok_or_else(|| {
                         ctx.push_error(ConvError::new(Severity::Error, item.span()).with_text(
                             "Import function not found in corresponding module",
-                            format!("Function {} not found", name),
+                            format!("Function {name} not found"),
                         ));
                         SendError::new_error()
                     })?;
@@ -55,7 +55,7 @@ impl Convert<()> for UseConv {
                     let ty = cache.header.ty.get(name).ok_or_else(|| {
                         ctx.push_error(ConvError::new(Severity::Error, item.span()).with_text(
                             "Import type not found in corresponding module",
-                            format!("Type {} not found", name),
+                            format!("Type {name} not found"),
                         ));
                         SendError::new_error()
                     })?;

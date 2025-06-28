@@ -41,9 +41,9 @@ pub(crate) fn search_name(
     ctx.push_error(ConvError::new(Severity::Error, span).with_text(
         "Undefined name",
         if let Some(alias) = alias {
-            format!("Value {} (alias {}) is undefined", name, alias)
+            format!("Value {name} (alias {alias}) is undefined")
         } else {
-            format!("Value {} is undefined", name)
+            format!("Value {name} is undefined")
         },
     ));
     Err(SendError::new_error())

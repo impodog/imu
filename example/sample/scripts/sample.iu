@@ -1,19 +1,8 @@
 mod sub;
 
-cus Hello {
-    x: sub::I32,
-}
-
-for Hello {
-    fun say(self) -> I32 {
-        self.x * self.x
-    }
-
-    fun foo(self) {
-        let x = self.say();
-    }
-}
-
 fun main() {
+    let x = 1;
+    let y = x;
+    sample::sub::hello;
 }
 

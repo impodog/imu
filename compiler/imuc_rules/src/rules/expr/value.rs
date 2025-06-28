@@ -19,14 +19,12 @@ impl Rule for ValueRule {
                 let prefix = parser
                     .pop_prefix()
                     .expect("Should contains a prefix after checking");
-                expr::ValueInner::Name(name::PrefixedName::new(
+                expr::ValueInner::Prefixed(name::PrefixedName::new(
                     prefix,
                     parser.look_up.insert(input.value),
                 ))
             } else {
-                expr::ValueInner::Name(name::PrefixedName::local(
-                    parser.look_up.insert(input.value),
-                ))
+                expr::ValueInner::Name(parser.look_up.insert(input.value))
             }
         } else if let Some(_input) = parser.next_if(&TokenKind::Ident(Ident::Unused))? {
             expr::ValueInner::Unused
@@ -39,7 +37,7 @@ impl Rule for ValueRule {
         } else {
             return Ok(None);
         };
-        if has_prefix && !matches!(value, expr::ValueInner::Name(_)) {
+        if has_prefix && !matches!(value, expr::ValueInner::Prefixed(_)) {
             return Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
                 expect: "name".to_owned(),
                 after: TokenKind::Prefix,

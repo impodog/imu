@@ -110,6 +110,9 @@ impl CompInst {
 
             let reader = imuc_lexer::Reader::new(content.content().chars());
             let file_reader = imuc_parser::FileReader::new(filename, content.content(), reader);
+
+            log::debug!("Contents of {:?} loaded, now parsing..", filename.get());
+
             let mut parser = imuc_parser::Parser::new(file_reader);
             parser.resolver.insert(&self.config.target.output)?;
             let module = imuc_rules::rules::ModuleRules::default()
@@ -204,7 +207,7 @@ impl CompInst {
                 }
             }
             Err(err) => {
-                error!("When opening header file {:?}, {:?}", header_path, err);
+                error!("When opening header file {header_path:?}, {err:?}");
                 self.failed = true;
                 return None;
             }

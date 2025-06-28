@@ -120,6 +120,12 @@ impl StrRef {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+    pub fn into_string(self) -> String {
+        match self.0 {
+            StrRefInner::Small(string) => string,
+            StrRefInner::Big(arc) => arc.to_string(),
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

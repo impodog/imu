@@ -1,5 +1,8 @@
 use imuc_lexer::StrRef;
-use std::collections::HashSet;
+use std::{
+    collections::HashSet,
+    ops::{Deref, DerefMut},
+};
 
 /// A name lookup set that produces [`StrRef`] on insertion
 ///
@@ -29,10 +32,21 @@ impl LookUp {
 
 /// Prefix connected by double colons used before values and types to specify the namespace
 #[derive(Default, Debug, Clone)]
-pub struct Prefix(pub Vec<StrRef>);
+pub struct Prefix(pub nonempty::NonEmpty<StrRef>);
+impl Deref for Prefix {
+    type Target = nonempty::NonEmpty<StrRef>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Prefix {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl Prefix {
-    pub fn new(prefix: Vec<StrRef>) -> Self {
+    pub fn new(prefix: nonempty::NonEmpty<StrRef>) -> Self {
         Self(prefix)
     }
 }

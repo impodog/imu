@@ -9,7 +9,7 @@ use super::ExprSolver;
 
 fn resolve_function(ctx: &mut Ctx, head: &Value, nest: &str) -> Option<Value> {
     let item = ctx::mangle::mangle_ty_item(&head.ty.name, nest);
-    crate::convs::expr::value::get_glob(ctx, item.as_str())
+    convs::expr::value::get_glob(ctx, item.as_str())
 }
 
 fn resolve_member(

@@ -1,4 +1,5 @@
 use crate::{ParserInput, ParserSequence, TokenKindSet};
+use imuc_ast::name::Prefix;
 use imuc_error::*;
 use imuc_lexer::TokenKind;
 use std::collections::VecDeque;
@@ -10,40 +11,16 @@ where
 {
     seq: I,
     queue: VecDeque<ParserStack<'s>>,
+    prefixes: VecDeque<Prefix>,
     pub look_up: imuc_ast::name::LookUp,
     pub resolver: imuc_path::Resolver,
     _phantom: std::marker::PhantomData<&'s str>,
 }
 
 struct ParserStack<'s> {
-    input: ParserElem<'s>,
+    input: ParserInput<'s>,
     cursor: imuc_lexer::Cursor,
     file_info: crate::file::FileInfo,
-}
-
-enum ParserElem<'s> {
-    Input(ParserInput<'s>),
-    Prefix(imuc_ast::name::Prefix),
-}
-
-impl<'s> ParserElem<'s> {
-    /// Gets self as [`ParserInput`], if the enum type matches, otherwise a dummy token is returned
-    fn as_input(&self) -> ParserInput<'s> {
-        match self {
-            Self::Input(input) => *input,
-            _ => ParserInput {
-                kind: TokenKind::Prefix,
-                value: "#DUMMY",
-            },
-        }
-    }
-    /// Converts self as [`Prefix`], if the enum type matches
-    fn into_prefix(self) -> Option<imuc_ast::name::Prefix> {
-        match self {
-            Self::Prefix(prefix) => Some(prefix),
-            _ => None,
-        }
-    }
 }
 
 impl<'s, I> Parser<'s, I>
@@ -55,6 +32,7 @@ where
         Self {
             seq: seq.into_iter(),
             queue: VecDeque::with_capacity(2),
+            prefixes: VecDeque::with_capacity(1),
             look_up: Default::default(),
             resolver: Default::default(),
             _phantom: Default::default(),
@@ -63,36 +41,14 @@ where
 
     /// Inserts a prefix into the front queue, blocking any other queue operations by returning dummy tokens
     /// until the prefix is collected by [`Self::pop_prefix`]
-    pub fn push_prefix(
-        &mut self,
-        prefix: imuc_ast::name::Prefix,
-        cursor: imuc_lexer::Cursor,
-        file_info: crate::file::FileInfo,
-    ) {
-        self.queue.push_front(ParserStack {
-            input: ParserElem::Prefix(prefix),
-            cursor,
-            file_info,
-        });
+    pub fn push_prefix(&mut self, prefix: imuc_ast::name::Prefix) {
+        self.prefixes.push_back(prefix);
     }
 
     /// Acquires the prefix in the queue, if any, otherwise no action is done.
     /// See [`Self::push_prefix`]
     pub fn pop_prefix(&mut self) -> Option<imuc_ast::name::Prefix> {
-        if self
-            .queue
-            .front()
-            .is_some_and(|front| matches!(front.input, ParserElem::Prefix(_)))
-        {
-            let prefix = self
-                .queue
-                .pop_front()
-                .and_then(|front| front.input.into_prefix())
-                .expect("Should contain a prefix after checking");
-            Some(prefix)
-        } else {
-            None
-        }
+        self.prefixes.pop_front()
     }
 
     /// Returns the nth pending result of [`Self::next_token`] without consuming the token,
@@ -104,14 +60,15 @@ where
         // The required length for the queue to contain the index
         let len = index + 1;
         while self.queue.len() < len {
-            if let Some(token) = self.next_token_unfiltered()? {
+            // Call directly because the queue lack new tokens, and must be retrieved from the seq
+            if let Some(token) = self.next_token_directly()? {
                 self.queue.push_back(token);
             } else {
                 return Ok(None);
             }
         }
         if let Some(input) = self.queue.get(index) {
-            Ok(Some(input.input.as_input()))
+            Ok(Some(input.input))
         } else {
             Ok(None)
         }
@@ -123,15 +80,14 @@ where
     /// Note that peeking does not change current [`Self::relative_cursor`] and [`Self::file_info`]
     pub fn peek(&mut self) -> Result<Option<ParserInput<'s>>> {
         if let Some(input) = self.queue.front() {
-            Ok(Some(input.input.as_input()))
+            Ok(Some(input.input))
         } else if let Some(token) = self.next_token_unfiltered()? {
             self.queue.push_back(token);
             Ok(Some(
                 self.queue
                     .back()
                     .expect("Should contain an element after pushing")
-                    .input
-                    .as_input(),
+                    .input,
             ))
         } else {
             Ok(None)
@@ -163,7 +119,7 @@ where
         self.filter_useless()?;
         let result = self.next_token_unfiltered()?;
         self.filter_useless()?;
-        Ok(result.map(|result| result.input.as_input()))
+        Ok(result.map(|result| result.input))
     }
 
     /// Internal function of [`Self::next_token`], filters any useless tokens
@@ -181,12 +137,9 @@ where
         Ok(())
     }
 
-    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens
-    fn next_token_unfiltered(&mut self) -> Result<Option<ParserStack<'s>>> {
-        if let Some(front) = self.queue.pop_front() {
-            return Ok(Some(front));
-        }
-
+    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens,
+    /// and does not touch the queue, but get a new token directly from the seq
+    fn next_token_directly(&mut self) -> Result<Option<ParserStack<'s>>> {
         let mut cursor = self.seq.relative_cursor();
         let mut file_info = self.seq.file_info();
         loop {
@@ -202,19 +155,27 @@ where
                     file_info = self.seq.file_info();
                 } else {
                     return Ok(Some(ParserStack {
-                        input: ParserElem::Input(input),
+                        input,
                         cursor,
                         file_info,
                     }));
                 }
             } else {
                 return Ok(input.map(move |input| ParserStack {
-                    input: ParserElem::Input(input),
+                    input,
                     cursor,
                     file_info,
                 }));
             }
         }
+    }
+
+    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens
+    fn next_token_unfiltered(&mut self) -> Result<Option<ParserStack<'s>>> {
+        if let Some(front) = self.queue.pop_front() {
+            return Ok(Some(front));
+        }
+        self.next_token_directly()
     }
 
     /// Gets the next token, mapping the errors, while regarding EOF as an error

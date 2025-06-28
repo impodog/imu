@@ -7,6 +7,6 @@ pub struct ExprSolver {
     /// Hint type of the expression
     pub hint: Option<Ty>,
     /// Stores the self value, if required
-    /// When setting to true, you must make sure that the underlying expression IS a dot operator
+    /// When setting to Some, you *must* make sure that the underlying expression IS a dot operator
     pub self_value: Option<Arc<OnceLock<Value>>>,
 }

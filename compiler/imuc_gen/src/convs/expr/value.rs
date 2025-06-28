@@ -2,7 +2,14 @@ use crate::prelude::*;
 use ast::expr::Value as AstValue;
 use ast::expr::ValueInner;
 
+use imuc_ast::name::PrefixedName;
 use imuc_lexer::token::ResVal;
+
+pub struct ValueConv;
+
+impl Converter for ValueConv {
+    type Input = AstValue;
+}
 
 pub(crate) fn get_glob(ctx: &mut Ctx, name: &str) -> Option<Value> {
     let body = ctx.body_mut();
@@ -20,7 +27,7 @@ pub(crate) fn get_glob(ctx: &mut Ctx, name: &str) -> Option<Value> {
     }
 }
 
-pub(crate) fn search_name(
+pub(crate) fn search_value(
     ctx: &mut Ctx,
     name: &StrRef,
     alias: Option<&StrRef>,
@@ -28,7 +35,7 @@ pub(crate) fn search_name(
 ) -> Result<Value> {
     if alias.is_none() {
         if let Some(target_name) = ctx.body_mut().get_import(name.as_str()) {
-            return search_name(ctx, &target_name, Some(name), span);
+            return search_value(ctx, &target_name, Some(name), span);
         }
     }
     if let Some(value) = ctx.body_mut().get_value(name.as_str()) {
@@ -49,18 +56,16 @@ pub(crate) fn search_name(
     Err(SendError::new_error())
 }
 
-pub struct ValueConv;
-
-impl Converter for ValueConv {
-    type Input = AstValue;
-}
-
 impl Convert<Option<Value>> for ValueConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
         let body = ctx.body_mut();
         match &input.value {
             ValueInner::Unused => Ok(None),
-            ValueInner::Name(name) => search_name(ctx, name, None, input.span()).map(Some),
+            ValueInner::Name(name) => search_value(ctx, name, None, input.span()).map(Some),
+            ValueInner::Prefixed(PrefixedName { prefix, name }) => {
+                let name = convs::PrefixConv { prefix }.convert(ctx, name)?.into();
+                search_value(ctx, &name, None, input.span()).map(Some)
+            }
             ValueInner::Res(res) => match res {
                 ResVal::True => {
                     let ptr = body.push_stack(Bytes::byte());

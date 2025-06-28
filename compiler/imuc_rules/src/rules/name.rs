@@ -23,8 +23,6 @@ impl Rule for PrefixRule {
             return Ok(Some(()));
         }
 
-        let cursor = parser.relative_cursor();
-        let file_info = parser.file_info();
         let mut prefix: Vec<StrRef> = Vec::new();
         while let Some(next) = parser.peek_nth(1)? {
             if next.kind == TokenKind::Symbol(Symbol::DblColon) {
@@ -41,7 +39,10 @@ impl Rule for PrefixRule {
         if prefix.is_empty() {
             Ok(None)
         } else {
-            parser.push_prefix(name::Prefix::new(prefix), cursor, file_info);
+            parser.push_prefix(name::Prefix::new(
+                nonempty::NonEmpty::from_vec(prefix)
+                    .expect("Prefix should not be empty after checking"),
+            ));
             Ok(Some(()))
         }
     }

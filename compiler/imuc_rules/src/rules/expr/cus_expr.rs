@@ -46,7 +46,7 @@ impl Rule for CusExprRule {
                     })?
                 } else {
                     expr::Expr::Value(expr::Value {
-                        value: expr::ValueInner::Name(name::PrefixedName::local(name.value.into())),
+                        value: expr::ValueInner::Name(name.value.into()),
                         span: parser.file_info().into_span(cursor_begin),
                     })
                 };

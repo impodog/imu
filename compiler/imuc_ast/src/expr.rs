@@ -54,7 +54,8 @@ pub struct Value {
 
 pub enum ValueInner {
     Unused,
-    Name(crate::name::PrefixedName),
+    Name(imuc_lexer::StrRef),
+    Prefixed(crate::name::PrefixedName),
     Res(imuc_lexer::token::ResVal),
 }
 

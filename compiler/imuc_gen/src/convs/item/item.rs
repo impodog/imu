@@ -12,6 +12,7 @@ impl Convert<()> for ItemConv {
         match &input.kind {
             ItemKind::Fun(fun) => {
                 let name = ctx.mangle_with_self(input.name.as_str());
+                log::debug!("Compiling function {name}");
                 let conv = convs::FunConv {
                     name: name.into(),
                     alias: input.name.clone(),

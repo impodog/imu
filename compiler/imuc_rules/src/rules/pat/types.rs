@@ -76,31 +76,57 @@ impl Rule for TypeRule {
         } else {
             pat::PatFlags::Unique
         };
-        let name = parser.next_if(&TypeNameTokens)?;
 
-        if let Some(name) = name {
+        let has_prefix = rules::PrefixRule.parse(parser)?.is_some();
+        // Raises an error if has_prefix is true
+        let should_not_have_prefix = |parser: &mut Parser<'s, I>| -> Result<()> {
+            if has_prefix {
+                Err(parser.map_err(errors::SyntaxError::ExpectedAfter {
+                    expect: "type name".to_owned(),
+                    after: imuc_lexer::TokenKind::Prefix,
+                }))
+            } else {
+                Ok(())
+            }
+        };
+
+        if let Some(name) = parser.next_if(&TypeNameTokens)? {
             let name = match name.kind {
                 TokenKind::Ident(ident) => match ident {
                     Ident::Type => name.value,
                     Ident::Unused => {
+                        should_not_have_prefix(parser)?;
+
                         return Ok(Some(pat::Type {
                             flags,
                             kind: pat::TypeKind::Wildcard,
                             span: parser.file_info().into_span(cursor_begin),
-                        }))
+                        }));
                     }
                     _ => filtered!(),
                 },
                 _ => filtered!(),
             };
             let name = parser.look_up.insert(name);
-
-            Ok(Some(pat::Type {
-                flags,
-                kind: pat::TypeKind::Single(name),
-                span: parser.file_info().into_span(cursor_begin),
-            }))
+            if has_prefix {
+                let prefix = parser
+                    .pop_prefix()
+                    .expect("should have a prefix after parsing one");
+                Ok(Some(pat::Type {
+                    flags,
+                    kind: pat::TypeKind::Prefixed(name::PrefixedName::new(prefix, name)),
+                    span: parser.file_info().into_span(cursor_begin),
+                }))
+            } else {
+                Ok(Some(pat::Type {
+                    flags,
+                    kind: pat::TypeKind::Single(name),
+                    span: parser.file_info().into_span(cursor_begin),
+                }))
+            }
         } else if let Some(res) = parser.next_if(&ResTyTokens)? {
+            should_not_have_prefix(parser)?;
+
             let res = match res.kind {
                 TokenKind::ResTy(res) => res,
                 _ => filtered!(),
@@ -111,6 +137,8 @@ impl Rule for TypeRule {
                 span: parser.file_info().into_span(cursor_begin),
             }))
         } else if parser.next_if(&TokenKind::Pair(Pair::LeftParen))?.is_some() {
+            should_not_have_prefix(parser)?;
+
             let mut list = Vec::new();
             let mut comma = false;
             loop {

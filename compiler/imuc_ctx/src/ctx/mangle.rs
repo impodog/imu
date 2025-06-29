@@ -15,6 +15,11 @@ impl Ctx {
             self.mangle_body(name)
         }
     }
+
+    /// Gets the base name of the module as it is given when creating the Ctx
+    pub fn base_name(&self) -> &str {
+        self.bottom().name()
+    }
 }
 
 pub fn mangle_body_item(body_name: &str, name: &str) -> String {
@@ -23,7 +28,7 @@ pub fn mangle_body_item(body_name: &str, name: &str) -> String {
 
 /// Mangles the name of a body inside of another body
 pub fn mangle_inside_body(prev_name: &str, name: &str) -> String {
-    format!("({prev_name}.{name})")
+    format!("{prev_name}.{name}")
 }
 
 /// Mangles the name of an item related to the type
@@ -46,8 +51,13 @@ pub fn mangle_ptr(name: &str) -> String {
     format!("#PTR{name}")
 }
 
+/// Mangles the name of the entry function of a module
+pub fn mangle_entry(name: &str) -> String {
+    format!("#ENT{name}")
+}
+
 /// Mangles the name of a tupled type, such that types A, B, ... become "(A,B,...)"
-pub fn tuple_name<'a, I>(tuple: I) -> String
+pub fn mangle_tuple_name<'a, I>(tuple: I) -> String
 where
     I: IntoIterator<Item = &'a str>,
     I::IntoIter: Clone,
@@ -76,6 +86,6 @@ where
 
 pub fn mangle_builtin_fun(ty: &str, res_ty: ResTy) -> String {
     let res_name = imuc_ast::builtin::associated_fun_name(res_ty);
-    let name = tuple_name([res_name, ty]);
+    let name = mangle_tuple_name([res_name, ty]);
     mangle_ty_item(&name, res_name)
 }

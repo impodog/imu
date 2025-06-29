@@ -149,7 +149,7 @@ impl CompInst {
 
         let mut ctx = ctx::ctx::Ctx::new(self.config.target.module.clone());
         imuc_gen::convs::SubmoduleConv.convert(&mut ctx, &ast).ok();
-        ctx.make_start_fun("#START");
+        ctx.make_entry_fun();
 
         let any_error = {
             let mut lock = ctx.error_queue.write().unwrap();

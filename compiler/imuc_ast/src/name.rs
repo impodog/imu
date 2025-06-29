@@ -30,24 +30,37 @@ impl LookUp {
     }
 }
 
+/// The first item of the prefix, supporting "loc" keyword
+#[derive(Debug, Clone)]
+pub enum PrefixFirst {
+    Name(StrRef),
+    Loc,
+}
 /// Prefix connected by double colons used before values and types to specify the namespace
-#[derive(Default, Debug, Clone)]
-pub struct Prefix(pub nonempty::NonEmpty<StrRef>);
+/// Its iterator only iterates over items after the first name of the prefix
+#[derive(Debug, Clone)]
+pub struct Prefix {
+    pub first: PrefixFirst,
+    pub remain: Vec<StrRef>,
+}
 impl Deref for Prefix {
-    type Target = nonempty::NonEmpty<StrRef>;
+    type Target = Vec<StrRef>;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.remain
     }
 }
 impl DerefMut for Prefix {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.remain
     }
 }
-
 impl Prefix {
-    pub fn new(prefix: nonempty::NonEmpty<StrRef>) -> Self {
-        Self(prefix)
+    /// Creates a new prefix with the first element
+    pub fn new(first: PrefixFirst) -> Self {
+        Self {
+            first,
+            remain: Default::default(),
+        }
     }
 }
 
@@ -62,13 +75,5 @@ impl PrefixedName {
     /// Creates a new prefixed name
     pub fn new(prefix: Prefix, name: StrRef) -> Self {
         Self { prefix, name }
-    }
-
-    /// Creates a name pointing to local variables (aka without prefix)
-    pub fn local(name: StrRef) -> Self {
-        Self {
-            prefix: Default::default(),
-            name,
-        }
     }
 }

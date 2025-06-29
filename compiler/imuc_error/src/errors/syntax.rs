@@ -7,6 +7,8 @@ pub enum SyntaxError {
     Expected { expect: String, found: TokenKind },
     #[error("expected {expect} after {after:?}")]
     ExpectedAfter { expect: String, after: TokenKind },
+    #[error("expected {expect} after {before:?}")]
+    ExpectedBefore { expect: String, before: TokenKind },
     #[error("expected {expect} in {context}")]
     ExpectedIn { expect: String, context: String },
     #[error("expected {expect:?}")]

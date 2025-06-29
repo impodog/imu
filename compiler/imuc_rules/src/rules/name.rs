@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Ident, Symbol};
+use imuc_lexer::token::{Ident, Keyword, Symbol};
 
 /// Outputs the prefix to type/value names. This rule is lazy, it only consumes the prefix from the
 /// parser, store it in the queue and return whether it is successful by [`Option`]. If the rule is
@@ -16,34 +16,50 @@ impl Rule for PrefixRule {
         I: ParserSequence<'s>,
     {
         // Test if a prefix already exists
-        if parser
-            .peek()?
-            .is_some_and(|input| matches!(input.kind, TokenKind::Prefix))
-        {
+        if parser.has_prefix() {
             return Ok(Some(()));
         }
 
-        let mut prefix: Vec<StrRef> = Vec::new();
+        let mut prefix: Option<name::Prefix> = None;
         while let Some(next) = parser.peek_nth(1)? {
             if next.kind == TokenKind::Symbol(Symbol::DblColon) {
-                let name = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
+                if let Some(name) = parser.next_if(&TokenKind::Ident(Ident::Value))? {
+                    let value = parser.look_up.insert(name.value);
+                    if let Some(ref mut prefix) = prefix {
+                        prefix.push(value);
+                    } else {
+                        prefix = Some(name::Prefix::new(name::PrefixFirst::Name(value)));
+                    }
+                } else if parser.next_if(&TokenKind::Keyword(Keyword::Loc))?.is_some() {
+                    if prefix.is_some() {
+                        return Err(errors::SyntaxError::ExpectedAfter {
+                            expect: "module name".to_owned(),
+                            after: TokenKind::Symbol(Symbol::DblColon),
+                        }
+                        .into());
+                    } else {
+                        prefix = Some(name::Prefix::new(name::PrefixFirst::Loc));
+                    }
+                } else {
+                    return Err(errors::SyntaxError::ExpectedBefore {
+                        expect: "module name or `loc`".to_owned(),
+                        before: TokenKind::Symbol(Symbol::DblColon),
+                    }
+                    .into());
+                }
                 // Remove double colon
                 parser
                     .next_token()?
                     .expect("Should contain a token after peeking");
-                prefix.push(parser.look_up.insert(name.value));
             } else {
                 break;
             }
         }
-        if prefix.is_empty() {
-            Ok(None)
-        } else {
-            parser.push_prefix(name::Prefix::new(
-                nonempty::NonEmpty::from_vec(prefix)
-                    .expect("Prefix should not be empty after checking"),
-            ));
+        if let Some(prefix) = prefix {
+            parser.push_prefix(prefix);
             Ok(Some(()))
+        } else {
+            Ok(None)
         }
     }
 }

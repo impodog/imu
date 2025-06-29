@@ -51,6 +51,11 @@ where
         self.prefixes.pop_front()
     }
 
+    /// Returns if there is any prefix in the queue
+    pub fn has_prefix(&self) -> bool {
+        !self.prefixes.is_empty()
+    }
+
     /// Returns the nth pending result of [`Self::next_token`] without consuming the token,
     /// index starting from 0
     ///

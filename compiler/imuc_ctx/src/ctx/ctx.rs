@@ -65,11 +65,17 @@ impl Ctx {
     pub fn push_body(
         &mut self,
         name: &str,
+        // Defines whether to directly use the given name and not mangle it again
+        direct_name: bool,
         self_ty: Option<Ty>,
         is_module: bool,
     ) -> &mut super::Body {
         let base_name = self.body.last().name();
-        let body_name = super::mangle::mangle_inside_body(base_name, name);
+        let body_name = if direct_name {
+            name.to_owned()
+        } else {
+            super::mangle::mangle_inside_body(base_name, name)
+        };
         let imports = if is_module {
             super::Imports::default()
         } else {
@@ -141,8 +147,8 @@ impl Ctx {
 
     /// Creates the entry point function for the module with given name.
     /// This takes the bottom body and pushes the function into current map
-    pub fn make_start_fun(&mut self, name: &'static str) {
-        let name = StrRef::from(self.mangle_body(name));
+    pub fn make_entry_fun(&mut self) {
+        let name = StrRef::from(crate::ctx::mangle::mangle_entry(self.body.first().name()));
         let cmd = self.bottom_mut().take_cmd();
 
         let param_ty = Ty::unit();

@@ -1,8 +1,14 @@
 mod sub;
 
+fun a() {
+    fun b() {
+        fun c() {}
+    }
+}
+
 fun main() {
-    let x = 1;
-    let y = x;
-    sample::sub::hello;
+    loc::a();
+    let foo = loc::sub::Foo(bar: 3.14);
+    let bar = sub::hello(foo.bar);
 }
 

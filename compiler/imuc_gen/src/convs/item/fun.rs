@@ -90,7 +90,7 @@ impl Convert<()> for FunConv {
         }
 
         // Work to compile body expression
-        ctx.push_body(name.as_str(), self_ty, false);
+        ctx.push_body(name.as_str(), true, self_ty, false);
         // We push stack record here to also include the added arguments
         ctx.body_mut().push_stack_record();
         // Reserve memory for arguments

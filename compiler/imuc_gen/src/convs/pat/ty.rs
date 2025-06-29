@@ -8,27 +8,33 @@ impl Converter for TypeConv {
     type Input = Type;
 }
 
+fn resolve_type_name(ctx: &mut Ctx, name: &str, span: imuc_lexer::Span) -> Result<Ty> {
+    // To make name a immutable reference that can be altered
+    let mut name = name;
+    // extract alias
+    let original = ctx.body().get_import(name);
+    if let Some(ref original) = original {
+        name = original;
+    }
+    let ty = ctx.get_type(name).ok_or_else(|| {
+        ctx.push_error(
+            ConvError::new(Severity::Error, span)
+                .with_text("Undefined type", format!("Undefined type: {name}")),
+        );
+        SendError::default()
+    })?;
+    Ok(ty.to_owned())
+}
+
 impl Convert<Option<Ty>> for TypeConv {
     /// Converts an AST type to an actual type; [`None`] is only returned if the type is wildcard
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Ty>> {
         let ty = match &input.kind {
             TypeKind::Wildcard => return Ok(None),
-            TypeKind::Single(ref name) => {
-                // To make name a immutable reference that can be altered
-                let mut name = name;
-                // extract alias
-                let original = ctx.body().get_import(name.as_str());
-                if let Some(ref original) = original {
-                    name = original;
-                }
-                let ty = ctx.get_type(name.as_str()).ok_or_else(|| {
-                    ctx.push_error(
-                        ConvError::new(Severity::Error, input.span)
-                            .with_text("Undefined type", format!("Undefined type: {name}")),
-                    );
-                    SendError::default()
-                })?;
-                ty.to_owned()
+            TypeKind::Single(ref name) => resolve_type_name(ctx, name, input.span())?,
+            TypeKind::Prefixed(ast::name::PrefixedName { prefix, name }) => {
+                let name = convs::PrefixConv { prefix }.convert(ctx, name)?;
+                resolve_type_name(ctx, name.as_str(), input.span())?
             }
             TypeKind::Res(res) => match res {
                 ResTy::SelfType => {
@@ -65,7 +71,7 @@ impl Convert<Option<Ty>> for TypeConv {
                     })?);
                 }
                 let name: StrRef =
-                    ctx::mangle::tuple_name(list.iter().map(|ty| ty.name.as_str())).into();
+                    ctx::mangle::mangle_tuple_name(list.iter().map(|ty| ty.name.as_str())).into();
                 ctx.ty
                     .or_insert_with(name.clone(), move || {
                         Ty::new(ir::sym::ty::TyInner {

@@ -70,13 +70,13 @@ impl Body {
 
     /// Memorize the current stack pointer, to be reverted later
     pub fn push_stack_record(&mut self) {
-        debug!("Push stack record: {:?}", self.stack());
+        // debug!("Push stack record: {:?}", self.stack());
         self.stack_record.push(self.stack());
     }
 
     /// Reverts to the given stack pointer, asserting it is lower than or equal to current stack
     pub fn revert_stack_record_to(&mut self, stack: cmd::Ptr) {
-        debug!("Revert stack record: {:?} to {:?}", self.stack(), stack);
+        // debug!("Revert stack record: {:?} to {:?}", self.stack(), stack);
         debug_assert!(self.stack >= stack);
         self.force_stack_to(stack);
     }
@@ -85,7 +85,7 @@ impl Body {
     /// than the stack pointer. This is only used after loop statements since there are special jump
     /// commands by mit
     pub fn force_stack_to(&mut self, stack: cmd::Ptr) {
-        debug!("Force stack to {stack:?}");
+        // debug!("Force stack to {stack:?}");
         self.push(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }

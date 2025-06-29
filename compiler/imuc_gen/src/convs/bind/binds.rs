@@ -68,7 +68,7 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                             ConvError::new(Severity::Error, pat.span())
                                 .with_head("Let binding to a name requires a value"),
                         );
-                        Err(SendError::default().into())
+                        Err(SendError::new_error())
                     }
                 }
             }

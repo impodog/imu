@@ -73,6 +73,7 @@ pub enum Keyword {
     Else,
     Loop,
     Mit,
+    Loc,
 }
 
 /// A part of [`TokenKind`] for values using reserved names

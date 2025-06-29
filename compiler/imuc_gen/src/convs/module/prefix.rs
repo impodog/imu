@@ -22,8 +22,13 @@ impl<'prefix> Converter for PrefixConv<'prefix> {
 
 impl<'prefix> Convert<String> for PrefixConv<'prefix> {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<String> {
-        let mut base = resolve_alias(ctx, self.prefix.first()).into_string();
-        for next in self.prefix.iter().skip(1) {
+        let base = match &self.prefix.first {
+            ast::name::PrefixFirst::Name(name) => resolve_alias(ctx, name),
+            ast::name::PrefixFirst::Loc => ctx.base_name().into(),
+        };
+        let mut base = base.into_string();
+        // Prefix iterator starts after the first element of the prefix,
+        for next in self.prefix.iter() {
             base = ctx::mangle::mangle_inside_body(base.as_str(), next.as_str());
         }
         Ok(ctx::mangle::mangle_body_item(base.as_str(), input.as_str()))

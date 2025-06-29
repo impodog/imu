@@ -4,9 +4,9 @@ mod tests {
 
     #[test]
     fn test_tuple_name() {
-        assert_eq!(tuple_name(["abc", "def", "ghi"]), "(abc,def,ghi)");
-        assert_eq!(tuple_name(["abc", ""]), "(abc,)");
-        assert_eq!(tuple_name([]), "()");
+        assert_eq!(mangle_tuple_name(["abc", "def", "ghi"]), "(abc,def,ghi)");
+        assert_eq!(mangle_tuple_name(["abc", ""]), "(abc,)");
+        assert_eq!(mangle_tuple_name([]), "()");
     }
 
     #[test]
@@ -16,6 +16,6 @@ mod tests {
             arr.push(i.to_string());
         }
         let iter = arr.iter().map(|s| s.as_str());
-        tuple_name(iter);
+        mangle_tuple_name(iter);
     }
 }

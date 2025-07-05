@@ -108,7 +108,7 @@ impl Bytes {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NumBytes {
     I8,
     I16,
@@ -166,6 +166,17 @@ impl From<NumBytes> for char {
             I16 => 'd',
             I32 => 'q',
             I64 => 'o',
+        }
+    }
+}
+
+impl From<NumBytes> for Bytes {
+    fn from(value: NumBytes) -> Self {
+        match value {
+            NumBytes::I8 => Bytes::new(1),
+            NumBytes::I16 => Bytes::new(2),
+            NumBytes::I32 => Bytes::new(4),
+            NumBytes::I64 => Bytes::new(8),
         }
     }
 }

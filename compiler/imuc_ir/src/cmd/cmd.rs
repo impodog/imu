@@ -35,6 +35,28 @@ macro_rules! arithmetic {
     }};
 }
 
+macro_rules! conversion {
+    (read $name: ident, $bytes: ident, $input: ident) => {{
+        if $bytes.len() != 2 {
+            return Err(errors::IrError::TwoNumBytesRequired($bytes.to_owned()).into());
+        }
+        let mut bytes_chars = $bytes.chars();
+        let lhs = bytes_chars.next().expect("len is exactly 2").try_into()?;
+        let rhs = bytes_chars.next().expect("len is exactly 2").try_into()?;
+        let ptr = Ptr::read(&mut $input)?;
+        Ok(Self::$name(lhs, rhs, ptr))
+    }};
+    (write $name: literal, $lhs: ident, $rhs: ident, $ptr: ident, $output: ident) => {{
+        write!(
+            $output,
+            concat!($name, "{}{} "),
+            char::from(*$lhs),
+            char::from(*$rhs)
+        )?;
+        $ptr.write(&mut $output)?;
+    }};
+}
+
 #[derive(Clone)]
 pub enum Cmd {
     /// Duplicate bytes from pointer to the top of stack
@@ -66,6 +88,10 @@ pub enum Cmd {
     Mulf(NumBytes, Ptr, Ptr),
     Divf(NumBytes, Ptr, Ptr),
     Testf(NumBytes, Ptr, Ptr),
+    FToF(NumBytes, NumBytes, Ptr),
+    IToF(NumBytes, NumBytes, Ptr),
+    FToI(NumBytes, NumBytes, Ptr),
+    Fill0(Bytes),
     /// Jump to a specific location if eached
     Jump(Ptr),
     /// If the 1-byte condition in pointer 1 is true, jump to pointer 2
@@ -143,6 +169,13 @@ impl Rw for Cmd {
             "mlf" => arithmetic!(read Mulf, bytes, input),
             "dvf" => arithmetic!(read Divf, bytes, input),
             "tsf" => arithmetic!(read Testf, bytes, input),
+            "ftf" => conversion!(read FToF, bytes, input),
+            "itf" => conversion!(read IToF, bytes, input),
+            "fti" => conversion!(read FToI, bytes, input),
+            "fil" => {
+                let bytes = Bytes::read(&mut input)?;
+                Ok(Self::Fill0(bytes))
+            }
             "jmp" => {
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::Jump(ptr))
@@ -224,6 +257,13 @@ impl Rw for Cmd {
             Self::Divf(bytes, lhs, rhs) => arithmetic!(write "dvf", bytes, lhs, rhs, output),
             Self::Testf(bytes, lhs, rhs) => arithmetic!(write "tsf", bytes, lhs, rhs, output),
             Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
+            Self::FToF(lhs, rhs, ptr) => conversion!(write "ftf", lhs, rhs, ptr, output),
+            Self::IToF(lhs, rhs, ptr) => conversion!(write "itf", lhs, rhs, ptr, output),
+            Self::FToI(lhs, rhs, ptr) => conversion!(write "fti", lhs, rhs, ptr, output),
+            Self::Fill0(bytes) => {
+                write!(output, "fil ")?;
+                bytes.write(&mut output)?;
+            }
             Self::Jump(ptr) => {
                 write!(output, "jmp ")?;
                 ptr.write(&mut output)?;

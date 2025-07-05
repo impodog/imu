@@ -13,6 +13,7 @@ pub enum Expr {
     Tuple(Tuple),
     Cus(Cus),
     Mit(Mit),
+    Cast(Cast),
 }
 
 impl Expr {
@@ -30,6 +31,7 @@ impl Expr {
             Self::Tuple(tuple) => tuple.span(),
             Self::Cus(cus) => cus.span(),
             Self::Mit(mit) => mit.span(),
+            Self::Cast(cast) => cast.span(),
         };
         Some(span)
     }
@@ -103,5 +105,12 @@ pub struct Mit {
     /// The layers of loops to jump out of, minus 1
     pub index: usize,
     pub expr: Box<Expr>,
+    pub span: imuc_lexer::Span,
+}
+
+#[derive(Spanned)]
+pub struct Cast {
+    pub expr: Box<Expr>,
+    pub ty: imuc_lexer::token::ResTy,
     pub span: imuc_lexer::Span,
 }

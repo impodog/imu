@@ -1,5 +1,15 @@
 use crate::prelude::*;
-use imuc_lexer::token::Keyword;
+use imuc_lexer::token::{Keyword, ResTy};
+
+lazy_tokens!(
+    CastTyTokens,
+    ResTy::I8,
+    ResTy::I16,
+    ResTy::I32,
+    ResTy::I64,
+    ResTy::F32,
+    ResTy::F64
+);
 
 pub struct ElemExprRule;
 
@@ -39,6 +49,27 @@ impl Rule for ElemExprRule {
             }))
         } else {
             None
+        };
+        // Search for suffix "as" statements
+        let expr = match expr {
+            Some(expr) => {
+                if parser.next_if(&TokenKind::Keyword(Keyword::As))?.is_some() {
+                    let ty = parser.next_expected(&CastTyTokens)?;
+                    let ty = match ty.kind {
+                        TokenKind::ResTy(ty) => ty,
+                        _ => filtered!(),
+                    };
+                    let expr = expr::Expr::Cast(expr::Cast {
+                        expr: Box::new(expr),
+                        ty,
+                        span: parser.file_info().into_span(cursor_begin),
+                    });
+                    Some(expr)
+                } else {
+                    Some(expr)
+                }
+            }
+            None => None,
         };
         Ok(expr)
     }

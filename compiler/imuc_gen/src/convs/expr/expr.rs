@@ -41,6 +41,7 @@ impl Convert<Option<Value>> for ExprConv {
                 convs::MitConv.convert(ctx, mit)?;
                 Ok(None)
             }
+            Expr::Cast(cast) => convs::CastConv.convert(ctx, cast).map(Some),
         }
     }
 }

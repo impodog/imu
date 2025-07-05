@@ -1,6 +1,7 @@
 mod bin_expr;
 mod body;
 mod call;
+mod cast;
 mod cus;
 mod expr;
 mod mit;
@@ -12,6 +13,7 @@ mod value;
 
 pub use bin_expr::BinExprConv;
 pub use body::BodyConv;
+pub use cast::CastConv;
 pub use cus::CusExprConv;
 pub use expr::ExprConv;
 pub use mit::MitConv;

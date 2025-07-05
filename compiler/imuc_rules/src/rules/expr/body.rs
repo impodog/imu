@@ -73,7 +73,7 @@ impl Rule for BodyRule {
             // Set the unit-ness for the most inner body
             stack.last_mut().unwrap().unit = unit;
 
-            let body = stack.into_iter().fold(None, |inner, mut elem| {
+            let body = stack.into_iter().rev().fold(None, |inner, mut elem| {
                 if let Some(inner) = inner {
                     elem.body.push(inner);
                 }

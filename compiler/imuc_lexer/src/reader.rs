@@ -123,7 +123,8 @@ where
         self.next_char();
     }
 
-    /// Advances the cursor by one char until `f` returns false, discarding chars in between
+    /// Advances the cursor by one char until `f` returns false, discarding chars in between (not
+    /// inclusive)
     pub fn advance_while(&mut self, mut f: impl FnMut(&mut Self) -> bool) {
         while f(self) {
             self.advance();

@@ -44,6 +44,12 @@ pub enum Spacing {
 pub enum Literal {
     Integer,
     Float,
+    I8,
+    I16,
+    I32,
+    I64,
+    F32,
+    F64,
     String,
     MultiString,
 }

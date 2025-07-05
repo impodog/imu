@@ -87,6 +87,9 @@ impl Rw for Prim {
                 Integer::I64(value) => {
                     write!(output, "o{value}")?;
                 }
+                Integer::Any(_) => {
+                    return Err(errors::IrError::TypeNotAllowed("Integer::Any".to_owned()).into());
+                }
             },
             Prim::Float(float) => match float {
                 Float::F32(value) => {
@@ -94,6 +97,9 @@ impl Rw for Prim {
                 }
                 Float::F64(value) => {
                     write!(output, ";{value:.10}")?;
+                }
+                Float::Any(_) => {
+                    return Err(errors::IrError::TypeNotAllowed("Float::Any".to_owned()).into());
                 }
             },
             Prim::String(value) => {

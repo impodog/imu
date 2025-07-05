@@ -198,6 +198,60 @@ where
         TokenKind::Spacing(Spacing::Indent)
     }
 
+    /// Gets the suffix indicating the type of the integer, or Literal::Integer for a generic one
+    fn next_integer_suffix(&mut self) -> TokenKind {
+        match self.first() {
+            'I' => {
+                self.advance();
+                match (self.first(), self.second()) {
+                    ('8', _) => {
+                        self.advance();
+                        TokenKind::Literal(Literal::I8)
+                    }
+                    ('1', '6') => {
+                        self.advance();
+                        self.advance();
+                        TokenKind::Literal(Literal::I16)
+                    }
+                    ('3', '2') => {
+                        self.advance();
+                        self.advance();
+                        TokenKind::Literal(Literal::I32)
+                    }
+                    ('6', '4') => {
+                        self.advance();
+                        self.advance();
+                        TokenKind::Literal(Literal::I64)
+                    }
+                    _ => TokenKind::LexError(LexError::NumberError),
+                }
+            }
+            _ => TokenKind::Literal(Literal::Integer),
+        }
+    }
+
+    fn next_float_suffix(&mut self) -> TokenKind {
+        match self.first() {
+            'F' => {
+                self.advance();
+                match (self.first(), self.second()) {
+                    ('3', '2') => {
+                        self.advance();
+                        self.advance();
+                        TokenKind::Literal(Literal::F32)
+                    }
+                    ('6', '4') => {
+                        self.advance();
+                        self.advance();
+                        TokenKind::Literal(Literal::F64)
+                    }
+                    _ => TokenKind::LexError(LexError::NumberError),
+                }
+            }
+            _ => TokenKind::Literal(Literal::Float),
+        }
+    }
+
     fn next_number(&mut self, ch: char) -> TokenKind {
         match ch {
             '0' => match self.first() {
@@ -205,19 +259,19 @@ where
                 'b' => {
                     self.advance();
                     self.advance_while(|reader| ('0'..='1').contains(&reader.first()));
-                    TokenKind::Literal(Literal::Integer)
+                    self.next_integer_suffix()
                 }
                 'x' => {
                     self.advance();
                     self.advance_while(|reader| reader.first().is_ascii_hexdigit());
-                    TokenKind::Literal(Literal::Integer)
+                    self.next_integer_suffix()
                 }
                 '.' => {
                     self.advance();
                     self.advance_while(|reader| reader.first().is_ascii_digit());
-                    TokenKind::Literal(Literal::Float)
+                    self.next_float_suffix()
                 }
-                _ => TokenKind::Literal(Literal::Integer),
+                _ => self.next_integer_suffix(),
             },
             '1'..='9' => {
                 self.advance_while(|reader| reader.first().is_ascii_digit());
@@ -231,9 +285,9 @@ where
                         }
                         self.advance_while(|reader| reader.first().is_ascii_digit());
                     }
-                    TokenKind::Literal(Literal::Float)
+                    self.next_float_suffix()
                 } else {
-                    TokenKind::Literal(Literal::Integer)
+                    self.next_integer_suffix()
                 }
             }
             _ => unreachable!(),

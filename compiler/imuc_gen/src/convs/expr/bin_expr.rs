@@ -123,15 +123,16 @@ impl Convert<Value> for BinExprConv {
             );
         }
 
-        let lhs: Value = convs::ExprConv::default()
-            .convert(ctx, input.lhs.as_ref())?
-            .ok_or_else(|| {
-                ctx.push_error(
-                    ConvError::new(Severity::Error, input.span)
-                        .with_head("Lhs should return a value"),
-                );
-                SendError::default()
-            })?;
+        let lhs: Value = convs::ExprConv {
+            solver: ExprSolver::inherit(&solver),
+        }
+        .convert(ctx, input.lhs.as_ref())?
+        .ok_or_else(|| {
+            ctx.push_error(
+                ConvError::new(Severity::Error, input.span).with_head("Lhs should return a value"),
+            );
+            SendError::default()
+        })?;
 
         // Special case: Dot is not an arithmetic operator
         if input.op == BinOp::Dot {
@@ -155,15 +156,16 @@ impl Convert<Value> for BinExprConv {
             }
         }
 
-        let rhs: Value = convs::ExprConv::default()
-            .convert(ctx, input.rhs.as_ref())?
-            .ok_or_else(|| {
-                ctx.push_error(
-                    ConvError::new(Severity::Error, input.span)
-                        .with_head("Rhs should return a value"),
-                );
-                SendError::default()
-            })?;
+        let rhs: Value = convs::ExprConv {
+            solver: ExprSolver::inherit(&solver).with_hint_or_else(Some(lhs.ty.clone())),
+        }
+        .convert(ctx, input.rhs.as_ref())?
+        .ok_or_else(|| {
+            ctx.push_error(
+                ConvError::new(Severity::Error, input.span).with_head("Rhs should return a value"),
+            );
+            SendError::default()
+        })?;
         let lhs_ty = lhs.ty.to_res_ty().ok_or_else(|| {
             ctx.push_error(
                 ConvError::new(Severity::Error, input.span)

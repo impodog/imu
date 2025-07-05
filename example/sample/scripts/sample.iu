@@ -10,5 +10,10 @@ fun main() {
     loc::a();
     let foo = loc::sub::Foo(bar: 3.14);
     let bar = sub::hello(foo.bar);
+    // Primitive type hinting
+    let x: I8 = 4;
+    let y: I64 = 5;
+    let z: I8 = 5 + x;
+    let w = x + 10; // Auto convert 10 to I8
 }
 

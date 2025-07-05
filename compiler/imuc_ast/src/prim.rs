@@ -15,6 +15,7 @@ pub enum Integer {
     I16(i16),
     I32(i32),
     I64(i64),
+    Any(i64),
 }
 
 /// Different sizes of a float stored in [`Prim`]
@@ -22,4 +23,5 @@ pub enum Integer {
 pub enum Float {
     F32(f32),
     F64(f64),
+    Any(f64),
 }

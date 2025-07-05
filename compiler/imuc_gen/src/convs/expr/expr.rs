@@ -24,8 +24,10 @@ impl Convert<Option<Value>> for ExprConv {
     /// unused name
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
         let ExprConv { solver } = self;
+        // NOTE: Here all solvers are not inherited because ExprConv is just a glue layer, and the
+        // real actions of solvers are done internally
         match input {
-            Expr::Prim(prim) => convs::PrimConv.convert(ctx, prim).map(Some),
+            Expr::Prim(prim) => convs::PrimConv { solver }.convert(ctx, prim).map(Some),
             Expr::Value(value) => convs::ValueConv.convert(ctx, value),
             Expr::UnExpr(un_expr) => convs::UnExprConv.convert(ctx, un_expr).map(Some),
             Expr::BinExpr(bin_expr) => convs::BinExprConv { solver }

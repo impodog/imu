@@ -79,14 +79,15 @@ impl ImportPool {
     /// Returns any errors encounter during io and compilation.
     pub fn load(&mut self, file: impl Into<PathBuf>) -> Result<Arc<ImportCache>> {
         let file = file.into();
-        let path = file.with_file_name("lib.iuh");
+        let path = file.join("lib.iuh");
         match self.pool.entry(file) {
             Entry::Occupied(entry) => Ok(entry.get().clone()),
             Entry::Vacant(entry) => {
                 let reader = std::io::BufReader::new(
                     std::fs::OpenOptions::new()
                         .read(true)
-                        .open(path.as_path())?,
+                        .open(path.as_path())
+                        .with_context(|| format!("When reading {path:?}"))?,
                 );
                 let reader = IrReader::new(reader, true);
                 let header = Header::read(reader)?;

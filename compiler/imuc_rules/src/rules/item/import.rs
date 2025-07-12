@@ -1,10 +1,15 @@
 use crate::prelude::*;
-use imuc_ast::module::Import;
-use imuc_lexer::token::{BinOp, Ident, Keyword, Pair, Symbol};
+use imuc_ast::{
+    module::{Import, ImportDir},
+    name::{Prefix, PrefixFirst},
+};
+use imuc_lexer::token::{Ident, Keyword, Pair, Symbol};
 
 lazy_tokens!(ImportTokens, Ident::Value, Ident::Type);
 
-pub struct ImportItemRule;
+struct ImportItemRule {
+    prefix: Prefix,
+}
 
 impl ImportItemRule {
     fn into_item(token: imuc_parser::ParserInput<'_>, str: StrRef) -> module::ImportItemKind {
@@ -46,6 +51,7 @@ impl Rule for ImportItemRule {
     where
         I: ParserSequence<'s>,
     {
+        let ImportItemRule { prefix } = self;
         if parser.next_if(&TokenKind::Pair(Pair::LeftParen))?.is_some() {
             let mut list = Self::Output::new();
             let mut comma = true;
@@ -68,6 +74,7 @@ impl Rule for ImportItemRule {
                 let alias = Self::next_alias(item.kind, parser)?;
 
                 list.push(module::ImportItem {
+                    prefix: prefix.clone(),
                     kind,
                     alias,
                     span: parser.file_info().into_span(cursor_begin),
@@ -81,6 +88,7 @@ impl Rule for ImportItemRule {
             if let Some(item) = parser.next_if(&ImportTokens)? {
                 let alias = Self::next_alias(item.kind, parser)?;
                 Ok(Some(vec![module::ImportItem {
+                    prefix,
                     kind: Self::into_item(item, parser.look_up.insert(item.value)),
                     alias,
                     span: parser.file_info().into_span(cursor_begin),
@@ -104,51 +112,36 @@ impl Rule for ImportRule {
     {
         let cursor_begin = parser.relative_cursor();
 
-        let module = parser.next_expected(&TokenKind::Ident(Ident::Value))?;
-        let module = parser
-            .resolver
-            .query(std::borrow::Cow::Borrowed(module.value))?;
-
-        let mut module_ref = module.as_ref();
-        let file = loop {
-            let _ = parser.next_expected(&TokenKind::BinOp(BinOp::Dot))?;
-            let next = parser.next_if(&TokenKind::Ident(Ident::Value))?;
-            if let Some(next) = next {
-                let sub = module_ref.get(next.value).ok_or_else(|| {
-                    parser.map_err(errors::PathError::ModuleNotFound(next.value.to_owned()))
-                })?;
-                match sub {
-                    imuc_path::SubModule::File(file) => {
-                        break Some(file);
-                    }
-                    imuc_path::SubModule::Module(module) => {
-                        module_ref = module;
-                    }
-                }
-            } else {
-                break None;
+        rules::PrefixRule.parse(parser)?.ok_or_else(|| {
+            parser.map_err(errors::SyntaxError::ExpectedAfter {
+                expect: "module name".to_owned(),
+                after: TokenKind::Keyword(Keyword::Use),
+            })
+        })?;
+        let prefix = parser
+            .pop_prefix()
+            .expect("Should contain a prefix after calling PrefixRule");
+        let dir = match prefix.first {
+            PrefixFirst::Name(ref path) => {
+                let module = parser
+                    .resolver
+                    .query(std::borrow::Cow::Borrowed(path.as_str()))?;
+                ImportDir::External(module.base().to_path_buf())
             }
+            PrefixFirst::Loc => ImportDir::Loc,
         };
-        match file {
-            Some(file) => {
-                let _ = parser.next_expected(&TokenKind::BinOp(BinOp::Dot))?;
-                let item = ImportItemRule.parse(parser)?.ok_or_else(|| {
-                    parser.map_err(errors::SyntaxError::ExpectedIn {
-                        expect: "Item".to_owned(),
-                        context: "import statement".to_owned(),
-                    })
-                })?;
-                let _ = parser.next_expected(&TokenKind::Semicolon);
-                Ok(Some(module::Import {
-                    file: file.clone(),
-                    item,
-                    span: parser.file_info().into_span(cursor_begin),
-                }))
-            }
-            None => {
-                // TODO: Add reference alias
-                Err(parser.map_err(errors::PathError::BrokenPath))
-            }
-        }
+
+        let item = ImportItemRule { prefix }.parse(parser)?.ok_or_else(|| {
+            parser.map_err(errors::SyntaxError::ExpectedIn {
+                expect: "Item".to_owned(),
+                context: "import statement".to_owned(),
+            })
+        })?;
+        let _ = parser.next_expected(&TokenKind::Semicolon);
+        Ok(Some(module::Import {
+            dir,
+            item,
+            span: parser.file_info().into_span(cursor_begin),
+        }))
     }
 }

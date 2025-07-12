@@ -208,22 +208,29 @@ pub struct Tuple(pub Vec<TyItem>);
 #[derive(Debug, Clone)]
 pub struct Cus(pub BTreeMap<StrRef, TyItem>);
 
+/// Tries to convert name to ResTy if matching
+fn try_into_res_ty(name: &str) -> Option<ResTy> {
+    let res_ty = match name {
+        "Unit" => ResTy::Unit,
+        "I8" => ResTy::I8,
+        "I16" => ResTy::I16,
+        "I32" => ResTy::I32,
+        "I64" => ResTy::I64,
+        "F32" => ResTy::F32,
+        "F64" => ResTy::F64,
+        "Str" => ResTy::Str,
+        "Ptr" => ResTy::Ptr,
+        _ => {
+            return None;
+        }
+    };
+    Some(res_ty)
+}
+
 impl Rw for ResTy {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = input.read_until(' ')?;
-        let res = match name {
-            "Unit" => ResTy::Unit,
-            "I8" => ResTy::I8,
-            "I16" => ResTy::I16,
-            "I32" => ResTy::I32,
-            "I64" => ResTy::I64,
-            "F32" => ResTy::F32,
-            "F64" => ResTy::F64,
-            "Str" => ResTy::Str,
-            "Ptr" => ResTy::Ptr,
-            _ => return Err(errors::IrError::NoSuchType(name.to_owned()).into()),
-        };
-        Ok(res)
+        try_into_res_ty(name).ok_or_else(|| errors::IrError::NoSuchType(name.to_owned()).into())
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         let str = match self {
@@ -252,7 +259,13 @@ impl From<Ty> for TyItem {
 impl Rw for TyItem {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = input.read_until(' ')?;
-        Ok(Self::Pending(name.into()))
+        if let Some(res_ty) = try_into_res_ty(name) {
+            Ok(Self::Solid(
+                Ty::from_res(res_ty).expect("should be available res_ty"),
+            ))
+        } else {
+            Ok(Self::Pending(name.into()))
+        }
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
         match self {

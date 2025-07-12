@@ -1,4 +1,0 @@
-mod inner;
-
-fun hello() {
-    }

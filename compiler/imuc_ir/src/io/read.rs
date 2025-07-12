@@ -15,7 +15,8 @@ pub trait IrRead {
     ///
     /// The default implementation uses [`Self::peek_line`]
     fn peek_line_or_else(&mut self) -> Result<&str> {
-        self.peek_line().ok_or_else(|| errors::IrError::Eof.into())
+        let peek = self.peek_line();
+        peek.ok_or_else(|| errors::IrError::Eof.into())
     }
     /// Returns whether the reading is outside the current compiled module
     fn external(&self) -> bool;
@@ -79,11 +80,12 @@ where
         {
             let mut buf = String::new();
             let value = self.inner.read_line(&mut buf)?;
-            buf.pop().expect("a line contains at least one character");
-            self.line = Some(buf);
             if value == 0 {
                 return Ok(false);
             }
+            buf.pop().expect("a line contains at least one character");
+            self.line = Some(buf);
+            self.cursor = 0;
         }
         Ok(true)
     }
@@ -114,6 +116,7 @@ where
         }
         let begin = self.cursor;
         if let Some(line) = &mut self.line {
+            let mut suffix = 0;
             while self.cursor < line.len() {
                 let ch = line[self.cursor..]
                     .chars()
@@ -121,10 +124,11 @@ where
                     .expect("chars should not be empty");
                 self.cursor += ch.len_utf8();
                 if ch == until {
+                    suffix = ch.len_utf8();
                     break;
                 }
             }
-            Ok(&line[begin..self.cursor])
+            Ok(&line[begin..self.cursor - suffix])
         } else {
             unreachable!()
         }
@@ -189,6 +193,7 @@ impl IrRead for LineReader<'_> {
 
     fn read_until(&mut self, until: char) -> Result<&str> {
         let begin = self.cursor;
+        let mut suffix = 0;
         while self.cursor < self.value.len() {
             let ch = self.value[self.cursor..]
                 .chars()
@@ -196,13 +201,14 @@ impl IrRead for LineReader<'_> {
                 .expect("chars should not be empty");
             self.cursor += ch.len_utf8();
             if ch == until {
+                suffix = ch.len_utf8();
                 break;
             }
         }
         if begin == self.cursor {
             Err(errors::IrError::Eof.into())
         } else {
-            Ok(&self.value[begin..self.cursor])
+            Ok(&self.value[begin..self.cursor - suffix])
         }
     }
 

@@ -30,15 +30,21 @@ pub enum ImportItemKind {
 
 #[derive(Spanned)]
 pub struct ImportItem {
+    pub prefix: crate::name::Prefix,
     pub kind: ImportItemKind,
     pub alias: Option<imuc_lexer::StrRef>,
     pub span: imuc_lexer::Span,
 }
 
+pub enum ImportDir {
+    External(std::path::PathBuf),
+    Loc,
+}
+
 /// A single import from the module
 #[derive(Spanned)]
 pub struct Import {
-    pub file: imuc_path::File,
+    pub dir: ImportDir,
     pub item: Vec<ImportItem>,
     pub span: imuc_lexer::Span,
 }

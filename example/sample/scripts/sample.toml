@@ -1,3 +1,6 @@
 [target]
 module = "sample"
 root = "sample.iu"
+[[req]]
+name = "other"
+path = "other.toml"

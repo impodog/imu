@@ -175,20 +175,24 @@ impl CompInst {
         };
 
         debug!("Compilation done. Now exporting...");
+        let output_dir = self
+            .config
+            .target
+            .output
+            .join(self.config.target.module.as_str());
+        if output_dir.exists() {
+            if !output_dir.is_dir() {
+                error!("Output dir {output_dir:?} is created and not a dir");
+                return None;
+            }
+        } else if let Err(err) = std::fs::create_dir(&output_dir) {
+            error!("Unable to create output dir: {err}");
+            return None;
+        }
         // Output header & functions separately
         let (header, funs) = module.split();
-        let header_path = self
-            .config
-            .target
-            .output
-            .join(self.config.target.module.as_str())
-            .with_extension("iuh");
-        let source_path = self
-            .config
-            .target
-            .output
-            .join(self.config.target.module.as_str())
-            .with_extension("iuc");
+        let header_path = output_dir.join("lib.iuh");
+        let source_path = output_dir.join("lib.iuc");
 
         match std::fs::OpenOptions::new()
             .create(true)

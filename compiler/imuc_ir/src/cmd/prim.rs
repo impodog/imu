@@ -93,10 +93,10 @@ impl Rw for Prim {
             },
             Prim::Float(float) => match float {
                 Float::F32(value) => {
-                    write!(output, "f{value:.6}")?;
+                    write!(output, "f{value:.7}")?;
                 }
                 Float::F64(value) => {
-                    write!(output, ";{value:.10}")?;
+                    write!(output, "l{value:.15}")?;
                 }
                 Float::Any(_) => {
                     return Err(errors::IrError::TypeNotAllowed("Float::Any".to_owned()).into());

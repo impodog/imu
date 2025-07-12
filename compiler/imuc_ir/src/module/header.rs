@@ -15,6 +15,10 @@ impl Rw for Header {
         let mut ty = Vec::new();
         loop {
             if input.peek_line_or_else()? == "%" {
+                // Remove the previous % line
+                input
+                    .read_line()
+                    .expect("Should contain a line after peeking");
                 break;
             }
             ty.push(Ty::read(&mut input)?);
@@ -24,6 +28,10 @@ impl Rw for Header {
         let mut fun = Vec::new();
         loop {
             if input.peek_line_or_else()? == "%" {
+                // Remove the previous % line
+                input
+                    .read_line()
+                    .expect("Should contain a line after peeking");
                 break;
             }
             let name = StrRef::from(input.read_until(' ')?);

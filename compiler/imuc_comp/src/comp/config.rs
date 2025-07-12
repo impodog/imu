@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::path::{Path, PathBuf};
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Requirement {
     pub name: String,
     #[serde(default)]
@@ -31,7 +31,7 @@ pub struct Env {
 
 impl Env {
     /// Changes the path according to the module cwd to the compiler program cwd,
-    /// if the path is relative
+    /// if the path is relative, otherwise, the path is simply cloned
     pub fn change_cwd(&self, path: &Path) -> PathBuf {
         if path.is_absolute() {
             path.to_path_buf()
@@ -66,7 +66,11 @@ impl Comp {
         let content = std::fs::read_to_string(path)?;
         let mut config: Comp = toml::from_str(content.as_str())?;
         if config.env.cwd.as_os_str().is_empty() {
-            config.env.cwd = path.parent().ok_or(NotAFile)?.to_path_buf();
+            config.env.cwd = path
+                .parent()
+                .ok_or(NotAFile)?
+                .to_path_buf()
+                .canonicalize()?;
         }
         config.target.root = config.env.change_cwd(config.target.root.as_path());
         config.target.output = config.env.change_cwd(config.target.output.as_path());

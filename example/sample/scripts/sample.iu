@@ -1,24 +1,4 @@
-mod sub;
-
-fun test_stacks() {
-    let a = 1;
-    a + 2;
-    let b = 3;
-}
-
+use other::print;
 fun main() {
-    let foo = loc::sub::Foo(bar: 3.14);
-    let bar = sub::hello(foo.bar);
-
-    // Primitive type hinting
-    let x: I8 = 4;
-    let y: I64 = 5;
-    let z: I8 = 5 + x;
-    let w = x + 10; // Auto convert 10 to I8
-    // Type casting
-    let x2 = x as I32;
-    let y2 = y as F32;
-    let x3 = x2 as I16;
-    let y3 = y2 as I8;
+    other::print();
 }
-

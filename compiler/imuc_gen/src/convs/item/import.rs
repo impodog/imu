@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use ast::module::{Import, ImportItem, ImportItemKind};
 use imuc_ast::module::ImportDir;
+use imuc_ctx::ctx::ImportCache;
 
 pub struct UseConv;
 
@@ -17,6 +18,11 @@ fn extract_alias(alias: Option<&StrRef>, name: &str) -> StrRef {
             .unwrap_or(name)
             .into()
     }
+}
+
+fn fun_is_public(cache: &ImportCache, name: &str) -> bool {
+    let fun_ty_name = ctx::mangle::mangle_fun_sig(name);
+    cache.header.ty.contains_key(fun_ty_name.as_str())
 }
 
 impl Convert<()> for UseConv {
@@ -46,6 +52,21 @@ impl Convert<()> for UseConv {
                             let alias = extract_alias(alias.as_ref(), name);
                             let name =
                                 StrRef::from(convs::PrefixConv { prefix }.convert(ctx, name)?);
+
+                            // Check whether it is a private function by checking whether the
+                            // function signature type is exported
+                            if !fun_is_public(cache.as_ref(), name.as_ref()) {
+                                ctx.push_error(
+                                    ConvError::new(Severity::Error, item.span()).with_text(
+                                        format!(
+                                            "Import function is present in {dir:?}, but is private"
+                                        ),
+                                        format!("Function {name} is private"),
+                                    ),
+                                );
+                                return Err(SendError::new_error());
+                            }
+
                             let fun = cache.header.fun.get(&name).ok_or_else(|| {
                                 ctx.push_error(
                                     ConvError::new(Severity::Error, item.span()).with_text(
@@ -83,14 +104,24 @@ impl Convert<()> for UseConv {
                         // NOTE: For wildcards, alias/prefix after first is ignored because parser didn't handle alias/prefix after first
                         // and will see this extra part as a syntax error
                         ImportItemKind::WildcardWithPrefix => {
-                            ctx.merge_fun(cache.header.fun.iter());
+                            ctx.merge_fun(
+                                cache.header.fun.iter().filter(|(name, _)| {
+                                    fun_is_public(cache.as_ref(), name.as_str())
+                                }),
+                            );
                             // Ty is previously imported by TyMap::merge
                         }
                         ImportItemKind::Wildcard => {
-                            ctx.merge_fun(cache.header.fun.iter());
+                            ctx.merge_fun(
+                                cache.header.fun.iter().filter(|(name, _)| {
+                                    fun_is_public(cache.as_ref(), name.as_str())
+                                }),
+                            );
                             for name in cache.header.fun.keys() {
-                                if let Some(alias) = ctx::mangle::extract_name_last_part(name) {
-                                    ctx.body_mut().insert_import(alias.into(), name.clone());
+                                if fun_is_public(cache.as_ref(), name.as_str()) {
+                                    if let Some(alias) = ctx::mangle::extract_name_last_part(name) {
+                                        ctx.body_mut().insert_import(alias.into(), name.clone());
+                                    }
                                 }
                             }
                             for name in cache.header.ty.keys() {

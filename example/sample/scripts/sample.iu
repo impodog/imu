@@ -1,6 +1,7 @@
 use other::+;
 
 fun main() {
+    let dog = other::Dog(age: 3);
     other::print();
-    let dog = other::Dog(age: 1);
+    other::private();
 }

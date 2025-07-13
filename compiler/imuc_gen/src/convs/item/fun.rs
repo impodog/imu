@@ -120,19 +120,17 @@ impl Convert<()> for FunConv {
         }
 
         // Add to function exports
-        if public >= Public::Pub {
-            ctx.fun.insert(
-                name.clone(),
-                IrFun {
-                    name,
-                    sig: FunSig {
-                        ret: ir::sym::ty::TyItem::Solid(ret),
-                        param: ir::sym::ty::TyItem::Solid(param),
-                    },
-                    body: CmdBody::new(body),
+        ctx.fun.insert(
+            name.clone(),
+            IrFun {
+                name,
+                sig: FunSig {
+                    ret: ir::sym::ty::TyItem::Solid(ret),
+                    param: ir::sym::ty::TyItem::Solid(param),
                 },
-            );
-        }
+                body: CmdBody::new(body),
+            },
+        );
 
         Ok(())
     }

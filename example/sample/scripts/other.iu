@@ -1,1 +1,5 @@
-fun print() {}
+pub fun print() {}
+
+pub cus Dog {
+    age: I8
+}

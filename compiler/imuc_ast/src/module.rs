@@ -8,12 +8,13 @@ pub struct Module {
 }
 
 /// The level of publicity in item definitions and items
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Public {
-    Pub,
+    #[default]
+    Priv,
     // TODO: Add keywords corresponding to this, if necessary
     Module,
-    Priv,
+    Pub,
 }
 
 pub struct SubNode {
@@ -26,6 +27,8 @@ pub struct SubNode {
 pub enum ImportItemKind {
     Value(imuc_lexer::StrRef),
     Type(imuc_lexer::StrRef),
+    Wildcard,
+    WildcardWithPrefix,
 }
 
 #[derive(Spanned)]

@@ -89,3 +89,8 @@ pub fn mangle_builtin_fun(ty: &str, res_ty: ResTy) -> String {
     let name = mangle_tuple_name([res_name, ty]);
     mangle_ty_item(&name, res_name)
 }
+
+pub fn extract_name_last_part(name: &str) -> Option<&str> {
+    let colon = name.rfind(':')?;
+    Some(&name[colon + 1..])
+}

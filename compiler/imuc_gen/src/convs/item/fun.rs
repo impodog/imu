@@ -28,8 +28,7 @@ impl Convert<()> for FunConv {
         let FunConv {
             name,
             alias,
-            // TODO: Add publicity handling
-            public: _public,
+            public,
             self_ty,
         } = self;
 
@@ -44,6 +43,7 @@ impl Convert<()> for FunConv {
             requires_ty: true,
             discard_name_warn: false,
             name: None,
+            public,
         }
         .convert(ctx, &input.param)?
         .expect("PatConv should not return None when requires_ty is enabled");
@@ -57,7 +57,7 @@ impl Convert<()> for FunConv {
                         param: param.clone().into(),
                         ret: ret.clone().into(),
                     },
-                    external: false,
+                    external: public < Public::Pub,
                 })
             })
             .clone();
@@ -68,7 +68,7 @@ impl Convert<()> for FunConv {
                 Ty::new(TyInner {
                     name: ptr_ty_name,
                     kind: TyKind::Ptr(fun_ty.into()),
-                    external: false,
+                    external: public < Public::Pub,
                 })
             })
             .clone();
@@ -90,6 +90,7 @@ impl Convert<()> for FunConv {
         }
 
         // Work to compile body expression
+
         ctx.push_body(name.as_str(), true, self_ty, false);
         // We push stack record here to also include the added arguments
         ctx.body_mut().push_stack_record();
@@ -119,14 +120,19 @@ impl Convert<()> for FunConv {
         }
 
         // Add to function exports
-        ctx.fun.insert(
-            name.clone(),
-            IrFun {
-                name,
-                sig: FunSig { ret, param },
-                body: CmdBody::new(body),
-            },
-        );
+        if public >= Public::Pub {
+            ctx.fun.insert(
+                name.clone(),
+                IrFun {
+                    name,
+                    sig: FunSig {
+                        ret: ir::sym::ty::TyItem::Solid(ret),
+                        param: ir::sym::ty::TyItem::Solid(param),
+                    },
+                    body: CmdBody::new(body),
+                },
+            );
+        }
 
         Ok(())
     }

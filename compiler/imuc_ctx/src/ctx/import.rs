@@ -77,7 +77,11 @@ pub struct ImportCache {
 impl ImportPool {
     /// Attempts to read from cache, or read a new file and compiles it.
     /// Returns any errors encounter during io and compilation.
-    pub fn load(&mut self, file: impl Into<PathBuf>) -> Result<Arc<ImportCache>> {
+    pub fn load(
+        &mut self,
+        ctx: &mut super::Ctx,
+        file: impl Into<PathBuf>,
+    ) -> Result<Arc<ImportCache>> {
         let file = file.into();
         let path = file.join("lib.iuh");
         match self.pool.entry(file) {
@@ -91,6 +95,7 @@ impl ImportPool {
                 );
                 let reader = IrReader::new(reader, true);
                 let header = Header::read(reader)?;
+                ctx.ty.merge(header.ty.iter())?;
                 Ok(entry.insert(Arc::new(ImportCache { header })).clone())
             }
         }

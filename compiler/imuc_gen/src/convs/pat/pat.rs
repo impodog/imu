@@ -13,6 +13,7 @@ pub struct PatConv {
     /// with identifier names (that does not belong to a cus pattern)
     pub discard_name_warn: bool,
     pub name: Option<StrRef>,
+    pub public: ast::module::Public,
 }
 
 impl Converter for PatConv {
@@ -27,6 +28,7 @@ impl Convert<Option<Ty>> for PatConv {
             requires_ty,
             discard_name_warn,
             name: given_name,
+            public,
         } = self;
         let push_error_fn = ctx.push_error_fn();
         let wildcard = |span: &Span| -> Result<Option<Ty>> {
@@ -76,6 +78,7 @@ impl Convert<Option<Ty>> for PatConv {
                         requires_ty,
                         discard_name_warn,
                         name: None,
+                        public,
                     }
                     .convert(ctx, sub_pat)?;
                     if let Some(sub_ty) = sub_ty {
@@ -99,7 +102,11 @@ impl Convert<Option<Ty>> for PatConv {
                 let ty = ctx
                     .ty
                     .or_insert_with(name.clone(), move || {
-                        Ty::new(TyInner::new(name, TyKind::Tuple(Tuple(tuple_ty))))
+                        Ty::new(TyInner::new_with_public(
+                            public,
+                            name,
+                            TyKind::Tuple(Tuple(tuple_ty)),
+                        ))
                     })
                     .clone();
                 Ok(Some(ty))
@@ -128,7 +135,11 @@ impl Convert<Option<Ty>> for PatConv {
                 let ty = ctx
                     .ty
                     .or_insert_with(name.clone(), move || {
-                        Ty::new(TyInner::new(name, TyKind::Cus(Cus(cus_ty))))
+                        Ty::new(TyInner::new_with_public(
+                            public,
+                            name,
+                            TyKind::Cus(Cus(cus_ty)),
+                        ))
                     })
                     .clone();
                 Ok(Some(ty))

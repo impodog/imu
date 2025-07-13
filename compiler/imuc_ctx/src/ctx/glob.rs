@@ -119,11 +119,15 @@ impl Globs {
                 let ty = Ty::new(TyInner::new(
                     name.clone(),
                     TyKind::Fun {
-                        param: sig.param.clone().into(),
-                        ret: sig.ret.clone().into(),
+                        param: sig.param.clone(),
+                        ret: sig.ret.clone(),
                     },
                 ));
-                self.load_fun(body, name.clone(), ty);
+                let ptr_ty = Ty::new(TyInner::new(
+                    super::mangle::mangle_ptr(ty.name.as_str()).into(),
+                    TyKind::Ptr(sym::ty::TyItem::Solid(ty)),
+                ));
+                self.load_fun(body, name.clone(), ptr_ty);
             }
         }
     }

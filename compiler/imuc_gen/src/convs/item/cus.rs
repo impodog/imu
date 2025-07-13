@@ -18,12 +18,13 @@ impl Convert<()> for CusConv {
         let CusConv {
             name,
             alias,
-            public: _public,
+            public,
         } = self;
         let ty = convs::PatConv {
             requires_ty: true,
             discard_name_warn: true,
             name: Some(name.clone()),
+            public,
         }
         .convert(ctx, &input.elem)?
         .expect("PatConv should not return None when requires_ty is enabled");

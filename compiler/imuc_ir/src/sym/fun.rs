@@ -29,8 +29,8 @@ impl From<(FunSig, SiglessFun)> for Fun {
 /// The signature of a function, containing the parameter and return type
 #[derive(Clone)]
 pub struct FunSig {
-    pub param: super::Ty,
-    pub ret: super::Ty,
+    pub param: super::ty::TyItem,
+    pub ret: super::ty::TyItem,
 }
 
 impl Rw for Fun {
@@ -63,12 +63,12 @@ impl Rw for SiglessFun {
 
 impl Rw for FunSig {
     fn read(mut input: impl IrRead) -> Result<Self> {
-        let param = super::Ty::read(&mut input)?;
-        let ret = super::Ty::read(&mut input)?;
+        let param = super::ty::TyItem::read(&mut input)?;
+        let ret = super::ty::TyItem::read(&mut input)?;
         Ok(Self { param, ret })
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        write!(output, "{} {}", self.param.name, self.ret.name)?;
+        write!(output, "{} {}", self.param.name(), self.ret.name())?;
         Ok(())
     }
 }

@@ -31,7 +31,7 @@ impl CompInst {
     /// Loads requirements from the config, if not previously done.
     pub fn load_req(&mut self) {
         if !self.req_loaded {
-            info!(
+            debug!(
                 "Loading requirements from module {}...",
                 self.config.target.module
             );
@@ -46,7 +46,7 @@ impl CompInst {
                         .or_else(|| crate::env::PATH_VAR.query(&req.name))
                         .map(|path| self.config.env.change_cwd(path.as_path()))
                         .filter(|path| path.exists() && path.is_file());
-                    info!("Requirement name is {:?}, path is {:?}", req.name, path);
+                    debug!("Requirement name is {:?}, path is {:?}", req.name, path);
                     if let Some(path) = path {
                         let mut config = config::Comp::read_file(path.as_path())
                             .inspect_err(|err| {

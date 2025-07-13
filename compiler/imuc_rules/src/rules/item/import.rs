@@ -1,11 +1,18 @@
 use crate::prelude::*;
 use imuc_ast::{
-    module::{Import, ImportDir},
+    module::{Import, ImportDir, ImportItemKind},
     name::{Prefix, PrefixFirst},
 };
-use imuc_lexer::token::{Ident, Keyword, Pair, Symbol};
+use imuc_lexer::token::{BinOp, Ident, Keyword, Pair, Symbol};
 
-lazy_tokens!(ImportTokens, Ident::Value, Ident::Type);
+// Used by single imports either in a list or appear individually, allowing wildcard omitting prefix(::*) or wildcard with prefix(::+)
+lazy_tokens!(
+    ImportTokens,
+    Ident::Value,
+    Ident::Type,
+    BinOp::Mul,
+    BinOp::Add
+);
 
 struct ImportItemRule {
     prefix: Prefix,
@@ -19,6 +26,8 @@ impl ImportItemRule {
                 Ident::Value => module::ImportItemKind::Value,
                 _ => filtered!(),
             },
+            TokenKind::BinOp(BinOp::Add) => return module::ImportItemKind::WildcardWithPrefix,
+            TokenKind::BinOp(BinOp::Mul) => return module::ImportItemKind::Wildcard,
             _ => filtered!(),
         };
         f(str)
@@ -45,6 +54,41 @@ impl ImportItemRule {
     }
 }
 
+fn parse_import_item<'s, I>(
+    parser: &mut Parser<'s, I>,
+    prefix: Prefix,
+) -> Result<module::ImportItem>
+where
+    I: ParserSequence<'s>,
+{
+    let cursor_begin = parser.relative_cursor();
+    let item = parser.next_expected(&ImportTokens)?;
+    let kind = ImportItemRule::into_item(item, parser.look_up.insert(item.value));
+
+    let alias = if matches!(
+        kind,
+        ImportItemKind::Wildcard | ImportItemKind::WildcardWithPrefix
+    ) {
+        // If the prefix has more than just a head
+        if !prefix.is_empty() {
+            return Err(parser.map_err(errors::SyntaxError::ExpectedBefore {
+                expect: "just one name".to_owned(),
+                before: item.kind,
+            }));
+        }
+        None
+    } else {
+        ImportItemRule::next_alias(item.kind, parser)?
+    };
+
+    Ok(module::ImportItem {
+        prefix,
+        kind,
+        alias,
+        span: parser.file_info().into_span(cursor_begin),
+    })
+}
+
 impl Rule for ImportItemRule {
     type Output = Vec<module::ImportItem>;
     fn parse<'s, I>(self, parser: &mut Parser<'s, I>) -> Result<Option<Self::Output>>
@@ -67,35 +111,13 @@ impl Rule for ImportItemRule {
                     }));
                 }
 
-                let cursor_begin = parser.relative_cursor();
-                let item = parser.next_expected(&ImportTokens)?;
-                let kind = Self::into_item(item, parser.look_up.insert(item.value));
-
-                let alias = Self::next_alias(item.kind, parser)?;
-
-                list.push(module::ImportItem {
-                    prefix: prefix.clone(),
-                    kind,
-                    alias,
-                    span: parser.file_info().into_span(cursor_begin),
-                });
+                list.push(parse_import_item(parser, prefix.clone())?);
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
             }
             Ok(Some(list))
         } else {
-            let cursor_begin = parser.relative_cursor();
-            if let Some(item) = parser.next_if(&ImportTokens)? {
-                let alias = Self::next_alias(item.kind, parser)?;
-                Ok(Some(vec![module::ImportItem {
-                    prefix,
-                    kind: Self::into_item(item, parser.look_up.insert(item.value)),
-                    alias,
-                    span: parser.file_info().into_span(cursor_begin),
-                }]))
-            } else {
-                Ok(None)
-            }
+            Ok(Some(vec![parse_import_item(parser, prefix)?]))
         }
     }
 }
@@ -114,7 +136,7 @@ impl Rule for ImportRule {
 
         rules::PrefixRule.parse(parser)?.ok_or_else(|| {
             parser.map_err(errors::SyntaxError::ExpectedAfter {
-                expect: "module name".to_owned(),
+                expect: "module name and item".to_owned(),
                 after: TokenKind::Keyword(Keyword::Use),
             })
         })?;

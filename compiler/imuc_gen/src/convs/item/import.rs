@@ -23,13 +23,17 @@ impl Convert<()> for UseConv {
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<()> {
         match input.dir {
             ImportDir::External(ref dir) => {
-                let cache = ctx.import_pool.write().unwrap().load(dir).map_err(|err| {
-                    ctx.push_error(
-                        ConvError::new(Severity::Error, input.span())
-                            .with_text("Error when loading module", err.to_string()),
-                    );
-                    SendError::new_error()
-                })?;
+                let cache = {
+                    let import_pool = ctx.import_pool.clone();
+                    let cache = import_pool.write().unwrap().load(ctx, dir).map_err(|err| {
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, input.span())
+                                .with_text(format!("When loading module {dir:?}"), err.to_string()),
+                        );
+                        SendError::new_error()
+                    })?;
+                    cache
+                };
                 for item in input.item.iter() {
                     let ImportItem {
                         kind,
@@ -52,7 +56,7 @@ impl Convert<()> for UseConv {
                                 SendError::new_error()
                             })?;
                             if !ctx.body_mut().insert_import(alias, name.clone()) {
-                                ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one function body is not allowed. This statement has no effect"));
+                                ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one body is not allowed. This statement has no effect"));
                             } else {
                                 ctx.merge_fun([(&name, fun)]);
                             }
@@ -71,9 +75,28 @@ impl Convert<()> for UseConv {
                                 SendError::new_error()
                             })?;
                             if !ctx.body_mut().insert_import(alias, name.clone()) {
-                                ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one function body is not allowed. This statement has no effect"));
+                                ctx.push_error(ConvError::new(Severity::Warn, item.span()).with_head("Multiple imports to the same alias within one body is not allowed. This statement has no effect"));
                             } else {
                                 ctx.body_mut().locals_mut().ty.insert(ty.clone());
+                            }
+                        }
+                        // NOTE: For wildcards, alias/prefix after first is ignored because parser didn't handle alias/prefix after first
+                        // and will see this extra part as a syntax error
+                        ImportItemKind::WildcardWithPrefix => {
+                            ctx.merge_fun(cache.header.fun.iter());
+                            // Ty is previously imported by TyMap::merge
+                        }
+                        ImportItemKind::Wildcard => {
+                            ctx.merge_fun(cache.header.fun.iter());
+                            for name in cache.header.fun.keys() {
+                                if let Some(alias) = ctx::mangle::extract_name_last_part(name) {
+                                    ctx.body_mut().insert_import(alias.into(), name.clone());
+                                }
+                            }
+                            for name in cache.header.ty.keys() {
+                                if let Some(alias) = ctx::mangle::extract_name_last_part(name) {
+                                    ctx.body_mut().insert_import(alias.into(), name.clone());
+                                }
                             }
                         }
                     }

@@ -1,4 +1,6 @@
-use other::print;
+use other::+;
+
 fun main() {
     other::print();
+    let dog = other::Dog(age: 1);
 }

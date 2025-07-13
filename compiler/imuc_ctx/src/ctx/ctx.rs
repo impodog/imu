@@ -184,8 +184,8 @@ impl Ctx {
                 body: cmd::CmdBody::new(cmd),
                 name,
                 sig: sym::FunSig {
-                    param: param_ty,
-                    ret: ret_ty,
+                    param: sym::ty::TyItem::Solid(param_ty),
+                    ret: sym::ty::TyItem::Solid(ret_ty),
                 },
             },
         );

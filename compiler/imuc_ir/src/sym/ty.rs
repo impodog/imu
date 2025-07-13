@@ -162,6 +162,25 @@ impl TyInner {
             external: false,
         }
     }
+
+    /// Creates a local type (possibly generated from user code),
+    /// marking it as private and not exported to the output
+    pub fn new_priv(name: StrRef, kind: TyKind) -> Self {
+        Self {
+            name,
+            kind,
+            external: true,
+        }
+    }
+
+    /// Creates a local type with the publicity given
+    pub fn new_with_public(public: imuc_ast::module::Public, name: StrRef, kind: TyKind) -> Self {
+        if public >= imuc_ast::module::Public::Pub {
+            Self::new(name, kind)
+        } else {
+            Self::new_priv(name, kind)
+        }
+    }
 }
 
 /// A part of [`TyInner`], holding the memory layout and features of the type
@@ -335,11 +354,11 @@ impl Rw for Ty {
                 let values = content[1..content.len() - 1].split(',');
                 let mut map = BTreeMap::new();
                 for value in values {
-                    let ok = if let Some(colon) = value.find(':') {
-                        if colon + 1 != value.len() {
-                            let name = StrRef::from(&value[..colon]);
+                    let ok = if let Some(equals) = value.find('=') {
+                        if equals + 1 != value.len() {
+                            let name = StrRef::from(&value[..equals]);
                             let item =
-                                TyItem::read(LineReader::new(&value[colon + 1..], external))?;
+                                TyItem::read(LineReader::new(&value[equals + 1..], external))?;
                             map.insert(name, item);
                             true
                         } else {
@@ -349,7 +368,7 @@ impl Rw for Ty {
                         false
                     };
                     if !ok {
-                        return Err(errors::IrError::CharRequired(':').into());
+                        return Err(errors::IrError::CharRequired('=').into());
                     }
                 }
                 Ok(Ty::new(TyInner {

@@ -21,8 +21,15 @@ impl Convert<Value> for CusExprConv {
         if let ir::sym::ty::TyKind::Cus(cus) = &ty.kind {
             let mut map = BTreeMap::new();
             for (name, expr) in input.elem.iter() {
-                // TODO: Hint the type with cus item
                 let value = convs::ExprConv::default()
+                    .with_hint(
+                        // NOTE: The resolve here uses "and_then", meaning that if the field
+                        // doesn't exist, it will still compile without a hint, to possibly produce
+                        // more meaningful errors as this may be a field typo
+                        cus.0
+                            .get(name)
+                            .and_then(|item| ctx.ty.resolve(item).cloned()),
+                    )
                     .convert(ctx, expr)?
                     .ok_or_else(|| {
                         ctx.push_error(

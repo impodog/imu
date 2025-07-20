@@ -14,6 +14,7 @@ pub enum Expr {
     Cus(Cus),
     Mit(Mit),
     Cast(Cast),
+    Req(Req),
 }
 
 impl Expr {
@@ -32,6 +33,7 @@ impl Expr {
             Self::Cus(cus) => cus.span(),
             Self::Mit(mit) => mit.span(),
             Self::Cast(cast) => cast.span(),
+            Self::Req(req) => req.span(),
         };
         Some(span)
     }
@@ -78,7 +80,7 @@ pub struct BinExpr {
     pub span: imuc_lexer::Span,
 }
 
-/// A group of expressions and/or bindings wrapped in braces as a body
+/// A group of bindings and expressions wrapped in braces as a body
 #[derive(Spanned)]
 pub struct Body {
     pub bind: Vec<crate::bind::Bind>,
@@ -87,12 +89,14 @@ pub struct Body {
     pub span: imuc_lexer::Span,
 }
 
+/// An expression to build a tuple value
 #[derive(Spanned)]
 pub struct Tuple {
     pub elem: Vec<Expr>,
     pub span: imuc_lexer::Span,
 }
 
+/// An expression to build a cus value with the type specified
 #[derive(Spanned)]
 pub struct Cus {
     pub ty: crate::pat::Type,
@@ -100,6 +104,7 @@ pub struct Cus {
     pub span: imuc_lexer::Span,
 }
 
+/// Quits ([`Self::index`] + 1) layers of loops
 #[derive(Spanned)]
 pub struct Mit {
     /// The layers of loops to jump out of, minus 1
@@ -108,9 +113,17 @@ pub struct Mit {
     pub span: imuc_lexer::Span,
 }
 
+/// Casts a primitive expression to another
 #[derive(Spanned)]
 pub struct Cast {
     pub expr: Box<Expr>,
     pub ty: imuc_lexer::token::ResTy,
+    pub span: imuc_lexer::Span,
+}
+
+/// Requires an external function, and resolve it when compiling, linking only once in runtimes
+#[derive(Spanned)]
+pub struct Req {
+    pub name: imuc_lexer::StrRef,
     pub span: imuc_lexer::Span,
 }

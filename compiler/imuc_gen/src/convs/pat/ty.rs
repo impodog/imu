@@ -84,6 +84,18 @@ impl Convert<Option<Ty>> for TypeConv {
                     })
                     .clone()
             }
+            TypeKind::Decl(expr) => {
+                let value = convs::ExprConv::default()
+                    .convert(ctx, expr.as_ref())?
+                    .ok_or_else(|| {
+                        ctx.push_error(
+                            ConvError::new(Severity::Error, expr.unwrap_span())
+                                .with_head("Expected value in type declaration"),
+                        );
+                        SendError::new_error()
+                    })?;
+                value.ty
+            }
         };
         let ty = match input.flags {
             PatFlags::Unique => ty,

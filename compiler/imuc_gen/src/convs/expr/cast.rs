@@ -60,23 +60,11 @@ impl Convert<Value> for CastConv {
                     ResTy::Bool | ResTy::Ptr | ResTy::I8 | ResTy::I16 | ResTy::I32 | ResTy::I64 => {
                         let src =
                             NumBytes::try_from(res_ty).expect("integer ResTy should be sized");
-                        let src_bytes = Bytes::from(src);
                         match dst {
                             CastDest::Integer(dst) => {
-                                if src < dst {
-                                    let ptr = body.push_stack(dst_bytes);
-                                    let fill = dst_bytes - src_bytes;
-                                    body.push(Cmd::Fill0(fill));
-                                    body.push(Cmd::Dupli(src_bytes, value.ptr));
-                                    Ok(Value { ptr, ty })
-                                } else {
-                                    let ptr = body.push_stack(dst_bytes);
-                                    body.push(Cmd::Dupli(
-                                        dst_bytes,
-                                        value.ptr + src_bytes - dst_bytes,
-                                    ));
-                                    Ok(Value { ptr, ty })
-                                }
+                                let ptr = body.push_stack(dst_bytes);
+                                body.push(Cmd::IToI(src, dst, value.ptr));
+                                Ok(Value { ptr, ty })
                             }
                             CastDest::Float(dst) => {
                                 let ptr = body.push_stack(dst_bytes);

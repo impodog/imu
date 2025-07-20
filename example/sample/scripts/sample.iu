@@ -1,7 +1,8 @@
 use other::+;
 
+fun add(x: I32, y: I32) {
+    let x: decl(add) = req _add;
+}
+
 fun main() {
-    let dog = other::Dog(age: 3);
-    other::print();
-    other::private();
 }

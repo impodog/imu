@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::{Keyword, ResTy};
+use imuc_lexer::token::{Ident, Keyword, ResTy};
 
 lazy_tokens!(
     CastTyTokens,
@@ -10,6 +10,8 @@ lazy_tokens!(
     ResTy::F32,
     ResTy::F64
 );
+
+lazy_tokens!(ReqNameTokens, Ident::Value, Ident::Type, Ident::Unused);
 
 pub struct ElemExprRule;
 
@@ -34,6 +36,12 @@ impl Rule for ElemExprRule {
             Some(tuple)
         } else if let Some(struct_stmt) = rules::CusExprRule.parse(parser)? {
             Some(expr::Expr::Cus(struct_stmt))
+        } else if parser.next_if(&TokenKind::Keyword(Keyword::Req))?.is_some() {
+            let name = parser.next_expected(&ReqNameTokens)?;
+            Some(expr::Expr::Req(expr::Req {
+                name: parser.look_up.insert(name.value),
+                span: parser.file_info().into_span(cursor_begin),
+            }))
         } else if parser.next_if(&TokenKind::Keyword(Keyword::Mit))?.is_some() {
             let mut index = 0;
             while parser.next_if(&TokenKind::Keyword(Keyword::Mit))?.is_some() {

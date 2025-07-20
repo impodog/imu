@@ -10,4 +10,4 @@ pub use cus::CusPatRule;
 pub use ident::IdentPatRule;
 pub use pat::PatRule;
 pub use tuple::TuplePatRule;
-pub use types::{TemplArgsRule, TypeRule};
+pub use types::TypeRule;

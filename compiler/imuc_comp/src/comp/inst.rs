@@ -134,7 +134,7 @@ impl CompInst {
         use imuc_gen::Convert;
         use imuc_ir::io::Rw;
 
-        info!("Compiling {}", self.config.target.module);
+        info!("{}: Initializing compiler", self.config.target.module);
 
         if let Err(err) = self.create_output() {
             error!(
@@ -145,7 +145,10 @@ impl CompInst {
 
         let ast = self.parse()?;
 
-        info!("AST is generated, now doing middle-end");
+        info!(
+            "{}: AST is generated, now doing middle-end",
+            self.config.target.module
+        );
 
         let mut ctx = ctx::ctx::Ctx::new(self.config.target.module.clone());
         imuc_gen::convs::SubmoduleConv.convert(&mut ctx, &ast).ok();
@@ -167,14 +170,20 @@ impl CompInst {
             return None;
         }
 
-        info!("Middle-end done without errors, now generating module");
+        info!(
+            "{}: Middle-end done without errors, now generating module",
+            self.config.target.module
+        );
 
         let module = ir::module::Module {
             ty: ctx.ty.extract_map(),
             fun: std::mem::take(&mut ctx.fun).into_map(),
         };
 
-        debug!("Compilation done. Now exporting...");
+        debug!(
+            "{}: Compilation done. Now exporting...",
+            self.config.target.module
+        );
         let output_dir = self
             .config
             .target

@@ -98,8 +98,32 @@ impl Globs {
     ///
     /// You must input the *bottom*(base) body into this function to prevent multiple calls
     pub fn load_fun(&mut self, body: &mut Body, name: StrRef, ty: Ty) {
+        self.load_fun_with(body, name, ty, Cmd::Link);
+    }
+
+    /// Loads the function with the [`Cmd::LinkCheck`] commands, see [`Self::load_fun`] for details
+    pub fn load_fun_check(
+        &mut self,
+        body: &mut Body,
+        name: StrRef,
+        ty: Ty,
+        param: Bytes,
+        ret: Bytes,
+    ) {
+        self.load_fun_with(body, name, ty, move |name| Cmd::LinkCheck(param, ret, name));
+    }
+
+    /// Helper function for both [`Self::load_fun`] and [`Self::load_fun_check`]. See load_fun for
+    /// details
+    fn load_fun_with(
+        &mut self,
+        body: &mut Body,
+        name: StrRef,
+        ty: Ty,
+        gen_cmd: impl FnOnce(StrRef) -> Cmd,
+    ) {
         let ptr = self.stack;
-        body.push(Cmd::Link(name.clone()));
+        body.push(gen_cmd(name.clone()));
         self.stack += Bytes::ptr();
         self.insert(name, Glob::new(ptr, ty, GlobKind::External));
     }

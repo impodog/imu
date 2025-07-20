@@ -42,6 +42,7 @@ impl Convert<Option<Value>> for ExprConv {
                 Ok(None)
             }
             Expr::Cast(cast) => convs::CastConv.convert(ctx, cast).map(Some),
+            Expr::Req(req) => convs::ReqConv { solver }.convert(ctx, req).map(Some),
         }
     }
 }

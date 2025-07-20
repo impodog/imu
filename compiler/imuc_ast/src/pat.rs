@@ -83,4 +83,5 @@ pub enum TypeKind {
     Single(imuc_lexer::StrRef),
     Prefixed(crate::name::PrefixedName),
     Tuple(Vec<Type>),
+    Decl(Box<crate::expr::Expr>),
 }

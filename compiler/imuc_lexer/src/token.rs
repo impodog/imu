@@ -80,6 +80,10 @@ pub enum Keyword {
     Loop,
     Mit,
     Loc,
+    /// Requires an externally linked function (FFI)
+    Req,
+    /// Declares the type of the inner value
+    Decl,
 }
 
 /// A part of [`TokenKind`] for values using reserved names
@@ -105,7 +109,7 @@ pub enum ResTy {
     F32,
     F64,
     Str,
-    // Trait-like types
+    // Special types
 }
 
 /// A part of [`TokenKind`] for left / right bracket

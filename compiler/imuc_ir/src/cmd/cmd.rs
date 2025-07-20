@@ -88,6 +88,7 @@ pub enum Cmd {
     Mulf(NumBytes, Ptr, Ptr),
     Divf(NumBytes, Ptr, Ptr),
     Testf(NumBytes, Ptr, Ptr),
+    IToI(NumBytes, NumBytes, Ptr),
     FToF(NumBytes, NumBytes, Ptr),
     IToF(NumBytes, NumBytes, Ptr),
     FToI(NumBytes, NumBytes, Ptr),
@@ -102,6 +103,8 @@ pub enum Cmd {
     Call(Bytes),
     /// Globally links to the function, putting its handle(ptr-sized) on top of the global stack
     Link(StrRef),
+    /// Does the link like [`Self::Link`] with additional argument and return size check
+    LinkCheck(Bytes, Bytes, StrRef),
     /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,
     /// or to act as a placeholder for optional commands
     End,
@@ -169,6 +172,7 @@ impl Rw for Cmd {
             "mlf" => arithmetic!(read Mulf, bytes, input),
             "dvf" => arithmetic!(read Divf, bytes, input),
             "tsf" => arithmetic!(read Testf, bytes, input),
+            "iti" => conversion!(read IToI, bytes, input),
             "ftf" => conversion!(read FToF, bytes, input),
             "itf" => conversion!(read IToF, bytes, input),
             "fti" => conversion!(read FToI, bytes, input),
@@ -192,6 +196,12 @@ impl Rw for Cmd {
             "lnk" => {
                 let name = input.read_until(' ')?;
                 Ok(Self::Link(StrRef::from(name)))
+            }
+            "lck" => {
+                let param = Bytes::read(&mut input)?;
+                let ret = Bytes::read(&mut input)?;
+                let name = input.read_until(' ')?;
+                Ok(Self::LinkCheck(param, ret, StrRef::from(name)))
             }
             "end" => Ok(Self::End),
             _ => Err(errors::IrError::NoSuchCommand(cmd.to_owned()).into()),
@@ -257,6 +267,7 @@ impl Rw for Cmd {
             Self::Divf(bytes, lhs, rhs) => arithmetic!(write "dvf", bytes, lhs, rhs, output),
             Self::Testf(bytes, lhs, rhs) => arithmetic!(write "tsf", bytes, lhs, rhs, output),
             Self::Test(bytes, lhs, rhs) => arithmetic!(write "tst", bytes, lhs, rhs, output),
+            Self::IToI(lhs, rhs, ptr) => conversion!(write "iti", lhs, rhs, ptr, output),
             Self::FToF(lhs, rhs, ptr) => conversion!(write "ftf", lhs, rhs, ptr, output),
             Self::IToF(lhs, rhs, ptr) => conversion!(write "itf", lhs, rhs, ptr, output),
             Self::FToI(lhs, rhs, ptr) => conversion!(write "fti", lhs, rhs, ptr, output),
@@ -280,6 +291,13 @@ impl Rw for Cmd {
             }
             Self::Link(name) => {
                 write!(output, "lnk {name}")?;
+            }
+            Self::LinkCheck(param, ret, name) => {
+                write!(output, "lck ")?;
+                param.write(&mut output)?;
+                write!(output, " ")?;
+                ret.write(&mut output)?;
+                write!(output, " {name}")?;
             }
             Self::End => {
                 write!(output, "end")?;

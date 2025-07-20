@@ -56,6 +56,11 @@ pub fn mangle_entry(name: &str) -> String {
     format!("#ENT{name}")
 }
 
+/// Mangles the name of a function indicated by "req" keyword
+pub fn mangle_req(name: &str) -> String {
+    format!("#REQ{name}")
+}
+
 /// Mangles the name of a tupled type, such that types A, B, ... become "(A,B,...)"
 pub fn mangle_tuple_name<'a, I>(tuple: I) -> String
 where

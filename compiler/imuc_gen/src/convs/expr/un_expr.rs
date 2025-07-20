@@ -32,7 +32,8 @@ impl Convert<Value> for UnExprConv {
                 })?;
                 let body = ctx.body_mut();
                 let ptr = body.push_stack(Bytes::ptr());
-                body.push(Cmd::Wrap(size, value.ptr));
+                body.push(Cmd::Alloc(size));
+                body.push(Cmd::WriteHeap(size, Bytes::start(), value.ptr, ptr));
 
                 let name: StrRef = ctx::mangle::mangle_ref(value.ty.name.as_str()).into();
                 let ty = ctx
@@ -50,15 +51,12 @@ impl Convert<Value> for UnExprConv {
                 Ok(Value { ptr, ty })
             }
             UnOp::Ptr => {
-                let global_ptr = ctx.get_global_ptr(value.ptr);
-
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(Bytes::global_ptr());
+                let ptr = body.push_stack(Bytes::ptr());
 
-                body.push(Cmd::StoreGlobalPtr(global_ptr));
+                body.push(Cmd::StorePtrAsGlobal(value.ptr));
 
                 let name: StrRef = ctx::mangle::mangle_ptr(value.ty.name.as_str()).into();
-                // FIXME: GlobalPtr(64) is stored, but the value type is Ptr(32)
                 let ty = ctx
                     .ty
                     .or_insert_with(name.clone(), || {

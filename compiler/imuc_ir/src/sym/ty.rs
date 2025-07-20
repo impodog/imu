@@ -93,7 +93,7 @@ impl Ty {
                             ResTy::I16 => 2,
                             ResTy::I32 | ResTy::F32 => 4,
                             ResTy::I64 | ResTy::F64 => 8,
-                            ResTy::Str | ResTy::Ptr => crate::cmd::GLOBAL_PTR_SIZE,
+                            ResTy::Str | ResTy::Ptr => crate::cmd::PTR_SIZE,
                         };
                         Bytes::new(len)
                     }
@@ -187,10 +187,17 @@ impl TyInner {
 #[derive(Debug, Clone)]
 pub enum TyKind {
     Res(ResTy),
-    Fun { param: TyItem, ret: TyItem },
+    Fun {
+        param: TyItem,
+        ret: TyItem,
+    },
     Tuple(Tuple),
     Cus(Cus),
     Ref(TyItem),
+    /// Note the difference between a pointer object(with type "Ptr", which is only known at
+    /// runtime), and the pointer to a object stored in the source code. The former is
+    /// relative to the global stack and depends on the runtime implementation, but the latter is
+    /// a compiler internal representation relative to the function call local stack
     Ptr(TyItem),
 }
 

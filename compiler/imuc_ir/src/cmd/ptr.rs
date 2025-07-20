@@ -13,9 +13,7 @@ const fn number_to_bytes(value: u32) -> Option<NumBytes> {
 }
 
 pub const PTR_SIZE: u32 = std::mem::size_of::<Ptr>() as u32;
-pub const GLOBAL_PTR_SIZE: u32 = std::mem::size_of::<GlobalPtr>() as u32;
 pub const PTR_BYTES: NumBytes = number_to_bytes(PTR_SIZE).unwrap();
-pub const GLOBAL_PTR_BYTES: NumBytes = number_to_bytes(GLOBAL_PTR_SIZE).unwrap();
 
 /// Represent the number of bytes, or a pointer to the local function stack
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -85,11 +83,6 @@ impl Bytes {
     /// Creates a representation of bytes with length equal to [`u32`]
     pub const fn ptr() -> Self {
         Self(PTR_SIZE)
-    }
-
-    /// Creates a representation of bytes with length equal to [`u64`]
-    pub const fn global_ptr() -> Self {
-        Self(GLOBAL_PTR_SIZE)
     }
 
     /// Creates a representation of bytes with length equal to [`i8`]
@@ -178,52 +171,5 @@ impl From<NumBytes> for Bytes {
             NumBytes::I32 => Bytes::new(4),
             NumBytes::I64 => Bytes::new(8),
         }
-    }
-}
-
-/// Represents a pointer to a stack of current or previous functions
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GlobalPtr(u64);
-
-impl GlobalPtr {
-    /// Creates a new global ptr to a specific stack(starting from the bottom) and a pointer to a
-    /// value in the stack
-    pub fn new(stack: u32, ptr: Bytes) -> Self {
-        let stack = (stack as u64) << 32;
-        Self(stack + ptr.0 as u64)
-    }
-
-    /// Extracts the stack position
-    pub fn stack(&self) -> u32 {
-        (self.0 >> 32) as u32
-    }
-
-    /// Extracts the pointer in the stack
-    pub fn ptr(&self) -> u32 {
-        (self.0 & 0xFFFFFFFF) as u32
-    }
-}
-
-use std::fmt::{Display, Formatter, Result as FmtResult};
-impl Display for GlobalPtr {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(
-            f,
-            "GlobalPtr {{ stack: {}, ptr: {} }}",
-            self.stack(),
-            self.ptr()
-        )
-    }
-}
-
-impl Rw for GlobalPtr {
-    fn read(mut input: impl IrRead) -> Result<Self> {
-        let value = input.read_until(' ')?;
-        let value = value.parse::<u64>()?;
-        Ok(Self(value))
-    }
-    fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        write!(output, "{}", self.0)?;
-        Ok(())
     }
 }

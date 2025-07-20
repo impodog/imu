@@ -66,13 +66,21 @@ pub enum Cmd {
     Overwrite(Bytes, Ptr, Ptr),
     Store(crate::sym::Prim),
     StorePtr(Ptr),
-    StoreGlobalPtr(super::GlobalPtr),
+    /// Converts the local pointer to the pointer relative to the global stack
+    StorePtrAsGlobal(Ptr),
     /// Shrinks the stack to given size, discarding memory after it. If the stack is
     /// smaller than the given size, no action will be performed
     Shrink(Ptr),
-    /// Allocates a heap location for bytes at stack position, putting the pointer on top of the
-    /// stack
-    Wrap(Bytes, Ptr),
+    /// Allocates bytes on the heap, putting the pointer on top of the stack
+    Alloc(Bytes),
+    /// Deallocates the heap chunk by the pointer stored
+    Dealloc(Ptr),
+    /// Writes bytes(1st) with offset(2nd) to the heap pointer stored(4th), from another local stack pointer(3rd)
+    WriteHeap(Bytes, Bytes, Ptr, Ptr),
+    /// Reads bytes(1st) with offset(2nd) from the heap pointer stored(3rd)
+    ReadHeap(Bytes, Bytes, Ptr),
+    /// Reads bytes(1st) with offset(2nd) from the stack pointer stored(3rd)
+    ReadStack(Bytes, Bytes, Ptr),
     Not(NumBytes, Ptr),
     Neg(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),
@@ -137,18 +145,40 @@ impl Rw for Cmd {
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::StorePtr(ptr))
             }
-            "sgp" => {
-                let ptr = super::GlobalPtr::read(&mut input)?;
-                Ok(Self::StoreGlobalPtr(ptr))
+            "sag" => {
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::StorePtrAsGlobal(ptr))
             }
             "srk" => {
-                let ptr = super::Ptr::read(&mut input)?;
+                let ptr = Ptr::read(&mut input)?;
                 Ok(Self::Shrink(ptr))
             }
-            "wrp" => {
+            "alc" => {
                 let bytes = Bytes::read(&mut input)?;
+                Ok(Self::Alloc(bytes))
+            }
+            "dal" => {
                 let ptr = Ptr::read(&mut input)?;
-                Ok(Self::Wrap(bytes, ptr))
+                Ok(Self::Dealloc(ptr))
+            }
+            "rdh" => {
+                let bytes = Bytes::read(&mut input)?;
+                let offset = Bytes::read(&mut input)?;
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::ReadHeap(bytes, offset, ptr))
+            }
+            "wrh" => {
+                let bytes = Bytes::read(&mut input)?;
+                let offset = Bytes::read(&mut input)?;
+                let src = Ptr::read(&mut input)?;
+                let dst = Ptr::read(&mut input)?;
+                Ok(Self::WriteHeap(bytes, offset, src, dst))
+            }
+            "rds" => {
+                let bytes = Bytes::read(&mut input)?;
+                let offset = Bytes::read(&mut input)?;
+                let ptr = Ptr::read(&mut input)?;
+                Ok(Self::ReadStack(bytes, offset, ptr))
             }
             "not" => {
                 let bytes = bytes.try_into()?;
@@ -237,17 +267,45 @@ impl Rw for Cmd {
                 write!(output, "spt ")?;
                 ptr.write(&mut output)?;
             }
-            Self::StoreGlobalPtr(ptr) => {
-                write!(output, "sgp ")?;
+            Self::StorePtrAsGlobal(ptr) => {
+                write!(output, "sag ")?;
                 ptr.write(&mut output)?;
             }
             Self::Shrink(ptr) => {
                 write!(output, "srk ")?;
                 ptr.write(&mut output)?;
             }
-            Self::Wrap(bytes, ptr) => {
-                write!(output, "wrp ")?;
+            Self::Alloc(bytes) => {
+                write!(output, "alc ")?;
                 bytes.write(&mut output)?;
+            }
+            Self::Dealloc(ptr) => {
+                write!(output, "dal ")?;
+                ptr.write(&mut output)?;
+            }
+            Self::ReadHeap(bytes, offset, ptr) => {
+                write!(output, "rdh ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                offset.write(&mut output)?;
+                write!(output, " ")?;
+                ptr.write(&mut output)?;
+            }
+            Self::WriteHeap(bytes, offset, src, dst) => {
+                write!(output, "wrh ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                offset.write(&mut output)?;
+                write!(output, " ")?;
+                src.write(&mut output)?;
+                write!(output, " ")?;
+                dst.write(&mut output)?;
+            }
+            Self::ReadStack(bytes, offset, ptr) => {
+                write!(output, "rds ")?;
+                bytes.write(&mut output)?;
+                write!(output, " ")?;
+                offset.write(&mut output)?;
                 write!(output, " ")?;
                 ptr.write(&mut output)?;
             }

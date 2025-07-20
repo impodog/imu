@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use imuc_error::errors::ctx::SendError;
-use imuc_ir::cmd::{GlobalPtr, Ptr};
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
 use std::collections::VecDeque;
@@ -111,11 +110,6 @@ impl Ctx {
             }
         }
         self.ty.get(name)
-    }
-
-    /// Gets a new [`GlobalPtr`] to a specified position in the current stack
-    pub fn get_global_ptr(&self, ptr: Ptr) -> GlobalPtr {
-        GlobalPtr::new(self.body.len() as u32, ptr)
     }
 
     /// Merges the functions from an iterator, same as calling on [`Self::glob`],

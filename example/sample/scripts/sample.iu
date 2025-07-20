@@ -6,5 +6,6 @@ fun add(x: I32, y: I32) {
 }
 
 fun main() {
-    let a = -1 + -2;
+    let a = 1;
+    let pa = @a;
 }

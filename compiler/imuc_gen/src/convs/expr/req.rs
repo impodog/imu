@@ -68,7 +68,7 @@ impl Convert<Value> for ReqConv {
 
         // Add to globals and prevent multiple additions, also mangles the name to prevent naming
         // conflicts and users can not use it without "req" keyword wrap
-        // NOTE: Runtimes must also use this naming wrap
+        // NOTE: Runtimes must also use this naming mangling convention
         let name = StrRef::from(ctx::mangle::mangle_req(input.name.as_str()));
 
         let globs = ctx.globs.clone();

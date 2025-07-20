@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use ast::expr::UnExpr;
 
+use imuc_ir::sym::ty::TyKind;
 use imuc_lexer::token::{ResTy, UnOp};
 
 // TODO: Add hint field
@@ -125,7 +126,42 @@ impl Convert<Value> for UnExprConv {
                 })
             }
             UnOp::Deref => {
-                todo!()
+                let push_error_fn = ctx.push_error_fn();
+                match &value.ty.kind {
+                    TyKind::Ptr(ty_item) => {
+                        let ty = ctx
+                            .ty
+                            .resolve_or(ty_item, input.span())
+                            .map_err(&push_error_fn)?
+                            .clone();
+                        let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
+
+                        let ptr = ctx.body_mut().push_stack(size);
+                        ctx.body_mut()
+                            .push(Cmd::ReadStack(size, Bytes::start(), value.ptr));
+                        Ok(Value { ty, ptr })
+                    }
+                    TyKind::Ref(ty_item) => {
+                        let ty = ctx
+                            .ty
+                            .resolve_or(ty_item, input.span())
+                            .map_err(&push_error_fn)?
+                            .clone();
+                        let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
+
+                        let ptr = ctx.body_mut().push_stack(size);
+                        ctx.body_mut()
+                            .push(Cmd::ReadHeap(size, Bytes::start(), value.ptr));
+                        Ok(Value { ty, ptr })
+                    }
+                    _ => {
+                        push_error_fn(ConvError::new(Severity::Error, input.span()).with_text(
+                            "Only Ptr or Ref can be derefed",
+                            format!("Input type is {}", value.ty.name),
+                        ));
+                        Err(SendError::new_error())
+                    }
+                }
             }
         }
     }

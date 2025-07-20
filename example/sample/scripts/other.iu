@@ -5,3 +5,13 @@ fun private() {}
 pub cus Dog {
     age: I8
 }
+
+
+for Dog {
+    pub fun bark(self) -> I8 {
+        // This function does nothing other than a type marker
+        fun bark_helper(s: @Str) -> I8 {0I8}
+        let bark: Decl(bark_helper) = req _external_bark;
+        bark(@"Woof!")
+    }
+}

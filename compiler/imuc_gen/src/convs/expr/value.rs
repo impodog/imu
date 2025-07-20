@@ -33,13 +33,13 @@ pub(crate) fn search_value(
     alias: Option<&StrRef>,
     span: imuc_lexer::Span,
 ) -> Result<Value> {
+    if let Some(value) = ctx.body_mut().get_value(name.as_str()) {
+        return Ok(value.to_owned());
+    }
     if alias.is_none() {
         if let Some(target_name) = ctx.body_mut().get_import(name.as_str()) {
             return search_value(ctx, &target_name, Some(name), span);
         }
-    }
-    if let Some(value) = ctx.body_mut().get_value(name.as_str()) {
-        return Ok(value.to_owned());
     }
     if let Some(value) = get_glob(ctx, name.as_str()) {
         return Ok(value);

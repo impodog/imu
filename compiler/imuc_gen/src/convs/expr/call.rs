@@ -145,9 +145,15 @@ pub(crate) fn convert_call(ctx: &mut Ctx, args: &Expr, func: &Expr, span: Span) 
         }
         _ => {
             ctx.push_error(ConvError::new(Severity::Error, span).with_text(
-                "Expected function pointer",
+                "Expected function pointer when calling",
                 format!("Given value type is {}", func.ty.name),
             ));
+            if func.ty.test_eq(&Ty::unit()) {
+                ctx.push_error(
+                    ConvError::new(Severity::Note, span)
+                        .with_head("Did you forget to put a semicolon?"),
+                );
+            }
             return Err(SendError::new_error());
         }
     };

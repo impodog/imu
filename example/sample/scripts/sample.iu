@@ -1,8 +1,10 @@
 use other::+;
 
 fun add(x: I32, y: I32) {
-    let x: decl(add) = req _add;
+    let external: Decl(add) = req _add;
+    external(x, y)
 }
 
 fun main() {
+    let a = -1 + -2;
 }

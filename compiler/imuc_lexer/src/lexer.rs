@@ -21,7 +21,7 @@ static KEYWORDS: LazyLock<TokenAC> = LazyLock::new(|| {
     ac.insert("mit", TokenKind::Keyword(Keyword::Mit));
     ac.insert("loc", TokenKind::Keyword(Keyword::Loc));
     ac.insert("req", TokenKind::Keyword(Keyword::Req));
-    ac.insert("decl", TokenKind::Keyword(Keyword::Decl));
+    ac.insert("Decl", TokenKind::Keyword(Keyword::Decl));
     ac.insert("true", TokenKind::ResVal(ResVal::True));
     ac.insert("false", TokenKind::ResVal(ResVal::False));
     ac.insert("Self", TokenKind::ResTy(ResTy::SelfType));

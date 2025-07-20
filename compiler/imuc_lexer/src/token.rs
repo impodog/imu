@@ -149,6 +149,8 @@ pub enum UnOp {
     Ref,
     Ptr,
     Not,
+    Deref,
+    Neg,
 }
 
 /// A part of [`TokenKind`] for parser structure symbol

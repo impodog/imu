@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::Priority;
 use imuc_lexer::token::BinOp;
 use imuc_lexer::token::Pair;
+use imuc_lexer::token::UnOp;
 use imuc_parser::ParserInput;
 use imuc_parser::TokenKindSet;
 
@@ -175,12 +176,30 @@ where
             if !is_elem {
                 let input = parser.peek()?;
                 if let Some(input) = input {
-                    match input.kind {
+                    let kind = if prev_is_expr {
+                        input.kind
+                    } else {
+                        match input.kind {
+                            TokenKind::BinOp(BinOp::Sub) => TokenKind::UnOp(UnOp::Neg),
+                            TokenKind::BinOp(BinOp::Mul) => TokenKind::UnOp(UnOp::Deref),
+                            _ => input.kind,
+                        }
+                    };
+                    match kind {
                         TokenKind::UnOp(_) | TokenKind::BinOp(_) => {
-                            push_symbol(parser, &mut op, &mut stack, cursor_begin, input)?;
+                            push_symbol(
+                                parser,
+                                &mut op,
+                                &mut stack,
+                                cursor_begin,
+                                ParserInput {
+                                    value: input.value,
+                                    kind,
+                                },
+                            )?;
                         }
                         _ => {
-                            if end.contains(&input.kind) {
+                            if end.contains(&kind) {
                                 break;
                             } else {
                                 return parser.error(errors::SyntaxError::ExpectedIn {

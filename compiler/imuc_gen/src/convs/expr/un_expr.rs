@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use ast::expr::UnExpr;
 
-use imuc_lexer::token::UnOp;
+use imuc_lexer::token::{ResTy, UnOp};
 
 // TODO: Add hint field
 pub struct UnExprConv;
@@ -93,6 +93,41 @@ impl Convert<Value> for UnExprConv {
                     ty: value.ty.clone(),
                     ptr,
                 })
+            }
+            UnOp::Neg => {
+                let push_error_fn = ctx.push_error_fn();
+                let bytes = value
+                    .ty
+                    .to_res_ty()
+                    .filter(|res_ty| {
+                        matches!(
+                            res_ty,
+                            ResTy::I8
+                                | ResTy::I16
+                                | ResTy::I32
+                                | ResTy::I64
+                                | ResTy::F32
+                                | ResTy::F64
+                        )
+                    })
+                    .ok_or_else(|| {
+                        push_error_fn(ConvError::new(Severity::Error, input.span()).with_text(
+                            "Neg requires a numeric primitive",
+                            format!("Operand type is {}", value.ty.name),
+                        ));
+                        SendError::default()
+                    })?
+                    .try_into()?;
+                let body = ctx.body_mut();
+                let ptr = body.push_stack(value.ty.size_or(input.span()).map_err(push_error_fn)?);
+                body.push(Cmd::Neg(bytes, value.ptr));
+                Ok(Value {
+                    ty: value.ty.clone(),
+                    ptr,
+                })
+            }
+            UnOp::Deref => {
+                todo!()
             }
         }
     }

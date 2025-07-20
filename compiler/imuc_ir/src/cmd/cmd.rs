@@ -74,6 +74,7 @@ pub enum Cmd {
     /// stack
     Wrap(Bytes, Ptr),
     Not(NumBytes, Ptr),
+    Neg(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),
     Sub(NumBytes, Ptr, Ptr),
     Mul(NumBytes, Ptr, Ptr),
@@ -150,6 +151,11 @@ impl Rw for Cmd {
                 Ok(Self::Wrap(bytes, ptr))
             }
             "not" => {
+                let bytes = bytes.try_into()?;
+                let opd = Ptr::read(&mut input)?;
+                Ok(Self::Not(bytes, opd))
+            }
+            "neg" => {
                 let bytes = bytes.try_into()?;
                 let opd = Ptr::read(&mut input)?;
                 Ok(Self::Not(bytes, opd))
@@ -247,6 +253,10 @@ impl Rw for Cmd {
             }
             Self::Not(bytes, opd) => {
                 write!(output, "not{} ", char::from(*bytes))?;
+                opd.write(&mut output)?;
+            }
+            Self::Neg(bytes, opd) => {
+                write!(output, "neg{} ", char::from(*bytes))?;
                 opd.write(&mut output)?;
             }
             Self::Add(bytes, lhs, rhs) => arithmetic!(write "add", bytes, lhs, rhs, output),

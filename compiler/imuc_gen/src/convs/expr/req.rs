@@ -25,22 +25,18 @@ impl Convert<Value> for ReqConv {
                         match item.kind {
                             TyKind::Fun { ref param, ref ret } => {
                                 let push_error_fn = ctx.push_error_fn();
-                                let map_err_fn = move |err: ConvError| {
-                                    push_error_fn(err);
-                                    SendError::new_error()
-                                };
                                 let param = ctx
                                     .ty
                                     .resolve_or(param, input.span())
-                                    .map_err(&map_err_fn)?
+                                    .map_err(&push_error_fn)?
                                     .size_or(input.span())
-                                    .map_err(&map_err_fn)?;
+                                    .map_err(&push_error_fn)?;
                                 let ret = ctx
                                     .ty
                                     .resolve_or(ret, input.span())
-                                    .map_err(&map_err_fn)?
+                                    .map_err(&push_error_fn)?
                                     .size_or(input.span())
-                                    .map_err(&map_err_fn)?;
+                                    .map_err(&push_error_fn)?;
                                 (hint, param, ret)
                             }
                             _ => {

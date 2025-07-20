@@ -12,7 +12,7 @@ pub trait Priority {
 impl Priority for UnOp {
     fn priority(&self) -> u8 {
         match self {
-            Self::Not | Self::Ref | Self::Ptr => 5,
+            Self::Not | Self::Ref | Self::Ptr | Self::Deref | Self::Neg => 5,
         }
     }
 

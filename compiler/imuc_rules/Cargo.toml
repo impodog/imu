@@ -19,4 +19,4 @@ lexical = { version = "7.0.4", default-features = false, features = [
 ] }
 unescape = "0.1.0"
 unquote = "0.0.8"
-nonempty = "0.11.0"
+nonempty = "0.12.0"

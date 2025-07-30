@@ -69,7 +69,7 @@ fn convert_float(body: &mut ctx::Body, solver: ExprSolver, float: Float) -> Resu
                 match hint.kind {
                     ir::sym::ty::TyKind::Res(res) => match res {
                         ResTy::F32 => convert_float(body, solver, Float::F32(value as f32)),
-                        ResTy::I64 => convert_float(body, solver, Float::F64(value)),
+                        ResTy::F64 => convert_float(body, solver, Float::F64(value)),
                         _ => convert_float(body, solver, Float::F32(value as f32)),
                     },
                     _ => convert_float(body, solver, Float::F32(value as f32)),

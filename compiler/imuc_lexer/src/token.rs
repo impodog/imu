@@ -127,6 +127,8 @@ pub enum Pair {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BinOp {
     Dot,
+    Arrow,
+    BackArrow,
     Call,
     Add,
     Sub,
@@ -159,7 +161,6 @@ pub enum Symbol {
     Colon,
     DblColon,
     Comma,
-    Arrow,
     Assign,
 }
 

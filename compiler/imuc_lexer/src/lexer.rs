@@ -109,7 +109,7 @@ where
                         Token::new(self.next_number(ch), self.diff(begin))
                     } else if self.first() == '>' {
                         self.advance();
-                        Token::new(TokenKind::Symbol(Symbol::Arrow), self.diff(begin))
+                        Token::new(TokenKind::BinOp(BinOp::Arrow), self.diff(begin))
                     } else {
                         Token::new(TokenKind::BinOp(BinOp::Sub), self.diff(begin))
                     }
@@ -131,6 +131,10 @@ where
                     _ => Token::new(TokenKind::Symbol(Symbol::Assign), self.diff(begin)),
                 },
                 '<' => match self.first() {
+                    '-' => {
+                        self.advance();
+                        Token::new(TokenKind::BinOp(BinOp::BackArrow), self.diff(begin))
+                    }
                     '=' => {
                         self.advance();
                         Token::new(TokenKind::BinOp(BinOp::Le), self.diff(begin))

@@ -1,81 +1,11 @@
-// Loads module-external items
-use other::+;
-
-fun test_dog() {
-    // Building Cus object
-    let dog = other::Dog(age: 3);
-    // Calling externally and type-associated function
-    dog.bark();
+cus Ty {
+    value: I32,
+    eps: F64,
 }
-
-fun arith_and_pointer_and_if(x: I32) -> @Str {
-    let y = x + 1;
-    let p_y = $y;
-    let y_again = *p_y;
-    let r_y = @y;
-    let y_again = *r_y;
-    @{
-        if y / 2 > 10 {
-            "This is a big number"
-        } else if y > 0 {
-            "This is a small number"
-        } else {
-            "..."
-        }
-    }
-}
-
-fun loops(x: I32) -> (@Str, I32) {
-    let name = @"TODO: implement mutability";
-    loop {
-        if x < 0 {
-            mit (name, x);
-        }
-        // TODO: mutability
-    }
-}
-
-fun type_hint_and_casting() -> I32 {
-    // Default I32
-    let x = 10;
-    // Casting
-    let y = x as F32;
-    let z = x as I64;
-    // Hinting
-    let p = 8I8 + 3;
-    let u: I64 = 1000000000;
-    // Mixed
-    ((u - 999999999) as I8 + p + 1) as I32
-}
-
 fun main() {
-    // Function calling
-    test_dog();
-    arith_and_pointer_and_if(10);
-    let result = loops(100);
-
-    // Unwrap tuples
-    let (name, x) = result;
-
-    // Test extern function
-    other::print();
-    {
-        cus ExternHelper {
-            time: F32,
-        }
-        fun extern_helper(_: ExternHelper) {}
-        let extern_fun: Decl(extern_helper) = req _extern_fun;
-        {
-            // The function is loaded only once globally
-            let extern_fun_again: Decl(extern_helper) = req _extern_fun;
-            let extern_fun_another: Decl(extern_helper) = req _extern_fun;
-        };
-        extern_fun(ExternHelper(time: 3.1415));
-    };
-
-    // Error caused by private functions
-    // other::private();
-    
-    let result = type_hint_and_casting();
-
+    let t = Ty(value: 1, eps: 10.0);
+    let tr = @t;
+    let v = *tr->value;
+    tr->value <- 12;
+    tr->eps <- 3.14;
 }

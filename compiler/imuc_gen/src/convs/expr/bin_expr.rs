@@ -2,6 +2,7 @@ use crate::prelude::*;
 use ast::expr::BinExpr;
 
 use imuc_ast::expr::Expr;
+use imuc_ir::sym::ty::{TyInner, TyItem};
 use imuc_lexer::token::{BinOp, ResTy};
 use ir::sym::ty::TyKind;
 
@@ -23,22 +24,19 @@ fn resolve_member(
     match &head.ty.kind {
         TyKind::Cus(cus) => {
             // FIXME: Anyway to prevent iterating?
-            let mut ptr = Ptr::default();
+            let mut offset = Ptr::default();
             for (name, ty) in cus.0.iter() {
                 if name.as_str() == nest {
                     return Ok(Some(Value {
-                        ptr: head.ptr + ptr,
+                        ptr: head.ptr + offset,
                         ty: ctx
                             .ty
                             .resolve_or(ty, span)
-                            .map_err(|err| {
-                                ctx.push_error(err);
-                                SendError::new_error()
-                            })?
+                            .map_err(ctx.push_error_fn())?
                             .clone(),
                     }));
                 }
-                ptr += ty.size().ok_or_else(|| {
+                offset += ty.size().ok_or_else(|| {
                     ctx.push_error(
                         ConvError::new(Severity::Fatal, span)
                             .with_head("Resolved type required in member resolution"),
@@ -49,6 +47,85 @@ fn resolve_member(
             Ok(None)
         }
         _ => Ok(None),
+    }
+}
+
+fn resolve_arrow_member(
+    ctx: &mut Ctx,
+    head: &Value,
+    nest: &str,
+    span: imuc_lexer::Span,
+) -> Result<Value> {
+    // NOTE: This function only returns Err because of type resolution, which is not possible in a
+    // normal parsing file
+    match &head.ty.kind {
+        TyKind::Ptr(item) | TyKind::Ref(item) => {
+            let push_error_fn = ctx.push_error_fn();
+            let ty = ctx.ty.resolve_or(item, span).map_err(&push_error_fn)?;
+            match &ty.kind {
+                TyKind::Cus(cus) => {
+                    // FIXME: Anyway to prevent iterating?
+                    let mut offset = Ptr::default();
+                    let mut found = None;
+                    for (name, ty) in cus.0.iter() {
+                        if name.as_str() == nest {
+                            let ty = ctx.ty.resolve_or(ty, span).map_err(&push_error_fn)?;
+                            found = Some(ty.clone());
+                            break;
+                        }
+                        offset += ty.size().ok_or_else(|| {
+                            ctx.push_error(
+                                ConvError::new(Severity::Fatal, span)
+                                    .with_head("Resolved type required in member resolution"),
+                            );
+                            SendError::new_error()
+                        })?;
+                    }
+                    if let Some(ty) = found {
+                        let ty = if matches!(head.ty.kind, TyKind::Ptr(_)) {
+                            let name = StrRef::from(ctx::mangle::mangle_ptr(&ty.name));
+                            ctx.ty
+                                .or_insert_with(name.clone(), move || {
+                                    Ty::new(TyInner::new_priv(name, TyKind::Ptr(TyItem::Solid(ty))))
+                                })
+                                .clone()
+                        } else {
+                            let name = StrRef::from(ctx::mangle::mangle_ref(&ty.name));
+                            ctx.ty
+                                .or_insert_with(name.clone(), move || {
+                                    Ty::new(TyInner::new_priv(name, TyKind::Ref(TyItem::Solid(ty))))
+                                })
+                                .clone()
+                        };
+                        let body = ctx.body_mut();
+                        let operand_ptr = body.push_stack(Bytes::ptr());
+                        let value_ptr = body.push_stack(Bytes::ptr());
+                        body.push(Cmd::Store(ast::prim::Prim::Integer(offset.into())));
+                        body.push(Cmd::Add(NumBytes::ptr(), offset, operand_ptr));
+                        Ok(Value { ptr: value_ptr, ty })
+                    } else {
+                        Err(ConvError::new(Severity::Error, span)
+                            .with_text(
+                                "Unable to find field",
+                                format!("No field {} in type {}", nest, ty.name),
+                            )
+                            .into())
+                    }
+                }
+                _ => Err(ConvError::new(Severity::Error, span)
+                    .with_text(
+                        "Expected pointer or reference to Cus",
+                        format!("Found {}", head.ty.name),
+                    )
+                    .into()),
+            }
+        }
+        _ => Err(ConvError::new(Severity::Error, span)
+            .with_text(
+                "Expected pointer or reference",
+                format!("Found {}", head.ty.name),
+            )
+            .into()),
     }
 }
 
@@ -94,6 +171,39 @@ fn resolve_nest(
     Ok(head)
 }
 
+fn convert_back_arrow(
+    ctx: &mut Ctx,
+    lhs: Value,
+    rhs: Value,
+    span: imuc_lexer::Span,
+) -> Result<Value> {
+    match &lhs.ty.kind {
+        TyKind::Ref(ty) => {
+            let push_error_fn = ctx.push_error_fn();
+            let ty = ctx.ty.resolve_or(ty, span).map_err(&push_error_fn)?;
+            let size = ty.size_or(span).map_err(&push_error_fn)?;
+            if ty.test_eq(&rhs.ty) {
+                let body = ctx.body_mut();
+                body.push(Cmd::WriteHeap(size, Bytes::start(), rhs.ptr, lhs.ptr));
+                Ok(Value::default())
+            } else {
+                ctx.push_error(ConvError::new(Severity::Error, span).with_text(
+                    "Assignment types mismatch",
+                    format!("Lhs(Ref) is {}, Rhs is {}", ty.name, rhs.ty.name),
+                ));
+                Err(SendError::new_error())
+            }
+        }
+        _ => {
+            ctx.push_error(ConvError::new(Severity::Error, span).with_text(
+                "BackArrow requires Ref on lhs",
+                format!("Unable to assign to type {}", lhs.ty.name),
+            ));
+            Err(SendError::new_error())
+        }
+    }
+}
+
 pub struct BinExprConv {
     pub solver: ExprSolver,
 }
@@ -134,7 +244,7 @@ impl Convert<Value> for BinExprConv {
             SendError::default()
         })?;
 
-        // Special case: Dot is not an arithmetic operator
+        // Special case: Dot
         if input.op == BinOp::Dot {
             match input.rhs.as_ref() {
                 Expr::Value(ast::expr::Value {
@@ -149,15 +259,50 @@ impl Convert<Value> for BinExprConv {
                 _ => {
                     ctx.push_error(
                         ConvError::new(Severity::Error, input.span())
-                            .with_head("Value name required after dot operator"),
+                            .with_head("Value name required after Dot operator"),
                     );
                     return Err(SendError::new_error());
                 }
             }
         }
 
+        // Special case: Arrow
+        if input.op == BinOp::Arrow {
+            match input.rhs.as_ref() {
+                Expr::Value(ast::expr::Value {
+                    value: ast::expr::ValueInner::Name(name),
+                    ..
+                }) => {
+                    return resolve_arrow_member(ctx, &lhs, name.as_str(), input.span);
+                }
+                _ => {
+                    ctx.push_error(
+                        ConvError::new(Severity::Error, input.span())
+                            .with_head("Value name required after Arrow operator"),
+                    );
+                    return Err(SendError::new_error());
+                }
+            }
+        }
+
+        // Determines the hint type to use
+        let hint_ty = if input.op == BinOp::BackArrow {
+            match &lhs.ty.kind {
+                TyKind::Ref(item) => {
+                    if let Some(ty) = ctx.ty.resolve(item) {
+                        ty.clone()
+                    } else {
+                        lhs.ty.clone()
+                    }
+                }
+                _ => lhs.ty.clone(),
+            }
+        } else {
+            lhs.ty.clone()
+        };
+
         let rhs: Value = convs::ExprConv {
-            solver: ExprSolver::inherit(&solver).with_hint_or_else(Some(lhs.ty.clone())),
+            solver: ExprSolver::inherit(&solver).with_hint_or_else(Some(hint_ty)),
         }
         .convert(ctx, input.rhs.as_ref())?
         .ok_or_else(|| {
@@ -166,6 +311,12 @@ impl Convert<Value> for BinExprConv {
             );
             SendError::default()
         })?;
+
+        // Special case: BackArrow assignment
+        if input.op == BinOp::BackArrow {
+            return convert_back_arrow(ctx, lhs, rhs, input.span);
+        }
+
         let lhs_ty = lhs.ty.to_res_ty().ok_or_else(|| {
             ctx.push_error(
                 ConvError::new(Severity::Error, input.span)
@@ -215,6 +366,8 @@ impl Convert<Value> for BinExprConv {
             BinOp::Ge => BinOpKind::CompareNot(-1),
             BinOp::Dot => unreachable!("Dot operator is filtered"),
             BinOp::Call => unreachable!("Call operator is filtered"),
+            BinOp::Arrow => unreachable!("Arrow operator is filtered"),
+            BinOp::BackArrow => unreachable!("BackArrow operator is filtered"),
         };
 
         match kind {

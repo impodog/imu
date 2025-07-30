@@ -24,7 +24,7 @@ impl Priority for UnOp {
 impl Priority for BinOp {
     fn priority(&self) -> u8 {
         match self {
-            Self::Dot => 1,
+            Self::Dot | Self::Arrow => 1,
             Self::Call => 2,
             Self::Mul | Self::Div => 7,
             Self::Add | Self::Sub => 8,
@@ -32,6 +32,7 @@ impl Priority for BinOp {
             Self::And => 14,
             Self::Xor => 15,
             Self::Or => 16,
+            Self::BackArrow => 20,
         }
     }
 

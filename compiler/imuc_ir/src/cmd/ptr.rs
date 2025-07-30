@@ -101,12 +101,26 @@ impl Bytes {
     }
 }
 
+impl From<Bytes> for imuc_ast::prim::Integer {
+    fn from(value: Bytes) -> Self {
+        Self::I32(value.0 as i32)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NumBytes {
     I8,
     I16,
     I32,
     I64,
+}
+
+impl NumBytes {
+    /// Creates the number of bytes corresponding to a pointer
+    pub const fn ptr() -> Self {
+        // WARN: Please change this when pointer size changes
+        Self::I32
+    }
 }
 
 impl TryFrom<char> for NumBytes {

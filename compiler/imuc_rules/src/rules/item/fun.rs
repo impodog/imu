@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use imuc_lexer::token::Symbol;
+use imuc_lexer::token::BinOp;
 
 pub struct FunRule;
 
@@ -16,11 +16,11 @@ impl Rule for FunRule {
                 context: "function arguments".to_owned(),
             })
         })?;
-        let ret = if parser.next_if(&TokenKind::Symbol(Symbol::Arrow))?.is_some() {
+        let ret = if parser.next_if(&TokenKind::BinOp(BinOp::Arrow))?.is_some() {
             Some(rules::TypeRule.parse(parser)?.ok_or_else(|| {
                 parser.map_err(errors::SyntaxError::ExpectedAfter {
                     expect: "Type".to_owned(),
-                    after: TokenKind::Symbol(Symbol::Arrow),
+                    after: TokenKind::BinOp(BinOp::Arrow),
                 })
             })?)
         } else {

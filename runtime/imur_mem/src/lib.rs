@@ -7,9 +7,12 @@ cfg_if! {
         extern crate std;
         use std::vec::Vec;
         use std::ptr::NonNull;
+        const ALIGNMENT: usize = std::mem::align_of::<*const ()>();
     } else {
         use core::ptr::NonNull;
+        const ALIGNMENT: usize = core::mem::align_of::<*const ()>();
     }
 }
 
-pub mod alc;
+pub mod alloc;
+pub mod stack;

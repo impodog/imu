@@ -101,7 +101,7 @@ fn resolve_arrow_member(
                         let operand_ptr = body.push_stack(Bytes::ptr());
                         let value_ptr = body.push_stack(Bytes::ptr());
                         body.push(Cmd::Store(ast::prim::Prim::Integer(offset.into())));
-                        body.push(Cmd::Add(NumBytes::ptr(), offset, operand_ptr));
+                        body.push(Cmd::Add(ir::cmd::PTR_BYTES, offset, operand_ptr));
                         Ok(Value { ptr: value_ptr, ty })
                     } else {
                         Err(ConvError::new(Severity::Error, span)

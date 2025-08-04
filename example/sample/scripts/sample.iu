@@ -1,11 +1,10 @@
-cus Ty {
-    value: I32,
-    eps: F64,
-}
 fun main() {
-    let t = Ty(value: 1, eps: 10.0);
-    let tr = @t;
-    let v = *tr->value;
-    tr->value <- 12;
-    tr->eps <- 3.14;
+    let x = @0;
+    loop {
+        if *x < 10 {
+            x <- *x + 1;
+        } else {
+            mit;
+        }
+    }
 }

@@ -115,14 +115,6 @@ pub enum NumBytes {
     I64,
 }
 
-impl NumBytes {
-    /// Creates the number of bytes corresponding to a pointer
-    pub const fn ptr() -> Self {
-        // WARN: Please change this when pointer size changes
-        Self::I32
-    }
-}
-
 impl TryFrom<char> for NumBytes {
     type Error = Error;
     fn try_from(value: char) -> std::result::Result<Self, Self::Error> {

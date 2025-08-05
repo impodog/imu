@@ -58,18 +58,33 @@ impl Body {
 
     /// Pushes bytes into the stack, returning the pointer to the top before pushing
     pub fn push_stack(&mut self, bytes: cmd::Bytes) -> cmd::Ptr {
+        // FIXME: This is temporary, and wastes much memory. Fix?
+        self.align_stack();
         let result = self.stack;
         self.stack += bytes;
         result
     }
 
-    /// Gets the pointer of stack top
+    /// Gets the pointer to stack top
     pub fn stack(&self) -> cmd::Ptr {
+        self.stack
+    }
+
+    /// Aligns the stack pointer to `crate::config::MEMORY_LAYOUT.ptr_align` and returns the
+    /// aligned one, wasting some memory if necessary
+    pub fn align_stack(&mut self) -> cmd::Ptr {
+        let rem = self.stack.num() % crate::config::MEMORY_LAYOUT.ptr_align;
+        if rem != 0 {
+            let add = crate::config::MEMORY_LAYOUT.ptr_align - rem;
+            self.stack += cmd::Bytes::new(add);
+        }
         self.stack
     }
 
     /// Memorize the current stack pointer, to be reverted later
     pub fn push_stack_record(&mut self) {
+        // Aligns the stack for return value
+        self.align_stack();
         // debug!("Push stack record: {:?}", self.stack());
         self.stack_record.push(self.stack());
     }
@@ -118,7 +133,9 @@ impl Body {
     /// Memorize the *next* (yet to push) cmd pointer in the loop records, so that "mit" expressions can be
     /// evaluated and jumped properly
     pub fn push_loop_record(&mut self) {
-        let ptr = cmd::Ptr::new_usize(self.len());
+        /// Aligns the stack for return value
+        self.align_stack();
+        let ptr = cmd::Ptr::new(self.len());
         self.loop_record.push(LoopRecord {
             ptr,
             stack: self.stack(),

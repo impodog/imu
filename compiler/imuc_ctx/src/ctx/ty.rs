@@ -106,7 +106,10 @@ impl Types {
                 index
             };
             match &ty.kind {
-                ty::TyKind::Res(_) | ty::TyKind::Ptr(_) | ty::TyKind::Fun { .. } => {}
+                ty::TyKind::Res(_)
+                | ty::TyKind::Ptr(_)
+                | ty::TyKind::Fun { .. }
+                | ty::TyKind::Pad(_) => {}
                 ty::TyKind::Ref(item) => {
                     add_edge(&mut graph, &mut map, node, item);
                 }
@@ -153,6 +156,7 @@ impl Types {
                     }
                     ty::TyKind::Cus(ty::Cus(value))
                 }
+                ty::TyKind::Pad(pad) => ty::TyKind::Pad(*pad),
             };
             let ty = ty::Ty::new(ty::TyInner {
                 name: ty.name.clone(),

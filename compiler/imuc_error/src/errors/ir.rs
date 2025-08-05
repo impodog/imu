@@ -6,6 +6,8 @@ pub enum IrError {
     Unmatched(char, char),
     #[error("type {0} is not allowed in IR")]
     TypeNotAllowed(String),
+    #[error("expected an integer of size, found {0:?}")]
+    ExpectedSize(String),
     #[error("no such command modifier: {0}")]
     NoSuchCommandMod(String),
     #[error("no such command: {0}")]

@@ -218,6 +218,7 @@ dependencies = [
  "imuc_ast",
  "imuc_error",
  "imuc_lexer",
+ "log",
  "unescape",
 ]
 

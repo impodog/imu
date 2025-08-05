@@ -17,6 +17,7 @@ impl Convert<Value> for IfElseConv {
         let ty = std::cell::OnceCell::<Ty>::default();
         let mut final_placeholders = Vec::new();
 
+        // Force align the stack for return value
         ctx.body_mut().push_stack_record();
         let revert_stack_and_dupli = |ctx: &mut Ctx, ptr: Ptr| -> Result<()> {
             let size = ty
@@ -87,14 +88,8 @@ impl Convert<Value> for IfElseConv {
             let current_index = ctx.body().len();
             *ctx.body_mut()
                 .get_mut(jump_index)
-                .expect("Body should contains a jump command placeholder") = Cmd::JumpIf(
-                inverse_ptr,
-                Bytes::new(
-                    current_index
-                        .try_into()
-                        .expect("Stack length should not exceed Bytes limit"),
-                ),
-            );
+                .expect("Body should contains a jump command placeholder") =
+                Cmd::JumpIf(inverse_ptr, Bytes::new(current_index));
 
             // Revert stack location before the next if/else branch
             revert_stack_and_dupli(ctx, value.ptr)?;
@@ -116,7 +111,7 @@ impl Convert<Value> for IfElseConv {
                 return Err(SendError::new_error());
             }
             revert_stack_and_dupli(ctx, value.ptr)?;
-            let final_ptr = Bytes::new_usize(ctx.body().len());
+            let final_ptr = Bytes::new(ctx.body().len());
             for index in final_placeholders.into_iter() {
                 *ctx.body_mut()
                     .get_mut(index)

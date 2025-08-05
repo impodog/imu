@@ -1,8 +1,8 @@
 use crate::prelude::*;
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Rem, Sub, SubAssign};
 
 /// Returns the representation of the number as `NumBytes`, if available
-const fn number_to_bytes(value: u32) -> Option<NumBytes> {
+const fn number_to_bytes(value: usize) -> Option<NumBytes> {
     match value {
         1 => Some(NumBytes::I8),
         2 => Some(NumBytes::I16),
@@ -12,12 +12,12 @@ const fn number_to_bytes(value: u32) -> Option<NumBytes> {
     }
 }
 
-pub const PTR_SIZE: u32 = std::mem::size_of::<Ptr>() as u32;
+pub const PTR_SIZE: usize = std::mem::size_of::<Ptr>();
 pub const PTR_BYTES: NumBytes = number_to_bytes(PTR_SIZE).unwrap();
 
 /// Represent the number of bytes, or a pointer to the local function stack
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Bytes(u32);
+pub struct Bytes(usize);
 pub type Ptr = Bytes;
 
 impl Add<Bytes> for Bytes {
@@ -46,13 +46,14 @@ impl SubAssign for Bytes {
     }
 }
 
-impl From<Bytes> for usize {
-    fn from(value: Bytes) -> Self {
-        value.0 as usize
+impl Rem for Bytes {
+    type Output = Bytes;
+    fn rem(self, rhs: Self) -> Self::Output {
+        Bytes(self.0.rem(rhs.0))
     }
 }
 
-impl From<Bytes> for u32 {
+impl From<Bytes> for usize {
     fn from(value: Bytes) -> Self {
         value.0
     }
@@ -61,7 +62,7 @@ impl From<Bytes> for u32 {
 impl Rw for Bytes {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let value = input.read_until(' ')?;
-        let value = value.parse::<u32>()?;
+        let value = value.parse::<usize>()?;
         Ok(Self(value))
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
@@ -71,13 +72,8 @@ impl Rw for Bytes {
 }
 
 impl Bytes {
-    pub const fn new(value: u32) -> Self {
+    pub const fn new(value: usize) -> Self {
         Self(value)
-    }
-
-    /// Creates a representation of bytes from a usize, panics if it exceeds `u32::MAX`
-    pub fn new_usize(value: usize) -> Self {
-        Self(value.try_into().expect("usize should not exceed bounds"))
     }
 
     /// Creates a representation of bytes with length equal to `u32`
@@ -98,6 +94,16 @@ impl Bytes {
     /// Creates a stack ptr to init position
     pub const fn start() -> Self {
         Self(0)
+    }
+
+    /// Returns if the number of bytes is 0
+    pub const fn is_null(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Extracts the number of bytes in `usize`
+    pub const fn num(self) -> usize {
+        self.0
     }
 }
 

@@ -5,6 +5,7 @@ use imuc_lexer::token::ResTy;
 use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::sync::LazyLock;
 use std::sync::OnceLock;
 
 /// A clonable immutable handle to `TyInner`, representing a type
@@ -45,6 +46,39 @@ impl Ty {
     /// referenced in other modules
     pub fn new(inner: TyInner) -> Self {
         Self(Arc::new((inner, OnceLock::new())))
+    }
+
+    /// Creates a padding type with a fixed size. This function is efficient because it
+    /// reuses previously generated types when 0 < `pad` < 8 and merely makes a clone.
+    ///
+    /// When `pad` == 0, this returns exactly the unit type.
+    pub fn pad(pad: usize) -> Self {
+        static PADS: LazyLock<Vec<Ty>> = LazyLock::new(|| {
+            let mut pads = Vec::new();
+            for size in 1..8 {
+                pads.push(Ty::new(TyInner::new_priv(
+                    format!("#PAD{size}").into(),
+                    TyKind::Pad(size),
+                )));
+            }
+            pads
+        });
+        if pad == 0 {
+            Ty::unit()
+        } else if pad < 8 {
+            // Minus 1 because padding vector started from pad 1
+            PADS.get(pad - 1)
+                .expect("padding should be cached between 1..8")
+                .clone()
+        } else {
+            // For bigger paddings(not used in compiler), create new types.
+            // This should not happen and emits a warn.
+            log::warn!("Unexpected big padding: {pad}");
+            Ty::new(TyInner::new_priv(
+                format!("#PAD{pad}").into(),
+                TyKind::Pad(pad),
+            ))
+        }
     }
 
     /// Tests if the types are same-by-name
@@ -113,6 +147,7 @@ impl Ty {
                         }
                         accum
                     }
+                    TyKind::Pad(padding) => Bytes::new(*padding),
                 };
                 Some(len)
             })
@@ -199,6 +234,7 @@ pub enum TyKind {
     /// relative to the global stack and depends on the runtime implementation, but the latter is
     /// a compiler internal representation relative to the function call local stack
     Ptr(TyItem),
+    Pad(usize),
 }
 
 /// A type item included in the definition of another type
@@ -384,6 +420,13 @@ impl Rw for Ty {
                     external: input.external(),
                 }))
             }
+            '>' => {
+                if let Ok(pad) = content[1..].parse::<usize>() {
+                    Ok(Ty::pad(pad))
+                } else {
+                    Err(errors::IrError::ExpectedSize(content[1..].to_string()).into())
+                }
+            }
             _ => {
                 let res_ty = ResTy::read(LineReader::new(content, external))?;
                 Ok(Ty::from_res(res_ty).expect("expected ResTy to read only applicable types"))
@@ -440,6 +483,9 @@ impl Rw for Ty {
                     }
                 }
                 write!(output, "}}")?;
+            }
+            TyKind::Pad(pad) => {
+                write!(output, ">{pad}")?;
             }
         }
         Ok(())

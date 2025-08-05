@@ -8,3 +8,4 @@ imuc_ast = { path = "../imuc_ast" }
 imuc_lexer = { path = "../imuc_lexer" }
 imuc_error = { path = "../imuc_error", features = ["ctx"] }
 unescape = "0.1.0"
+log = "0.4.27"

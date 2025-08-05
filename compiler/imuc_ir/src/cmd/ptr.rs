@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-/// Returns the representation of the number as [`NumBytes`], if available
+/// Returns the representation of the number as `NumBytes`, if available
 const fn number_to_bytes(value: u32) -> Option<NumBytes> {
     match value {
         1 => Some(NumBytes::I8),
@@ -75,17 +75,17 @@ impl Bytes {
         Self(value)
     }
 
-    /// Creates a representation of bytes from a usize, panics if it exceeds [`u32::MAX`]
+    /// Creates a representation of bytes from a usize, panics if it exceeds `u32::MAX`
     pub fn new_usize(value: usize) -> Self {
         Self(value.try_into().expect("usize should not exceed bounds"))
     }
 
-    /// Creates a representation of bytes with length equal to [`u32`]
+    /// Creates a representation of bytes with length equal to `u32`
     pub const fn ptr() -> Self {
         Self(PTR_SIZE)
     }
 
-    /// Creates a representation of bytes with length equal to [`i8`]
+    /// Creates a representation of bytes with length equal to `i8`
     pub const fn byte() -> Self {
         Self(1)
     }

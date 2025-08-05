@@ -2,7 +2,7 @@ use imuc_error::Error;
 use imuc_lexer::{Cursor, Filename, Span, Token, TokenKind};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-/// Clonable information of [`FileReader`] holding the file string and cursor position
+/// Clonable information of `FileReader` holding the file string and cursor position
 #[derive(Debug, Clone, Copy)]
 pub struct FileInfo {
     pub file: Filename,
@@ -10,7 +10,7 @@ pub struct FileInfo {
     pub column: usize,
 }
 
-/// An adaptor from token lexers to [`ParserSequence`](`crate::ParserSequence`)
+/// An adaptor from token lexers to `ParserSequence`(`crate::ParserSequence`)
 pub struct FileReader<'s, I>
 where
     I: Iterator<Item = Token> + Send + Sync,
@@ -45,8 +45,8 @@ where
         }
     }
 
-    /// Advance the file reader by one token, returning the next [`ParserInput`](`crate::ParserInput`)
-    /// Returns [`None`] when the content or the reader exhausts
+    /// Advance the file reader by one token, returning the next `ParserInput`(`crate::ParserInput`)
+    /// Returns `None` when the content or the reader exhausts
     pub fn advance(&mut self) -> Option<crate::ParserInput<'s>> {
         self.reader.next().and_then(|token| {
             let next_index = self.index + token.len;

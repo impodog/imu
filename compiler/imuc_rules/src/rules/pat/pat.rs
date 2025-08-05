@@ -14,7 +14,7 @@ impl Rule for PatRule {
         let first = if let Some(named) = rules::CusPatRule.parse(parser)? {
             pat::PatInner::Cus(named)
         } else if let Some(first) = rules::TuplePatRule.parse(parser)? {
-            // NOTE: Tuple pat returns [`PatInner`] because it can be without comma
+            // NOTE: Tuple pat returns `PatInner` because it can be without comma
             first
         } else if let Some(first) = rules::IdentPatRule.parse(parser)? {
             pat::PatInner::Ident(first)

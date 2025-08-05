@@ -104,7 +104,7 @@ pub struct Cus {
     pub span: imuc_lexer::Span,
 }
 
-/// Quits ([`Self::index`] + 1) layers of loops
+/// Quits (`Self::index` + 1) layers of loops
 #[derive(Spanned)]
 pub struct Mit {
     /// The layers of loops to jump out of, minus 1

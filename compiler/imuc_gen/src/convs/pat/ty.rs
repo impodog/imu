@@ -27,7 +27,7 @@ fn resolve_type_name(ctx: &mut Ctx, name: &str, span: imuc_lexer::Span) -> Resul
 }
 
 impl Convert<Option<Ty>> for TypeConv {
-    /// Converts an AST type to an actual type; [`None`] is only returned if the type is wildcard
+    /// Converts an AST type to an actual type; `None` is only returned if the type is wildcard
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Ty>> {
         let ty = match &input.kind {
             TypeKind::Wildcard => return Ok(None),

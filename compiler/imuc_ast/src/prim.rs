@@ -8,7 +8,7 @@ pub enum Prim {
     Unit,
 }
 
-/// Different sizes of an integer stored in [`Prim`]
+/// Different sizes of an integer stored in `Prim`
 #[derive(Clone)]
 pub enum Integer {
     I8(i8),
@@ -18,7 +18,7 @@ pub enum Integer {
     Any(i64),
 }
 
-/// Different sizes of a float stored in [`Prim`]
+/// Different sizes of a float stored in `Prim`
 #[derive(Clone)]
 pub enum Float {
     F32(f32),

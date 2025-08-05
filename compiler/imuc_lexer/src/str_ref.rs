@@ -18,10 +18,10 @@ impl Default for StrRef {
     }
 }
 
-/// The internal enum that holds data of [`StrRef`]
+/// The internal enum that holds data of `StrRef`
 ///
 /// The enum is two variants, namely Small and Big.
-/// When the string is smaller than [`SMALL_STRING_THRESHOLD`], the Small variant is used and the
+/// When the string is smaller than `SMALL_STRING_THRESHOLD`, the Small variant is used and the
 /// string is cloned completely. Otherwise the Big variant is used and the string is stored in
 /// an Arc
 #[derive(Clone, Debug)]

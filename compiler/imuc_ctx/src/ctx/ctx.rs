@@ -112,7 +112,7 @@ impl Ctx {
         self.ty.get(name)
     }
 
-    /// Merges the functions from an iterator, same as calling on [`Self::glob`],
+    /// Merges the functions from an iterator, same as calling on `Self::glob`,
     /// but with the body parameter given, preventing reference errors
     pub fn merge_fun<'a, I>(&mut self, funs: I)
     where
@@ -124,13 +124,13 @@ impl Ctx {
             .merge_fun(self.body.last_mut(), funs);
     }
 
-    /// Accesses [`Self::error_queue`] and pushes back an error
+    /// Accesses `Self::error_queue` and pushes back an error
     pub fn push_error(&self, error: errors::ctx::ConvError) {
         self.error_queue.write().unwrap().push_back(error);
     }
 
-    /// Returns a function applicable to [`Result::map_err`] that grabs the stored error
-    /// and replaces it with a [`SendError`]
+    /// Returns a function applicable to `Result::map_err` that grabs the stored error
+    /// and replaces it with a `SendError`
     pub fn push_error_fn(&self) -> impl Fn(errors::ctx::ConvError) -> SendError + 'static {
         let error_queue = self.error_queue.clone();
         move |error| {

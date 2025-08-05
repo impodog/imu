@@ -8,7 +8,7 @@ use imuc_parser::TokenKindSet;
 
 lazy_tokens!(EndTokens, Pair::RightParen, Pair::RightBracket, Pair::RightBrace and Semicolon);
 
-/// [`Self::end`] defines the token to end the expression when meet
+/// `Self::end` defines the token to end the expression when meet
 ///
 /// The expression will end anyway if it meets open right brackets ')', ']', '}' or ';' (as a suffix and will not be consumed)
 pub struct ExprRule<T>

@@ -20,7 +20,7 @@ impl Converter for ExprConv {
 }
 
 impl Convert<Option<Value>> for ExprConv {
-    /// Converts an expression to a value; [`None`] is only returned if the expression is just an
+    /// Converts an expression to a value; `None` is only returned if the expression is just an
     /// unused name
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Value>> {
         let ExprConv { solver } = self;

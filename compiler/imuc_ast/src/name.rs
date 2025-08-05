@@ -4,7 +4,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-/// A name lookup set that produces [`StrRef`] on insertion
+/// A name lookup set that produces `StrRef` on insertion
 ///
 /// This reduces the times of cloning the same name reference
 #[derive(Default)]

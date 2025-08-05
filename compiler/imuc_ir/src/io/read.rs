@@ -5,7 +5,7 @@ use std::io::BufRead;
 pub trait IrRead {
     /// Reads the next char, regarding EOF as an error
     fn read_char(&mut self) -> Result<char>;
-    /// Reads until the reader hits [`ch`] or reaches the end of a line, consuming the "until" character
+    /// Reads until the reader hits `ch` or reaches the end of a line, consuming the "until" character
     fn read_until(&mut self, ch: char) -> Result<&str>;
     /// Reads until the reader reaches the end of a line, consuming the rest of the line
     fn read_line(&mut self) -> Result<&str>;
@@ -13,7 +13,7 @@ pub trait IrRead {
     fn peek_line(&mut self) -> Option<&str>;
     /// Peeks the current line, returning Err on EOF
     ///
-    /// The default implementation uses [`Self::peek_line`]
+    /// The default implementation uses `Self::peek_line`
     fn peek_line_or_else(&mut self) -> Result<&str> {
         let peek = self.peek_line();
         peek.ok_or_else(|| errors::IrError::Eof.into())
@@ -44,7 +44,7 @@ where
     }
 }
 
-/// This wrapper implements [`IrRead`] and can be used for IR serde
+/// This wrapper implements `IrRead` and can be used for IR serde
 pub struct IrReader<T>
 where
     T: BufRead,
@@ -59,7 +59,7 @@ impl<T> IrReader<T>
 where
     T: BufRead,
 {
-    /// Creates a new [`IrReader`]
+    /// Creates a new `IrReader`
     pub fn new(inner: T, external: bool) -> Self {
         Self {
             inner,
@@ -140,7 +140,7 @@ where
         }
         if let Some(line) = &self.line {
             let result = &line[self.cursor..];
-            // Setting cursor to usize::MAX effectively forces [`Self::update`] on next read
+            // Setting cursor to usize::MAX effectively forces `Self::update` on next read
             self.cursor = usize::MAX;
             Ok(result)
         } else {

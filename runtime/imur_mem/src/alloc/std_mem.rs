@@ -1,16 +1,16 @@
 use crate::alloc::Memory;
 use crate::*;
 
-/// An utility memory allocator by [`std::vec::Vec`]. Only available with feature "std".
-/// This grows by multiplier of 2 each time [`Self::grow`] is called if the vec is above half full.
-/// The reserving behavior is the same as how [`std::vec::Vec`] is implemented in [`Vec::resize`].
+/// An utility memory allocator by `std::vec::Vec`. Only available with feature "std".
+/// This grows by multiplier of 2 each time `Self::grow` is called if the vec is above half full.
+/// The reserving behavior is the same as how `std::vec::Vec`] is implemented in [`Vec::resize`.
 #[derive(Default)]
 pub struct VecMem {
     mem: Vec<u8>,
 }
 
 impl VecMem {
-    /// Creates a new memory containing an empty [`Vec`]
+    /// Creates a new memory containing an empty `Vec`
     pub fn new() -> Self {
         Self::default()
     }

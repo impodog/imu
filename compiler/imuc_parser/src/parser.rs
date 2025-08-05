@@ -4,7 +4,7 @@ use imuc_error::*;
 use imuc_lexer::TokenKind;
 use std::collections::VecDeque;
 
-/// A parser that iterates over sequences of [`ParserInput`], with syntax trees
+/// A parser that iterates over sequences of `ParserInput`, with syntax trees
 pub struct Parser<'s, I>
 where
     I: ParserSequence<'s>,
@@ -40,13 +40,13 @@ where
     }
 
     /// Inserts a prefix into the front queue, blocking any other queue operations by returning dummy tokens
-    /// until the prefix is collected by [`Self::pop_prefix`]
+    /// until the prefix is collected by `Self::pop_prefix`
     pub fn push_prefix(&mut self, prefix: imuc_ast::name::Prefix) {
         self.prefixes.push_back(prefix);
     }
 
     /// Acquires the prefix in the queue, if any, otherwise no action is done.
-    /// See [`Self::push_prefix`]
+    /// See `Self::push_prefix`
     pub fn pop_prefix(&mut self) -> Option<imuc_ast::name::Prefix> {
         self.prefixes.pop_front()
     }
@@ -56,11 +56,11 @@ where
         !self.prefixes.is_empty()
     }
 
-    /// Returns the nth pending result of [`Self::next_token`] without consuming the token,
+    /// Returns the nth pending result of `Self::next_token` without consuming the token,
     /// index starting from 0
     ///
     /// Errors are only caused by lexer errors
-    /// Note that peeking does not change current [`Self::relative_cursor`] and [`Self::file_info`]
+    /// Note that peeking does not change current `Self::relative_cursor`] and [`Self::file_info`
     pub fn peek_nth(&mut self, index: usize) -> Result<Option<ParserInput<'s>>> {
         // The required length for the queue to contain the index
         let len = index + 1;
@@ -79,10 +79,10 @@ where
         }
     }
 
-    /// Returns the next pending result of [`Self::next_token`] without consuming the token
+    /// Returns the next pending result of `Self::next_token` without consuming the token
     ///
     /// Errors are only caused by lexer errors
-    /// Note that peeking does not change current [`Self::relative_cursor`] and [`Self::file_info`]
+    /// Note that peeking does not change current `Self::relative_cursor`] and [`Self::file_info`
     pub fn peek(&mut self) -> Result<Option<ParserInput<'s>>> {
         if let Some(input) = self.queue.front() {
             Ok(Some(input.input))
@@ -99,7 +99,7 @@ where
         }
     }
 
-    /// Returns the next pending result of [`Self::next_token`] if its matches the given kinds, or [`Ok(None)`] is returned
+    /// Returns the next pending result of `Self::next_token`] if its matches the given kinds, or [`Ok(None)` is returned
     ///
     /// Errors are only caused by lexer errors
     pub fn next_if(
@@ -119,7 +119,7 @@ where
     }
 
     /// Gets the next token, if any, while mapping the possible errors
-    /// If the token is an error, an [`Err`] result is returned
+    /// If the token is an error, an `Err` result is returned
     pub fn next_token(&mut self) -> Result<Option<ParserInput<'s>>> {
         self.filter_useless()?;
         let result = self.next_token_unfiltered()?;
@@ -127,7 +127,7 @@ where
         Ok(result.map(|result| result.input))
     }
 
-    /// Internal function of [`Self::next_token`], filters any useless tokens
+    /// Internal function of `Self::next_token`, filters any useless tokens
     fn filter_useless(&mut self) -> Result<()> {
         while self.peek()?.is_some_and(|input| {
             matches!(
@@ -142,7 +142,7 @@ where
         Ok(())
     }
 
-    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens,
+    /// Internal function of `Self::next_token`, but does not filter tail useless tokens,
     /// and does not touch the queue, but get a new token directly from the seq
     fn next_token_directly(&mut self) -> Result<Option<ParserStack<'s>>> {
         let mut cursor = self.seq.relative_cursor();
@@ -175,7 +175,7 @@ where
         }
     }
 
-    /// Internal function of [`Self::next_token`], but does not filter tail useless tokens
+    /// Internal function of `Self::next_token`, but does not filter tail useless tokens
     fn next_token_unfiltered(&mut self) -> Result<Option<ParserStack<'s>>> {
         if let Some(front) = self.queue.pop_front() {
             return Ok(Some(front));
@@ -226,7 +226,7 @@ where
         self.seq.map_error(err.into())
     }
 
-    /// Gets the current file info, with the cursor same as [`Self::relative_cursor`]
+    /// Gets the current file info, with the cursor same as `Self::relative_cursor`
     pub fn file_info(&self) -> crate::file::FileInfo {
         if let Some(front) = self.queue.front() {
             front.file_info
@@ -246,7 +246,7 @@ where
         }
     }
 
-    /// Maps the error then output a [`Result`] of [`Err`]
+    /// Maps the error then output a `Result`] of [`Err`
     pub fn error<R>(&self, err: impl Into<Error>) -> Result<R> {
         Err(self.map_err(err))
     }

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
-/// A immutable, clonable handle of [`PatInner`], holding the pattern info
+/// A immutable, clonable handle of `PatInner`, holding the pattern info
 #[derive(Clone, Spanned)]
 pub struct Pat {
     inner: Arc<PatInner>,
@@ -18,7 +18,7 @@ impl Pat {
         }
     }
 
-    /// Extracts the [`PatInner`], panics if the inner is borrowed
+    /// Extracts the `PatInner`, panics if the inner is borrowed
     pub fn into_inner(self) -> PatInner {
         Arc::into_inner(self.inner).expect("inner pattern should not be borrowed")
     }
@@ -54,7 +54,7 @@ pub struct AnyPat(pub Vec<Pat>);
 /// A name group of patterns that can be matched according to names
 pub struct CusPat(pub BTreeMap<imuc_lexer::StrRef, Option<Type>>);
 
-/// An enumeration used in [`IdentPat`] for an unused or normal name
+/// An enumeration used in `IdentPat` for an unused or normal name
 pub enum IdentKind {
     Unused,
     Value(imuc_lexer::StrRef),
@@ -76,7 +76,7 @@ pub struct Type {
     pub span: imuc_lexer::Span,
 }
 
-/// A part of [`Type`] storing only its name and template args
+/// A part of `Type` storing only its name and template args
 pub enum TypeKind {
     Wildcard,
     Res(imuc_lexer::token::ResTy),

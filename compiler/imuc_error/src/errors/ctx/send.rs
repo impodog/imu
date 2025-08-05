@@ -13,7 +13,7 @@ impl SendError {
         Self::default()
     }
 
-    /// Creates a new marker error wrapped in type [`Error`]
+    /// Creates a new marker error wrapped in type `Error`
     pub fn new_error() -> Error {
         Self::new().into()
     }

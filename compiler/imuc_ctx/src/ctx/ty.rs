@@ -8,7 +8,7 @@ use sym::{ty, Ty};
 type TyMap = HashMap<StrRef, Ty>;
 
 /// A direct representation of strings mapped to types,
-/// can be used to convert [`ty::TyItem`] into [`Ty`]
+/// can be used to convert `ty::TyItem`] into [`Ty`
 #[derive(Default)]
 pub struct Types {
     map: TyMap,
@@ -26,7 +26,7 @@ impl Types {
         self.map.get(key)
     }
 
-    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible
+    /// Resolves the `TyItem`](`ty::TyItem`) into a direct [`Ty`, if possible
     pub fn resolve<'a, 'b>(&'a self, item: &'b ty::TyItem) -> Option<&'a Ty>
     where
         'b: 'a,
@@ -37,10 +37,10 @@ impl Types {
         }
     }
 
-    /// Resolves the [`TyItem`](`ty::TyItem`) into a direct [`Ty`], if possible,
+    /// Resolves the `TyItem`](`ty::TyItem`) into a direct [`Ty`, if possible,
     /// or an error with the given span and a relatively fixed message is returned
     ///
-    /// If you want custom messages, use [`Self::resolve`] instead
+    /// If you want custom messages, use `Self::resolve` instead
     pub fn resolve_or<'a, 'b>(
         &'a self,
         item: &'b ty::TyItem,
@@ -175,7 +175,7 @@ impl Types {
         self.map.entry(name).or_insert_with(f)
     }
 
-    /// Extracts local types from the type map, and store them in a [`BTreeMap`] suitable for
+    /// Extracts local types from the type map, and store them in a `BTreeMap` suitable for
     /// ir module representation.
     pub fn extract_map(&self) -> BTreeMap<StrRef, Ty> {
         let mut map = BTreeMap::new();

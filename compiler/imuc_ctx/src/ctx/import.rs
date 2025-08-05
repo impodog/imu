@@ -60,7 +60,7 @@ impl Imports {
     }
 }
 
-/// The locked shared handle for [`ImportPool`]
+/// The locked shared handle for `ImportPool`
 pub type ImportPoolHandle = Arc<RwLock<ImportPool>>;
 
 /// A cache pool for all modules read externally and can be used on repeat

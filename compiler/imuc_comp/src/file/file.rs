@@ -44,7 +44,7 @@ impl FileHandle {
     }
 }
 
-/// Helper struct of [`FileHandle`] to save file string for querying convenience
+/// Helper struct of `FileHandle` to save file string for querying convenience
 #[derive(Default)]
 struct FileContent {
     content: String,

@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 type FunMap = BTreeMap<StrRef, Fun>;
 
-/// Stores a map of in-module functions that can be used to build a [`Module`][`imuc_ir::module::Module`]
+/// Stores a map of in-module functions that can be used to build a `Module`][`imuc_ir::module::Module`
 #[derive(Default)]
 pub struct Funs {
     map: FunMap,

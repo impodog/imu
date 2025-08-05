@@ -21,8 +21,8 @@ impl Converter for PatConv {
 }
 
 impl Convert<Option<Ty>> for PatConv {
-    /// Extracts the type info from the pat; [`None`] is only returned if the type is wildcard *and*
-    /// [`Self::requires_ty`] is set to `false`
+    /// Extracts the type info from the pat; `None` is only returned if the type is wildcard *and*
+    /// `Self::requires_ty` is set to `false`
     fn convert(self, ctx: &mut Ctx, input: &Self::Input) -> Result<Option<Ty>> {
         let Self {
             requires_ty,

@@ -112,9 +112,9 @@ pub enum Cmd {
     Call(Bytes),
     /// Globally links to the function, putting its handle(ptr-sized) on top of the global stack
     Link(StrRef),
-    /// Does the link like [`Self::Link`] with additional argument and return size check
+    /// Does the link like `Self::Link` with additional argument and return size check
     LinkCheck(Bytes, Bytes, StrRef),
-    /// Note that this command should not appear in [`CmdBody`]. It is only used to mark function ends in files,
+    /// Note that this command should not appear in `CmdBody`. It is only used to mark function ends in files,
     /// or to act as a placeholder for optional commands
     End,
 }

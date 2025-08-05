@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
-/// A clonable immutable handle to [`TyInner`], representing a type
+/// A clonable immutable handle to `TyInner`, representing a type
 ///
 /// This should not cause looped reference when creating
 #[derive(Debug, Clone)]
@@ -52,14 +52,14 @@ impl Ty {
         self.size() == ty.size() && self.name == ty.name
     }
 
-    /// Converts the type to [`ResTy`], if possible
+    /// Converts the type to `ResTy`, if possible
     pub fn to_res_ty(&self) -> Option<ResTy> {
         match &self.0 .0.kind {
             TyKind::Res(res_ty) => Some(*res_ty),
             _ => None,
         }
     }
-    /// Builds a ty from [`ResTy`], if possible
+    /// Builds a ty from `ResTy`, if possible
     pub fn from_res(res_ty: ResTy) -> Option<Self> {
         let ty = match res_ty {
             ResTy::SelfType => return None,
@@ -79,7 +79,7 @@ impl Ty {
 
     /// Calculates the size of the type in bytes, and store it for future use
     ///
-    /// If the type contains unresolved types or ResTy::SelfType or TyKind::Fun, [`None`] is returned
+    /// If the type contains unresolved types or ResTy::SelfType or TyKind::Fun, `None` is returned
     pub fn size(&self) -> Option<Bytes> {
         self.0
              .1
@@ -123,7 +123,7 @@ impl Ty {
     /// Calculates the size of the type in bytes, and store it for future use
     ///
     /// If the type contains unresolved types or ResTy::SelfType or TyKind::Fun, an error message addressing that is returned.
-    /// If you want custom messages, use [`Self::size`]
+    /// If you want custom messages, use `Self::size`
     pub fn size_or(&self, span: imuc_lexer::Span) -> Result<Bytes, ConvError> {
         self.size().ok_or_else(|| {
             ConvError::new(Severity::Error, span).with_text(
@@ -183,7 +183,7 @@ impl TyInner {
     }
 }
 
-/// A part of [`TyInner`], holding the memory layout and features of the type
+/// A part of `TyInner`, holding the memory layout and features of the type
 #[derive(Debug, Clone)]
 pub enum TyKind {
     Res(ResTy),
@@ -217,7 +217,7 @@ impl TyItem {
         }
     }
 
-    /// Gets the name of this [`TyItem`]
+    /// Gets the name of this `TyItem`
     pub fn name(&self) -> &StrRef {
         match self {
             Self::Solid(ty) => &ty.name,

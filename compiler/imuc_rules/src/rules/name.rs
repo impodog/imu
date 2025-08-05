@@ -2,8 +2,8 @@ use crate::prelude::*;
 use imuc_lexer::token::{Ident, Keyword, Symbol};
 
 /// Outputs the prefix to type/value names. This rule is lazy, it only consumes the prefix from the
-/// parser, store it in the queue and return whether it is successful by [`Option`]. If the rule is
-/// called multiple times without popping the prefix with [`Parser::pop_prefix`], no action will be
+/// parser, store it in the queue and return whether it is successful by `Option`. If the rule is
+/// called multiple times without popping the prefix with `Parser::pop_prefix`, no action will be
 /// done.
 ///
 /// This rule does not output anything, because it inserts the prefix into the parser queue

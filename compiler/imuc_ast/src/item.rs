@@ -20,7 +20,7 @@ pub struct TemplItem {
     pub req: Vec<crate::pat::Type>,
 }
 
-/// The internal data of an [`Item`], representing functions, customs types or constant values
+/// The internal data of an `Item`, representing functions, customs types or constant values
 pub enum ItemKind {
     Fun(Fun),
     Cus(Cus),

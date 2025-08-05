@@ -16,7 +16,7 @@ impl Flow {
     }
 }
 
-/// An "if" statement stored in [`Flow`]
+/// An "if" statement stored in `Flow`
 #[derive(Spanned)]
 pub struct If {
     pub cond: Box<Expr>,
@@ -34,7 +34,7 @@ pub struct IfElse {
     pub span: imuc_lexer::Span,
 }
 
-/// A "loop" statement stored in [`Flow`]
+/// A "loop" statement stored in `Flow`
 #[derive(Spanned)]
 pub struct Loop {
     pub body: Body,

@@ -25,21 +25,21 @@ pub enum TokenKind {
     Prefix,
 }
 
-/// A part of [`TokenKind`] for comments
+/// A part of `TokenKind` for comments
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Comment {
     Comment,
     MultiComment,
 }
 
-/// A part of [`TokenKind`] for chunks of whitespace
+/// A part of `TokenKind` for chunks of whitespace
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Spacing {
     Indent,
     LineBreak,
 }
 
-/// A part of [`TokenKind`] for literals
+/// A part of `TokenKind` for literals
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Literal {
     Integer,
@@ -54,7 +54,7 @@ pub enum Literal {
     MultiString,
 }
 
-/// A part of [`TokenKind`] for identifiers(values / types / ignore names)
+/// A part of `TokenKind` for identifiers(values / types / ignore names)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Ident {
     Value,
@@ -62,7 +62,7 @@ pub enum Ident {
     Unused,
 }
 
-/// A part of [`TokenKind`] for keywords
+/// A part of `TokenKind` for keywords
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Keyword {
     Mod,
@@ -86,14 +86,14 @@ pub enum Keyword {
     Decl,
 }
 
-/// A part of [`TokenKind`] for values using reserved names
+/// A part of `TokenKind` for values using reserved names
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResVal {
     True,
     False,
 }
 
-/// A part of [`TokenKind`] for types, such as primitives, using reserved names
+/// A part of `TokenKind` for types, such as primitives, using reserved names
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResTy {
     // Unique types
@@ -112,7 +112,7 @@ pub enum ResTy {
     // Special types
 }
 
-/// A part of [`TokenKind`] for left / right bracket
+/// A part of `TokenKind` for left / right bracket
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Pair {
     LeftParen,
@@ -123,7 +123,7 @@ pub enum Pair {
     RightBrace,
 }
 
-/// A part of [`TokenKind`] for binary operators
+/// A part of `TokenKind` for binary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BinOp {
     Dot,
@@ -145,7 +145,7 @@ pub enum BinOp {
     Ge,
 }
 
-/// A part of [`TokenKind`] for unary operators
+/// A part of `TokenKind` for unary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnOp {
     Ref,
@@ -155,7 +155,7 @@ pub enum UnOp {
     Neg,
 }
 
-/// A part of [`TokenKind`] for parser structure symbol
+/// A part of `TokenKind` for parser structure symbol
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Symbol {
     Colon,
@@ -164,7 +164,7 @@ pub enum Symbol {
     Assign,
 }
 
-/// A part of [`TokenKind`] for errors that may happen in lexer
+/// A part of `TokenKind` for errors that may happen in lexer
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LexError {
     UnknownChar,
@@ -173,7 +173,7 @@ pub enum LexError {
     UnclosedString,
 }
 
-/// The token produced by the lexer of [`crate::reader::Reader`]
+/// The token produced by the lexer of `crate::reader::Reader`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Token {
     pub kind: TokenKind,

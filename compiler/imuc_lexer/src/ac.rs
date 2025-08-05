@@ -1,6 +1,6 @@
 use std::collections::{btree_map::Entry, BTreeMap};
 
-/// A node of the trie used in [`AhoCorasick`]
+/// A node of the trie used in `AhoCorasick`
 struct TrieNode<T> {
     node: BTreeMap<char, usize>,
     fail: usize,
@@ -18,13 +18,13 @@ impl<T> Default for TrieNode<T> {
 }
 
 /// A raw trie used to insert new elements
-/// Call [`Self::build`] to generate a [`AhoCorasick`] automaton
+/// Call `Self::build`] to generate a [`AhoCorasick` automaton
 pub struct AhoCorasickBuilder<T> {
     nodes: Vec<TrieNode<T>>,
 }
 
 /// A built aho-corasick automaton that can be used for querying
-/// You need to build this from [`AhoCorasickBuilder`]
+/// You need to build this from `AhoCorasickBuilder`
 ///
 /// ```
 /// use imuc_lexer::{AhoCorasickBuilder, AhoCorasick};
@@ -120,7 +120,7 @@ impl<T> AhoCorasickBuilder<T> {
         }
     }
 
-    /// Consume the builder, and get a [`AhoCorasick`] with data moved
+    /// Consume the builder, and get a `AhoCorasick` with data moved
     pub fn build(mut self) -> AhoCorasick<T> {
         self.nodes.get_mut(0).expect("Nodes are empty").fail = usize::MAX;
         self.build_pos(0, usize::MAX);
@@ -130,7 +130,7 @@ impl<T> AhoCorasickBuilder<T> {
 
 impl<T> AhoCorasick<T> {
     /// Query the next position of the automaton, or return usize::MAX if no more matches are
-    /// possible, see [`AhoCorasick`] for example of usage
+    /// possible, see `AhoCorasick` for example of usage
     ///
     /// It is safe to give unavailable pos(usually usize::MAX) to this function,
     /// and it will return the same pos again.

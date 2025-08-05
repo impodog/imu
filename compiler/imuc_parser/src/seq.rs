@@ -1,7 +1,7 @@
 use imuc_error::*;
 use imuc_lexer::{Cursor, TokenKind};
 
-/// The direct input to parser, holding [`TokenKind`] and its corresponding string slice
+/// The direct input to parser, holding `TokenKind` and its corresponding string slice
 #[derive(Debug, Clone, Copy)]
 pub struct ParserInput<'s> {
     pub kind: TokenKind,
@@ -9,7 +9,7 @@ pub struct ParserInput<'s> {
 }
 
 /// Trait for types that can be applied to a parser
-/// This requires an iterator over [`ParserInput`] and context info
+/// This requires an iterator over `ParserInput` and context info
 pub trait ParserSequence<'s>: Iterator<Item = ParserInput<'s>> + Send + Sync {
     /// Maps an error with additional context from the parser
     fn map_error(&self, err: Error) -> Error;

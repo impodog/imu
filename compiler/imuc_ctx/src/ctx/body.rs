@@ -133,7 +133,7 @@ impl Body {
     /// Memorize the *next* (yet to push) cmd pointer in the loop records, so that "mit" expressions can be
     /// evaluated and jumped properly
     pub fn push_loop_record(&mut self) {
-        /// Aligns the stack for return value
+        // Aligns the stack for return value
         self.align_stack();
         let ptr = cmd::Ptr::new(self.len());
         self.loop_record.push(LoopRecord {

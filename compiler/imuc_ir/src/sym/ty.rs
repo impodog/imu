@@ -2,10 +2,8 @@ use crate::cmd::Bytes;
 use crate::io::LineReader;
 use crate::prelude::*;
 use imuc_lexer::token::ResTy;
-use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
-use std::sync::LazyLock;
 use std::sync::OnceLock;
 
 /// A clonable immutable handle to `TyInner`, representing a type
@@ -46,39 +44,6 @@ impl Ty {
     /// referenced in other modules
     pub fn new(inner: TyInner) -> Self {
         Self(Arc::new((inner, OnceLock::new())))
-    }
-
-    /// Creates a padding type with a fixed size. This function is efficient because it
-    /// reuses previously generated types when 0 < `pad` < 8 and merely makes a clone.
-    ///
-    /// When `pad` == 0, this returns exactly the unit type.
-    pub fn pad(pad: usize) -> Self {
-        static PADS: LazyLock<Vec<Ty>> = LazyLock::new(|| {
-            let mut pads = Vec::new();
-            for size in 1..8 {
-                pads.push(Ty::new(TyInner::new_priv(
-                    format!("#PAD{size}").into(),
-                    TyKind::Pad(size),
-                )));
-            }
-            pads
-        });
-        if pad == 0 {
-            Ty::unit()
-        } else if pad < 8 {
-            // Minus 1 because padding vector started from pad 1
-            PADS.get(pad - 1)
-                .expect("padding should be cached between 1..8")
-                .clone()
-        } else {
-            // For bigger paddings(not used in compiler), create new types.
-            // This should not happen and emits a warn.
-            log::warn!("Unexpected big padding: {pad}");
-            Ty::new(TyInner::new_priv(
-                format!("#PAD{pad}").into(),
-                TyKind::Pad(pad),
-            ))
-        }
     }
 
     /// Tests if the types are same-by-name
@@ -142,12 +107,11 @@ impl Ty {
                     }
                     TyKind::Cus(cus) => {
                         let mut accum = Bytes::default();
-                        for value in cus.0.values() {
+                        for value in cus.0.iter() {
                             accum += value.size()?;
                         }
                         accum
                     }
-                    TyKind::Pad(padding) => Bytes::new(*padding),
                 };
                 Some(len)
             })
@@ -234,7 +198,6 @@ pub enum TyKind {
     /// relative to the global stack and depends on the runtime implementation, but the latter is
     /// a compiler internal representation relative to the function call local stack
     Ptr(TyItem),
-    Pad(usize),
 }
 
 /// A type item included in the definition of another type
@@ -245,7 +208,7 @@ pub enum TyItem {
 }
 
 impl TyItem {
-    /// Gets the size of the type in bytes, or None if the type is uninitialized
+    /// Gets the size of the type in bytes, or `None` if the type is uninitialized
     pub fn size(&self) -> Option<Bytes> {
         match self {
             Self::Solid(ty) => ty.size(),
@@ -262,13 +225,47 @@ impl TyItem {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum TupleField {
+    Data(TyItem),
+    Pad(Bytes),
+}
+
+impl TupleField {
+    // Gets the size of the tuple field, either data or padding in bytes, or `None` if the type is
+    // uninitialized
+    pub fn size(&self) -> Option<Bytes> {
+        match self {
+            TupleField::Data(item) => item.size(),
+            TupleField::Pad(pad) => Some(*pad),
+        }
+    }
+}
+
 /// A tuple type, which is an array of inner types
 #[derive(Debug, Clone)]
-pub struct Tuple(pub Vec<TyItem>);
+pub struct Tuple(pub Vec<TupleField>);
+
+#[derive(Debug, Clone)]
+pub enum CusField {
+    Data(StrRef, TyItem),
+    Pad(Bytes),
+}
+
+impl CusField {
+    // Gets the size of the cus field, either data or padding in bytes, or `None` if the type is
+    // uninitialized
+    pub fn size(&self) -> Option<Bytes> {
+        match self {
+            CusField::Data(_name, item) => item.size(),
+            CusField::Pad(pad) => Some(*pad),
+        }
+    }
+}
 
 /// A struct type, which is a map from names to field types
 #[derive(Debug, Clone)]
-pub struct Cus(pub BTreeMap<StrRef, TyItem>);
+pub struct Cus(pub Vec<CusField>);
 
 /// Tries to convert name to ResTy if matching
 fn try_into_res_ty(name: &str) -> Option<ResTy> {
@@ -342,6 +339,71 @@ impl Rw for TyItem {
     }
 }
 
+impl Rw for TupleField {
+    fn read(mut input: impl IrRead) -> Result<Self> {
+        let external = input.external();
+        let value = input.read_line()?;
+        if let Some(value) = value.strip_prefix('+') {
+            let mut reader = crate::io::LineReader::new(value, external);
+            let bytes = Bytes::read(&mut reader)?;
+            Ok(Self::Pad(bytes))
+        } else {
+            let item = TyItem::read(input)?;
+            Ok(Self::Data(item))
+        }
+    }
+    fn write(&self, mut output: impl std::io::Write) -> Result<()> {
+        match self {
+            Self::Data(item) => item.write(output),
+            Self::Pad(pad) => {
+                write!(output, "+")?;
+                pad.write(output)
+            }
+        }
+    }
+}
+
+impl Rw for CusField {
+    fn read(mut input: impl IrRead) -> Result<Self> {
+        let external = input.external();
+        let value = input.read_line()?;
+        if let Some(value) = value.strip_prefix('+') {
+            let mut reader = crate::io::LineReader::new(value, external);
+            let bytes = Bytes::read(&mut reader)?;
+            Ok(Self::Pad(bytes))
+        } else {
+            let result = if let Some(equals) = value.find('=') {
+                if equals + 1 != value.len() {
+                    let name = StrRef::from(&value[..equals]);
+                    let item = TyItem::read(LineReader::new(&value[equals + 1..], external))?;
+                    Some((name, item))
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            if let Some((name, item)) = result {
+                Ok(CusField::Data(name, item))
+            } else {
+                Err(errors::IrError::CharRequired('=').into())
+            }
+        }
+    }
+    fn write(&self, mut output: impl std::io::Write) -> Result<()> {
+        match self {
+            Self::Data(name, item) => {
+                write!(output, "{name}=")?;
+                item.write(output)
+            }
+            Self::Pad(pad) => {
+                write!(output, "+")?;
+                pad.write(output)
+            }
+        }
+    }
+}
+
 impl Rw for Ty {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let name = StrRef::from(input.read_until(' ')?);
@@ -381,8 +443,8 @@ impl Rw for Ty {
                 let values = content[1..content.len() - 1].split(',');
                 let mut tuple = Vec::new();
                 for value in values {
-                    let item = TyItem::read(LineReader::new(value, external))?;
-                    tuple.push(item);
+                    let field = TupleField::read(LineReader::new(value, external))?;
+                    tuple.push(field);
                 }
                 Ok(Ty::new(TyInner {
                     name,
@@ -395,37 +457,16 @@ impl Rw for Ty {
                     return Err(errors::IrError::Unmatched('{', '}').into());
                 }
                 let values = content[1..content.len() - 1].split(',');
-                let mut map = BTreeMap::new();
+                let mut cus = Vec::new();
                 for value in values {
-                    let ok = if let Some(equals) = value.find('=') {
-                        if equals + 1 != value.len() {
-                            let name = StrRef::from(&value[..equals]);
-                            let item =
-                                TyItem::read(LineReader::new(&value[equals + 1..], external))?;
-                            map.insert(name, item);
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        false
-                    };
-                    if !ok {
-                        return Err(errors::IrError::CharRequired('=').into());
-                    }
+                    let field = CusField::read(LineReader::new(value, external))?;
+                    cus.push(field);
                 }
                 Ok(Ty::new(TyInner {
                     name,
-                    kind: TyKind::Cus(Cus(map)),
+                    kind: TyKind::Cus(Cus(cus)),
                     external: input.external(),
                 }))
-            }
-            '>' => {
-                if let Ok(pad) = content[1..].parse::<usize>() {
-                    Ok(Ty::pad(pad))
-                } else {
-                    Err(errors::IrError::ExpectedSize(content[1..].to_string()).into())
-                }
             }
             _ => {
                 let res_ty = ResTy::read(LineReader::new(content, external))?;
@@ -455,13 +496,13 @@ impl Rw for Ty {
             }
             TyKind::Tuple(tuple) => {
                 write!(output, "(")?;
-                for (is_last, ty) in tuple
+                for (is_last, field) in tuple
                     .0
                     .iter()
                     .enumerate()
-                    .map(|(i, ty)| (i + 1 == tuple.0.len(), ty))
+                    .map(|(i, field)| (i + 1 == tuple.0.len(), field))
                 {
-                    ty.write(&mut output)?;
+                    field.write(&mut output)?;
                     if !is_last {
                         write!(output, ",")?;
                     }
@@ -470,22 +511,18 @@ impl Rw for Ty {
             }
             TyKind::Cus(cus) => {
                 write!(output, "{{")?;
-                for (is_last, (name, ty)) in cus
+                for (is_last, field) in cus
                     .0
                     .iter()
                     .enumerate()
-                    .map(|(i, value)| (i + 1 == cus.0.len(), value))
+                    .map(|(i, field)| (i + 1 == cus.0.len(), field))
                 {
-                    write!(output, "{}=", &**name)?;
-                    ty.write(&mut output)?;
+                    field.write(&mut output)?;
                     if !is_last {
                         write!(output, ",")?;
                     }
                 }
                 write!(output, "}}")?;
-            }
-            TyKind::Pad(pad) => {
-                write!(output, ">{pad}")?;
             }
         }
         Ok(())

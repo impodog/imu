@@ -81,6 +81,8 @@ pub enum Cmd {
     ReadHeap(Bytes, Bytes, Ptr),
     /// Reads bytes(1st) with offset(2nd) from the stack pointer stored(3rd)
     ReadStack(Bytes, Bytes, Ptr),
+    /// Moves the stack ptr forward without having to do anything
+    Skip(Bytes),
     Not(NumBytes, Ptr),
     Neg(NumBytes, Ptr),
     Add(NumBytes, Ptr, Ptr),

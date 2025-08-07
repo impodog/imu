@@ -111,17 +111,13 @@ impl Types {
                     add_edge(&mut graph, &mut map, node, item);
                 }
                 ty::TyKind::Tuple(tuple) => {
-                    for item in tuple.0.iter() {
-                        if let ty::TupleField::Data(item) = item {
-                            add_edge(&mut graph, &mut map, node, item);
-                        }
+                    for field in tuple.0.iter() {
+                        add_edge(&mut graph, &mut map, node, &field.item);
                     }
                 }
                 ty::TyKind::Cus(cus) => {
-                    for item in cus.0.iter() {
-                        if let ty::CusField::Data(_name, item) = item {
-                            add_edge(&mut graph, &mut map, node, item);
-                        }
+                    for (_name, field) in cus.0.iter() {
+                        add_edge(&mut graph, &mut map, node, &field.item);
                     }
                 }
             }
@@ -146,24 +142,21 @@ impl Types {
                 ty::TyKind::Tuple(tuple) => {
                     let mut value = Vec::new();
                     for field in tuple.0.iter() {
-                        value.push(match field {
-                            ty::TupleField::Data(item) => {
-                                ty::TupleField::Data(modify_item(&self.map, item)?)
-                            }
-                            ty::TupleField::Pad(_) => field.clone(),
+                        value.push(ty::Field {
+                            pad: field.pad,
+                            item: modify_item(&self.map, &field.item)?,
                         });
                     }
                     ty::TyKind::Tuple(ty::Tuple(value))
                 }
                 ty::TyKind::Cus(cus) => {
-                    let mut value = Vec::new();
-                    for field in cus.0.iter() {
-                        value.push(match field {
-                            ty::CusField::Data(name, item) => {
-                                ty::CusField::Data(name.clone(), modify_item(&self.map, item)?)
-                            }
-                            ty::CusField::Pad(_) => field.clone(),
-                        })
+                    let mut value = BTreeMap::new();
+                    for (name, field) in cus.0.iter() {
+                        let field = ty::Field {
+                            pad: field.pad,
+                            item: modify_item(&self.map, &field.item)?,
+                        };
+                        value.insert(name.clone(), field);
                     }
                     ty::TyKind::Cus(ty::Cus(value))
                 }

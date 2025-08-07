@@ -18,6 +18,19 @@ pub enum Integer {
     Any(i64),
 }
 
+impl Integer {
+    /// Returns a primitive integer with size aligned to `usize`
+    pub fn ptr(value: usize) -> Self {
+        match std::mem::size_of::<usize>() {
+            1 => Integer::I8(value as i8),
+            2 => Integer::I16(value as i16),
+            4 => Integer::I32(value as i32),
+            8 => Integer::I64(value as i64),
+            _ => unimplemented!("usize of this size is not supported"),
+        }
+    }
+}
+
 /// Different sizes of a float stored in `Prim`
 #[derive(Clone)]
 pub enum Float {

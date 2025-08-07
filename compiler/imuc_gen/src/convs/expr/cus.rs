@@ -21,14 +21,13 @@ impl Convert<Value> for CusExprConv {
         if let ir::sym::ty::TyKind::Cus(cus) = &ty.kind {
             let mut map = BTreeMap::new();
             for (name, expr) in input.elem.iter() {
+                let field = cus.0.get(name);
                 let value = convs::ExprConv::default()
                     .with_hint(
                         // NOTE: The resolve here uses "and_then", meaning that if the field
                         // doesn't exist, it will still compile without a hint, to possibly produce
                         // more meaningful errors as this may be a field typo
-                        cus.0
-                            .get(name)
-                            .and_then(|item| ctx.ty.resolve(item).cloned()),
+                        field.and_then(|field| ctx.ty.resolve(&field.item).cloned()),
                     )
                     .convert(ctx, expr)?
                     .ok_or_else(|| {
@@ -38,12 +37,14 @@ impl Convert<Value> for CusExprConv {
                         );
                         SendError::default()
                     })?;
-                map.insert(name.to_owned(), value);
+                map.insert(
+                    name.to_owned(),
+                    (field.map_or(Bytes::start(), |field| field.pad), value),
+                );
             }
-            let mut size = Bytes::default();
             for (key, value) in map.iter() {
-                if let Some(ty) = cus.0.get(key) {
-                    match ty {
+                if let Some(field) = cus.0.get(key) {
+                    match field.item {
                         TyItem::Solid(ty) => {
                             if !ty.test_eq(&value.ty) {
                                 ctx.push_error(
@@ -57,7 +58,7 @@ impl Convert<Value> for CusExprConv {
                         }
                         TyItem::Pending(name) => {
                             ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(
-                                "Type is undefined in Cus field instantiation (FIXME)",
+                                "Type is undefined in Cus field instantiation (bug if you see this)",
                                 format!("Type {name} is undefined"),
                             ));
                             return Err(SendError::default().into());
@@ -70,7 +71,6 @@ impl Convert<Value> for CusExprConv {
                     ));
                     return Err(SendError::default().into());
                 }
-                size += value.ty.size_or(input.span).map_err(ctx.push_error_fn())?;
             }
             for key in cus.0.keys() {
                 if !map.contains_key(key) {
@@ -83,15 +83,20 @@ impl Convert<Value> for CusExprConv {
             }
 
             let push_error_fn = ctx.push_error_fn();
+            let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
             let body = ctx.body_mut();
-            for (_name, value) in map.into_iter() {
-                body.push(Cmd::Dupli(
+
+            let ptr = body.push_stack(size);
+            // Allocate dirty bytes then overwrite
+            body.push(Cmd::Skip(size));
+            for (_name, (pad, value)) in map.into_iter() {
+                body.push(Cmd::Overwrite(
                     value.ty.size_or(input.span).map_err(&push_error_fn)?,
                     value.ptr,
+                    ptr + pad,
                 ));
             }
 
-            let ptr = body.push_stack(size);
             Ok(Value { ty, ptr })
         } else {
             ctx.push_error(ConvError::new(Severity::Error, input.span).with_text(

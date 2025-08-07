@@ -15,6 +15,8 @@ pub enum SyntaxError {
     ExpectedToken { expect: TokenKind },
     #[error("expected a token, found EOF")]
     ExpectedAny,
+    #[error("duplicate cus fields {value}")]
+    DuplicateCus { value: String },
     #[error("item type {item:?} does not match with alias type {alias:?}")]
     AliasMismatch { item: TokenKind, alias: TokenKind },
     #[error("unknown escape sequence")]

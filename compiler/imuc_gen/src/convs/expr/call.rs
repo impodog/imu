@@ -33,14 +33,22 @@ fn add_self_to_args(
             let name = once('(')
                 .chain(self_value.ty.name.chars())
                 .chain(once(','))
+                // NOTE: Here the first paren is skipped, but the last rparen is preserved
                 .chain(args.ty.name.chars().skip(1))
                 .collect::<String>();
             let name = StrRef::from(name);
             ctx.ty
                 .or_insert_with(name.clone(), || {
-                    let tuple = once(TyItem::Solid(args.ty.clone()))
-                        .chain(tuple.0.iter().cloned())
-                        .collect::<Vec<_>>();
+                    let rest_start_ptr = config::MEMORY_LAYOUT.align_ptr(self_value_size);
+                    let tuple = once(ir::sym::ty::Field {
+                        pad: Ptr::start(),
+                        item: TyItem::Solid(self_value.ty.clone()),
+                    })
+                    .chain(tuple.0.iter().cloned().map(|mut field| {
+                        field.pad += rest_start_ptr;
+                        field
+                    }))
+                    .collect::<Vec<_>>();
                     Ty::new(TyInner {
                         name,
                         kind: TyKind::Tuple(ir::sym::ty::Tuple(tuple)),
@@ -60,10 +68,17 @@ fn add_self_to_args(
             let name = StrRef::from(name);
             ctx.ty
                 .or_insert_with(name.clone(), || {
-                    let tuple = [&self_value.ty, &args.ty]
-                        .into_iter()
-                        .map(|ty| TyItem::Solid(ty.clone()))
-                        .collect::<Vec<_>>();
+                    let rest_start_ptr = config::MEMORY_LAYOUT.align_ptr(self_value_size);
+                    let tuple = vec![
+                        ir::sym::ty::Field {
+                            pad: Ptr::start(),
+                            item: self_value.ty.into(),
+                        },
+                        ir::sym::ty::Field {
+                            pad: rest_start_ptr,
+                            item: args.ty.into(),
+                        },
+                    ];
                     Ty::new(TyInner {
                         name,
                         kind: TyKind::Tuple(ir::sym::ty::Tuple(tuple)),

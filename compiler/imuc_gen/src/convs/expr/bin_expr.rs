@@ -24,25 +24,17 @@ fn resolve_member(
     match &head.ty.kind {
         TyKind::Cus(cus) => {
             // FIXME: Anyway to prevent iterating?
-            let mut offset = Ptr::default();
-            for (name, ty) in cus.0.iter() {
+            for (name, field) in cus.0.iter() {
                 if name.as_str() == nest {
                     return Ok(Some(Value {
-                        ptr: head.ptr + offset,
+                        ptr: head.ptr + field.pad,
                         ty: ctx
                             .ty
-                            .resolve_or(ty, span)
+                            .resolve_or(&field.item, span)
                             .map_err(ctx.push_error_fn())?
                             .clone(),
                     }));
                 }
-                offset += ty.size().ok_or_else(|| {
-                    ctx.push_error(
-                        ConvError::new(Severity::Fatal, span)
-                            .with_head("Resolved type required in member resolution"),
-                    );
-                    SendError::new_error()
-                })?;
             }
             Ok(None)
         }
@@ -65,23 +57,18 @@ fn resolve_arrow_member(
             match &ty.kind {
                 TyKind::Cus(cus) => {
                     // FIXME: Anyway to prevent iterating?
-                    let mut offset = Ptr::default();
                     let mut found = None;
-                    for (name, ty) in cus.0.iter() {
+                    for (name, field) in cus.0.iter() {
                         if name.as_str() == nest {
-                            let ty = ctx.ty.resolve_or(ty, span).map_err(&push_error_fn)?;
-                            found = Some(ty.clone());
+                            let ty = ctx
+                                .ty
+                                .resolve_or(&field.item, span)
+                                .map_err(&push_error_fn)?;
+                            found = Some((field.pad, ty.clone()));
                             break;
                         }
-                        offset += ty.size().ok_or_else(|| {
-                            ctx.push_error(
-                                ConvError::new(Severity::Fatal, span)
-                                    .with_head("Resolved type required in member resolution"),
-                            );
-                            SendError::new_error()
-                        })?;
                     }
-                    if let Some(ty) = found {
+                    if let Some((pad, ty)) = found {
                         let ty = if matches!(head.ty.kind, TyKind::Ptr(_)) {
                             let name = StrRef::from(ctx::mangle::mangle_ptr(&ty.name));
                             ctx.ty
@@ -100,8 +87,10 @@ fn resolve_arrow_member(
                         let body = ctx.body_mut();
                         let operand_ptr = body.push_stack(Bytes::ptr());
                         let value_ptr = body.push_stack(Bytes::ptr());
-                        body.push(Cmd::Store(ast::prim::Prim::Integer(offset.into())));
-                        body.push(Cmd::Add(ir::cmd::PTR_BYTES, offset, operand_ptr));
+                        body.push(Cmd::Store(ast::prim::Prim::Integer(
+                            ast::prim::Integer::ptr(pad.num()),
+                        )));
+                        body.push(Cmd::Add(ir::cmd::PTR_BYTES, head.ptr, operand_ptr));
                         Ok(Value { ptr: value_ptr, ty })
                     } else {
                         Err(ConvError::new(Severity::Error, span)

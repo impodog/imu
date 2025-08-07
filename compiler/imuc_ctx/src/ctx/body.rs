@@ -73,11 +73,7 @@ impl Body {
     /// Aligns the stack pointer to `crate::config::MEMORY_LAYOUT.ptr_align` and returns the
     /// aligned one, wasting some memory if necessary
     pub fn align_stack(&mut self) -> cmd::Ptr {
-        let rem = self.stack.num() % crate::config::MEMORY_LAYOUT.ptr_align;
-        if rem != 0 {
-            let add = crate::config::MEMORY_LAYOUT.ptr_align - rem;
-            self.stack += cmd::Bytes::new(add);
-        }
+        self.stack = crate::config::MEMORY_LAYOUT.align_ptr(self.stack);
         self.stack
     }
 

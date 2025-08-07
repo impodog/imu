@@ -2,6 +2,7 @@ use crate::cmd::Bytes;
 use crate::io::LineReader;
 use crate::prelude::*;
 use imuc_lexer::token::ResTy;
+use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::OnceLock;
@@ -100,15 +101,15 @@ impl Ty {
                     TyKind::Fun { .. } => return None,
                     TyKind::Tuple(tuple) => {
                         let mut accum = Bytes::default();
-                        for value in tuple.0.iter() {
-                            accum += value.size()?;
+                        for field in tuple.0.iter() {
+                            accum += field.size()?;
                         }
                         accum
                     }
                     TyKind::Cus(cus) => {
                         let mut accum = Bytes::default();
-                        for value in cus.0.iter() {
-                            accum += value.size()?;
+                        for (_name, field) in cus.0.iter() {
+                            accum += field.size()?;
                         }
                         accum
                     }
@@ -225,47 +226,27 @@ impl TyItem {
     }
 }
 
+/// Defines a tuple/cus field with padding indicating the bytes before the field
 #[derive(Debug, Clone)]
-pub enum TupleField {
-    Data(TyItem),
-    Pad(Bytes),
+pub struct Field {
+    pub pad: Bytes,
+    pub item: TyItem,
 }
 
-impl TupleField {
-    // Gets the size of the tuple field, either data or padding in bytes, or `None` if the type is
-    // uninitialized
+impl Field {
+    // Gets the size of the field without padding
     pub fn size(&self) -> Option<Bytes> {
-        match self {
-            TupleField::Data(item) => item.size(),
-            TupleField::Pad(pad) => Some(*pad),
-        }
+        self.item.size()
     }
 }
 
 /// A tuple type, which is an array of inner types
 #[derive(Debug, Clone)]
-pub struct Tuple(pub Vec<TupleField>);
-
-#[derive(Debug, Clone)]
-pub enum CusField {
-    Data(StrRef, TyItem),
-    Pad(Bytes),
-}
-
-impl CusField {
-    // Gets the size of the cus field, either data or padding in bytes, or `None` if the type is
-    // uninitialized
-    pub fn size(&self) -> Option<Bytes> {
-        match self {
-            CusField::Data(_name, item) => item.size(),
-            CusField::Pad(pad) => Some(*pad),
-        }
-    }
-}
+pub struct Tuple(pub Vec<Field>);
 
 /// A struct type, which is a map from names to field types
 #[derive(Debug, Clone)]
-pub struct Cus(pub Vec<CusField>);
+pub struct Cus(pub BTreeMap<StrRef, Field>);
 
 /// Tries to convert name to ResTy if matching
 fn try_into_res_ty(name: &str) -> Option<ResTy> {
@@ -339,68 +320,23 @@ impl Rw for TyItem {
     }
 }
 
-impl Rw for TupleField {
+impl Rw for Field {
     fn read(mut input: impl IrRead) -> Result<Self> {
         let external = input.external();
         let value = input.read_line()?;
-        if let Some(value) = value.strip_prefix('+') {
-            let mut reader = crate::io::LineReader::new(value, external);
-            let bytes = Bytes::read(&mut reader)?;
-            Ok(Self::Pad(bytes))
+        if let Some((pad, item)) = value.split_once('+') {
+            let pad = Bytes::read(crate::io::LineReader::new(pad, external))?;
+            let item = TyItem::read(crate::io::LineReader::new(item, external))?;
+            Ok(Self { pad, item })
         } else {
-            let item = TyItem::read(input)?;
-            Ok(Self::Data(item))
+            Err(errors::IrError::ExpectedPlus(value.to_owned()).into())
         }
     }
     fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        match self {
-            Self::Data(item) => item.write(output),
-            Self::Pad(pad) => {
-                write!(output, "+")?;
-                pad.write(output)
-            }
-        }
-    }
-}
-
-impl Rw for CusField {
-    fn read(mut input: impl IrRead) -> Result<Self> {
-        let external = input.external();
-        let value = input.read_line()?;
-        if let Some(value) = value.strip_prefix('+') {
-            let mut reader = crate::io::LineReader::new(value, external);
-            let bytes = Bytes::read(&mut reader)?;
-            Ok(Self::Pad(bytes))
-        } else {
-            let result = if let Some(equals) = value.find('=') {
-                if equals + 1 != value.len() {
-                    let name = StrRef::from(&value[..equals]);
-                    let item = TyItem::read(LineReader::new(&value[equals + 1..], external))?;
-                    Some((name, item))
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-            if let Some((name, item)) = result {
-                Ok(CusField::Data(name, item))
-            } else {
-                Err(errors::IrError::CharRequired('=').into())
-            }
-        }
-    }
-    fn write(&self, mut output: impl std::io::Write) -> Result<()> {
-        match self {
-            Self::Data(name, item) => {
-                write!(output, "{name}=")?;
-                item.write(output)
-            }
-            Self::Pad(pad) => {
-                write!(output, "+")?;
-                pad.write(output)
-            }
-        }
+        self.pad.write(&mut output)?;
+        write!(output, "+")?;
+        self.item.write(&mut output)?;
+        Ok(())
     }
 }
 
@@ -443,7 +379,7 @@ impl Rw for Ty {
                 let values = content[1..content.len() - 1].split(',');
                 let mut tuple = Vec::new();
                 for value in values {
-                    let field = TupleField::read(LineReader::new(value, external))?;
+                    let field = Field::read(LineReader::new(value, external))?;
                     tuple.push(field);
                 }
                 Ok(Ty::new(TyInner {
@@ -457,10 +393,25 @@ impl Rw for Ty {
                     return Err(errors::IrError::Unmatched('{', '}').into());
                 }
                 let values = content[1..content.len() - 1].split(',');
-                let mut cus = Vec::new();
+                let mut cus = BTreeMap::new();
                 for value in values {
-                    let field = CusField::read(LineReader::new(value, external))?;
-                    cus.push(field);
+                    let result = if let Some(equals) = value.find('=') {
+                        if equals + 1 != value.len() {
+                            let name = StrRef::from(&value[..equals]);
+                            let field =
+                                Field::read(LineReader::new(&value[equals + 1..], external))?;
+                            Some((name, field))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    if let Some((name, field)) = result {
+                        cus.insert(name, field);
+                    } else {
+                        return Err(errors::IrError::CharRequired('=').into());
+                    }
                 }
                 Ok(Ty::new(TyInner {
                     name,
@@ -511,12 +462,13 @@ impl Rw for Ty {
             }
             TyKind::Cus(cus) => {
                 write!(output, "{{")?;
-                for (is_last, field) in cus
+                for (is_last, (name, field)) in cus
                     .0
                     .iter()
                     .enumerate()
                     .map(|(i, field)| (i + 1 == cus.0.len(), field))
                 {
+                    write!(output, "{name}=")?;
                     field.write(&mut output)?;
                     if !is_last {
                         write!(output, ",")?;

@@ -8,6 +8,8 @@ pub enum IrError {
     TypeNotAllowed(String),
     #[error("expected an integer of size, found {0:?}")]
     ExpectedSize(String),
+    #[error("expected plus symbol in field definition: {0}")]
+    ExpectedPlus(String),
     #[error("no such command modifier: {0}")]
     NoSuchCommandMod(String),
     #[error("no such command: {0}")]

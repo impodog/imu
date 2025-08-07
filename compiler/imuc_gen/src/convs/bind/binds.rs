@@ -97,19 +97,17 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
                         ));
                         Err(SendError::default().into())
                     } else {
-                        let mut ptr = value.ptr;
-                        for (pat, ty) in tuple.0.iter().zip(tuple_ty.0.iter()) {
+                        for (pat, field) in tuple.0.iter().zip(tuple_ty.0.iter()) {
                             let ty = ctx
                                 .ty
-                                .resolve_or(ty, pat.span)
+                                .resolve_or(&field.item, pat.span)
                                 .map_err(ctx.push_error_fn())?
                                 .clone();
                             convert_let(
                                 ctx,
                                 pat,
-                                Conversion::Value(Some(Value::new(ty.clone(), ptr))),
+                                Conversion::Value(Some(Value::new(ty.clone(), field.pad))),
                             )?;
-                            ptr += ty.size_or(pat.span()).map_err(ctx.push_error_fn())?;
                         }
                         Ok(())
                     }
@@ -134,20 +132,16 @@ pub fn convert_let(ctx: &mut Ctx, pat: &Pat, val: Conversion) -> Result<()> {
             match &value.ty.kind {
                 TyKind::Cus(cus) => {
                     let mut left = cus.0.iter();
-                    let mut ptr = value.ptr;
                     for (name, item) in named.0.iter() {
                         let (current_ptr, ty) = loop {
-                            if let Some((origin_name, origin_item)) = left.next() {
+                            if let Some((origin_name, origin_field)) = left.next() {
                                 let origin_ty = ctx
                                     .ty
-                                    .resolve_or(origin_item, pat.span())
+                                    .resolve_or(&origin_field.item, pat.span())
                                     .map_err(ctx.push_error_fn())?
                                     .clone();
-                                let prev = ptr;
-                                ptr +=
-                                    origin_ty.size_or(pat.span()).map_err(ctx.push_error_fn())?;
                                 if name == origin_name {
-                                    break (prev, origin_ty);
+                                    break (origin_field.pad, origin_ty);
                                 }
                             } else {
                                 ctx.push_error(

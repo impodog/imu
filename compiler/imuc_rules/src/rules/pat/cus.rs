@@ -45,7 +45,11 @@ impl Rule for CusPatRule {
                 } else {
                     None
                 };
-                list.insert(ident, ty);
+                if list.insert(ident.clone(), ty).is_some() {
+                    return Err(parser.map_err(errors::SyntaxError::DuplicateCus {
+                        value: ident.into_string(),
+                    }));
+                }
 
                 comma = parser.next_if(&TokenKind::Symbol(Symbol::Comma))?.is_some();
             }

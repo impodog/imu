@@ -42,9 +42,9 @@ impl Convert<Value> for CusExprConv {
                     (field.map_or(Bytes::start(), |field| field.pad), value),
                 );
             }
-            for (key, value) in map.iter() {
+            for (key, (_, value)) in map.iter() {
                 if let Some(field) = cus.0.get(key) {
-                    match field.item {
+                    match &field.item {
                         TyItem::Solid(ty) => {
                             if !ty.test_eq(&value.ty) {
                                 ctx.push_error(

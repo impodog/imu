@@ -61,7 +61,7 @@ macro_rules! conversion {
 pub enum Cmd {
     /// Duplicate bytes from pointer to the top of stack
     Dupli(Bytes, Ptr),
-    /// Duplicate bytes from the first pointer, then overwrite contents of the second pointer.
+    /// Take first element bytes from the second pointer to overwrite contents of the third pointer.
     /// If the two segments overlap, correct behavior is also guaranteed
     Overwrite(Bytes, Ptr, Ptr),
     Store(crate::sym::Prim),
@@ -181,6 +181,10 @@ impl Rw for Cmd {
                 let offset = Bytes::read(&mut input)?;
                 let ptr = Ptr::read(&mut input)?;
                 Ok(Self::ReadStack(bytes, offset, ptr))
+            }
+            "skp" => {
+                let bytes = Bytes::read(&mut input)?;
+                Ok(Self::Skip(bytes))
             }
             "not" => {
                 let bytes = bytes.try_into()?;
@@ -310,6 +314,10 @@ impl Rw for Cmd {
                 offset.write(&mut output)?;
                 write!(output, " ")?;
                 ptr.write(&mut output)?;
+            }
+            Self::Skip(bytes) => {
+                write!(output, "skp ")?;
+                bytes.write(&mut output)?;
             }
             Self::Not(bytes, opd) => {
                 write!(output, "not{} ", char::from(*bytes))?;

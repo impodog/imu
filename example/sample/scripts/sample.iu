@@ -1,10 +1,4 @@
 fun main() {
-    let x = @0;
-    loop {
-        if *x < 10 {
-            x <- *x + 1;
-        } else {
-            mit;
-        }
-    }
+    let x = 0;
+    let y = 1;
 }

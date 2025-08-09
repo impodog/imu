@@ -10,7 +10,7 @@ pub struct PatConv {
     /// If set to `true`, a missing wildcard type is regarded as an error
     pub requires_ty: bool,
     /// If set to `true`, a warning will be thrown out when the type contains identifier patterns
-    /// with identifier names (that does not belong to a cus pattern)
+    /// with identifier names (except identifiers in a cus pattern)
     pub discard_name_warn: bool,
     pub name: Option<StrRef>,
     pub public: ast::module::Public,
@@ -72,6 +72,8 @@ impl Convert<Option<Ty>> for PatConv {
 
                 let mut tuple_ty = Vec::new();
                 let mut name = String::new();
+                let mut pad = Bytes::start();
+                let mut align = config::MEMORY_LAYOUT.init_align();
                 name.push('(');
                 for sub_pat in tuple.0.iter() {
                     let sub_ty = PatConv {
@@ -84,7 +86,15 @@ impl Convert<Option<Ty>> for PatConv {
                     if let Some(sub_ty) = sub_ty {
                         name.push_str(sub_ty.name.as_str());
                         name.push(',');
-                        tuple_ty.push(TyItem::from(sub_ty));
+
+                        let sub_ty_size = sub_ty.size_or(sub_pat.span()).map_err(&push_error_fn)?;
+                        align = config::MEMORY_LAYOUT.update_align_by(align, sub_ty_size);
+                        pad = config::memory::align_ptr_to(pad, align);
+                        tuple_ty.push(ir::sym::ty::Field {
+                            pad,
+                            item: TyItem::from(sub_ty),
+                        });
+                        pad += sub_ty_size;
                     } else {
                         return wildcard(&sub_pat.span);
                     }
@@ -112,7 +122,7 @@ impl Convert<Option<Ty>> for PatConv {
                 Ok(Some(ty))
             }
             PatInner::Cus(cus) => {
-                let mut cus_ty = BTreeMap::new();
+                let mut fields = Vec::new();
                 let name =
                     if let Some(given_name) = given_name {
                         given_name
@@ -126,11 +136,27 @@ impl Convert<Option<Ty>> for PatConv {
                     if let Some(sub_type) = sub_type {
                         let sub_ty = convs::TypeConv.convert(ctx, sub_type)?;
                         if let Some(sub_ty) = sub_ty {
-                            cus_ty.insert(sub_name.clone(), TyItem::from(sub_ty));
+                            let size = sub_ty.size_or(sub_type.span()).map_err(&push_error_fn)?;
+                            fields.push((sub_name.clone(), TyItem::from(sub_ty), size));
+                        } else {
+                            return wildcard(&sub_type.span());
                         }
                     } else {
                         return wildcard(&input.span);
                     }
+                }
+
+                // Optimize padding by small fields first
+                fields.sort_by_key(|(_, _, size)| size.num());
+                // Handle padding
+                let mut cus_ty = BTreeMap::new();
+                let mut pad = Bytes::start();
+                let mut align = config::MEMORY_LAYOUT.init_align();
+                for (sub_name, sub_ty, size) in fields.into_iter() {
+                    align = config::MEMORY_LAYOUT.update_align_by(align, size);
+                    pad = config::memory::align_ptr_to(pad, align);
+                    cus_ty.insert(sub_name, ir::sym::ty::Field { pad, item: sub_ty });
+                    pad += size;
                 }
                 let ty = ctx
                     .ty

@@ -61,24 +61,35 @@ impl Convert<Option<Ty>> for TypeConv {
             },
             TypeKind::Tuple(tuple) => {
                 let mut list = Vec::new();
+                let push_error_fn = ctx.push_error_fn();
+                let mut pad = Bytes::start();
+                let mut align = config::MEMORY_LAYOUT.init_align();
                 for pat in tuple.iter() {
-                    list.push(TypeConv.convert(ctx, pat)?.ok_or_else(|| {
+                    let ty = TypeConv.convert(ctx, pat)?.ok_or_else(|| {
                         ctx.push_error(
                             ConvError::new(Severity::Error, pat.span())
                                 .with_head("Wildcard types not allowed in solid type"),
                         );
                         SendError::new_error()
-                    })?);
+                    })?;
+                    let size = ty.size_or(pat.span()).map_err(&push_error_fn)?;
+                    align = config::MEMORY_LAYOUT.update_align_by(align, size);
+                    pad = config::memory::align_ptr_to(pad, align);
+                    list.push(ir::sym::ty::Field {
+                        pad,
+                        item: ir::sym::ty::TyItem::Solid(ty),
+                    });
+                    pad += size;
                 }
-                let name: StrRef =
-                    ctx::mangle::mangle_tuple_name(list.iter().map(|ty| ty.name.as_str())).into();
+                let name: StrRef = ctx::mangle::mangle_tuple_name(
+                    list.iter().map(|field| field.item.name().as_str()),
+                )
+                .into();
                 ctx.ty
                     .or_insert_with(name.clone(), move || {
                         Ty::new(ir::sym::ty::TyInner {
                             name,
-                            kind: ir::sym::ty::TyKind::Tuple(ir::sym::ty::Tuple(
-                                list.into_iter().map(ir::sym::ty::TyItem::Solid).collect(),
-                            )),
+                            kind: ir::sym::ty::TyKind::Tuple(ir::sym::ty::Tuple(list)),
                             external: false,
                         })
                     })

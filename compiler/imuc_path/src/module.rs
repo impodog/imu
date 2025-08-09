@@ -73,7 +73,7 @@ impl Module {
     }
 
     /// Returns a iterator over submodules and their names
-    pub fn iter(&self) -> std::collections::hash_map::Iter<String, SubModule> {
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, String, SubModule> {
         self.sub.iter()
     }
 

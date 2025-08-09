@@ -59,8 +59,7 @@ impl Body {
     /// Pushes bytes into the stack, returning the pointer to the top before pushing
     pub fn push_stack(&mut self, bytes: cmd::Bytes) -> cmd::Ptr {
         // FIXME: This is temporary, and wastes much memory. Fix?
-        self.align_stack();
-        let result = self.stack;
+        let result = self.align_stack();
         self.stack += bytes;
         result
     }

@@ -30,7 +30,7 @@ impl<T: Memory> Stack<T> {
 
     /// Pushes an element of given size into the stack, returning its offset,
     /// which can be used to access that element later.
-    /// If allocation fails by the internal `Memory`], [`None` is returned.
+    /// If allocation fails by the internal `Memory`, `None` is returned.
     pub fn push<E>(&mut self, elem: E) -> Option<usize>
     where
         E: Sized,
@@ -47,7 +47,7 @@ impl<T: Memory> Stack<T> {
             .access_mut(vptr, size)
             .expect("Should contain the stack element");
         unsafe {
-            *(ptr.as_ptr() as *mut E) = elem;
+            core::ptr::write_unaligned(ptr.as_ptr() as *mut E, elem);
         };
         self.top += size;
         Some(vptr)
@@ -70,7 +70,7 @@ impl<T: Memory> Stack<T> {
     ///
     /// # Safety
     /// - The given type must be the same as the value was pushed into the stack
-    pub unsafe fn access<E>(&self, ptr: usize) -> Option<&E>
+    pub unsafe fn access_aligned<E>(&self, ptr: usize) -> Option<&E>
     where
         E: Sized,
     {
@@ -79,35 +79,32 @@ impl<T: Memory> Stack<T> {
         Some(unsafe { &*(ptr.as_ptr() as *const E) })
     }
 
-    /// Also enables unaligned access without any panics, see `Self::access` for details
+    /// Accesses the stack for the element at pointer, or return `None` if the pointer is out of
+    /// bounds, or the size of the element would exceed to size limits.
     ///
     /// # Safety
     /// - The given type must be the same as the value was pushed into the stack
-    pub unsafe fn access_checked<E>(&self, ptr: usize) -> Option<E>
+    pub unsafe fn access<E>(&self, ptr: usize) -> Option<E>
     where
         E: Sized + Copy,
     {
         let size: usize = core::mem::size_of::<E>();
         let ptr = self.mem.access(ptr, size)?;
-        if ptr.is_aligned() {
-            Some(unsafe { *(ptr.as_ptr() as *const E) })
-        } else {
-            Some(unsafe { (ptr.as_ptr() as *const E).read_unaligned() })
-        }
+        Some(unsafe { (ptr.as_ptr() as *const E).read_unaligned() })
     }
 
     /// Duplicates the memory that is already stored in the stack to the top of the stack.
     /// This function ensures safe memory behavior.
     ///
-    /// Returns whether the operation is successful. This fails because of internal memory
+    /// Returns the offset to the newly-created element, if the operation is successful. This fails because of internal memory
     /// allocation failure, or if `ptr` of `size` is out of bounds
     #[must_use]
-    pub fn duplicate(&mut self, ptr: usize, size: usize) -> bool {
+    pub fn duplicate(&mut self, ptr: usize, size: usize) -> Option<usize> {
         if ptr + size > self.top {
-            return false;
+            return None;
         }
         if !self.extend_by(size) {
-            return false;
+            return None;
         }
         let src = self
             .mem
@@ -119,12 +116,18 @@ impl<T: Memory> Stack<T> {
             .expect("new allocation is made sure to accommodate size bytes");
         unsafe {
             // NOTE: `ptr` is ensured to be inside the old stack, thus there is no memory overlap.
-            core::ptr::copy_nonoverlapping(src.as_ptr(), dst.as_ptr(), size);
+            core::ptr::copy_nonoverlapping(
+                src.as_ptr() as *const u8,
+                dst.as_ptr() as *mut u8,
+                size,
+            );
         }
-        true
+        let result = self.top;
+        self.top += size;
+        Some(result)
     }
 
-    /// Returns the size of used bytes of stack. This is lower than the actual memory cost,
+    /// Returns the size of used bytes of stack. This is lower than or equal to the actual memory cost,
     /// as there may be some vacant pending memory to be used.
     pub fn size(&self) -> usize {
         self.top

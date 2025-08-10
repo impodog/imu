@@ -3,7 +3,7 @@ use crate::*;
 
 /// An utility memory allocator by `std::vec::Vec`. Only available with feature "std".
 /// This grows by multiplier of 2 each time `Self::grow` is called if the vec is above half full.
-/// The reserving behavior is the same as how `std::vec::Vec`] is implemented in [`Vec::resize`.
+/// The reserving behavior is the same as how `std::vec::Vec` is implemented in `Vec::resize`.
 #[derive(Default)]
 pub struct VecMem {
     mem: Vec<u8>,
@@ -33,7 +33,6 @@ impl Memory for VecMem {
         if new_len > isize::MAX as usize {
             false
         } else {
-            std::dbg!(new_len);
             self.mem.resize(new_len, 0);
             true
         }
@@ -50,9 +49,8 @@ impl Memory for VecMem {
         if ptr + size > self.mem.len() {
             None
         } else {
-            std::dbg!(ptr, size);
             let ptr = unsafe { self.mem.as_ptr().add(ptr) };
-            std::dbg!(self.mem.as_ptr(), ptr);
+            self.mem.as_ptr();
             Some(unsafe { NonNull::new_unchecked(ptr as *mut ()) })
         }
     }

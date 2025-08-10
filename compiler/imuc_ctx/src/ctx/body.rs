@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use imuc_ir::sym::Ty;
 use nonempty::NonEmpty;
-use std::ops::{Deref, DerefMut};
 use std::sync::OnceLock;
 
 pub struct Body {
@@ -16,19 +15,6 @@ pub struct Body {
     loop_record: Vec<LoopRecord>,
     locals: NonEmpty<super::Locals>,
     pub(super) imports: super::Imports,
-}
-
-impl Deref for Body {
-    type Target = Vec<cmd::Cmd>;
-    fn deref(&self) -> &Self::Target {
-        &self.list
-    }
-}
-
-impl DerefMut for Body {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.list
-    }
 }
 
 impl Body {
@@ -56,9 +42,42 @@ impl Body {
         }
     }
 
+    // Pushes a command that extends the stack into the body. `bytes` is the amount of stack
+    // extension, and this returns the pointer to the command result
+    pub fn push_cmd(&mut self, bytes: cmd::Bytes, cmd: cmd::Cmd) -> cmd::Ptr {
+        let ptr = self.push_stack(bytes);
+        self.list.push(cmd);
+        ptr
+    }
+
+    /// Pushes a command that does not extend the stack
+    /// This function does nothing more than pushing the command and does not
+    /// change the compiler stack status
+    pub fn push_void(&mut self, cmd: cmd::Cmd) {
+        self.list.push(cmd);
+    }
+
+    /// Returns the length of current command list
+    pub fn len(&self) -> usize {
+        self.list.len()
+    }
+
+    /// Returns whether the body consists of no commands
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
+    /// Replaces the command at index to the given command,
+    /// panics if the index is out of range
+    pub fn replace(&mut self, index: usize, cmd: cmd::Cmd) {
+        *self
+            .list
+            .get_mut(index)
+            .expect("expected index to be in ranges") = cmd;
+    }
+
     /// Pushes bytes into the stack, returning the pointer to the top before pushing
     pub fn push_stack(&mut self, bytes: cmd::Bytes) -> cmd::Ptr {
-        // FIXME: This is temporary, and wastes much memory. Fix?
         let result = self.align_stack();
         self.stack += bytes;
         result
@@ -72,7 +91,9 @@ impl Body {
     /// Aligns the stack pointer to `crate::config::MEMORY_LAYOUT.ptr_align` and returns the
     /// aligned one, wasting some memory if necessary
     pub fn align_stack(&mut self) -> cmd::Ptr {
+        let prev = self.stack;
         self.stack = crate::config::MEMORY_LAYOUT.align_ptr(self.stack);
+        self.list.push(imuc_ir::cmd::Cmd::Skip(self.stack - prev));
         self.stack
     }
 
@@ -96,7 +117,7 @@ impl Body {
     /// commands by mit
     pub fn force_stack_to(&mut self, stack: cmd::Ptr) {
         // debug!("Force stack to {stack:?}");
-        self.push(cmd::Cmd::Shrink(stack));
+        self.push_void(cmd::Cmd::Shrink(stack));
         self.stack = stack;
     }
 
@@ -130,7 +151,7 @@ impl Body {
     pub fn push_loop_record(&mut self) {
         // Aligns the stack for return value
         self.align_stack();
-        let ptr = cmd::Ptr::new(self.len());
+        let ptr = cmd::Ptr::new(self.list.len());
         self.loop_record.push(LoopRecord {
             ptr,
             stack: self.stack(),

@@ -22,13 +22,13 @@ impl Convert<Value> for LoopConv {
         let body = ctx.body_mut();
 
         let loop_begin_index = body.len() + 2;
-        body.push(Cmd::Jump(Ptr::new(loop_begin_index)));
+        body.push_void(Cmd::Jump(Ptr::new(loop_begin_index)));
 
         let loop_record_index = body.len();
         // Force align stack for mit value
         body.push_loop_record();
         // Placeholder for a pointer out of the loop
-        body.push(Cmd::End);
+        body.push_void(Cmd::End);
 
         let value = convs::BodyConv::default()
             .convert(ctx, &input.body)
@@ -47,13 +47,11 @@ impl Convert<Value> for LoopConv {
 
         let body = ctx.body_mut();
         // Add loop jump-back
-        body.push(Cmd::Jump(Ptr::new(loop_begin_index)));
+        body.push_void(Cmd::Jump(Ptr::new(loop_begin_index)));
 
         // Replace loop record jump out command
         let end_index = body.len();
-        *body
-            .get_mut(loop_record_index)
-            .expect("Loop record command should exist") = Cmd::Jump(Ptr::new(end_index));
+        body.replace(loop_record_index, Cmd::Jump(Ptr::new(end_index)));
 
         let loop_record = body
             .pop_loop_record()

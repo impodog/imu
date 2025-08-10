@@ -85,12 +85,16 @@ fn resolve_arrow_member(
                                 .clone()
                         };
                         let body = ctx.body_mut();
-                        let operand_ptr = body.push_stack(Bytes::ptr());
-                        let value_ptr = body.push_stack(Bytes::ptr());
-                        body.push(Cmd::Store(ast::prim::Prim::Integer(
-                            ast::prim::Integer::ptr(pad.num()),
-                        )));
-                        body.push(Cmd::Add(ir::cmd::PTR_BYTES, head.ptr, operand_ptr));
+                        let operand_ptr = body.push_cmd(
+                            Bytes::ptr(),
+                            Cmd::Store(ast::prim::Prim::Integer(ast::prim::Integer::ptr(
+                                pad.num(),
+                            ))),
+                        );
+                        let value_ptr = body.push_cmd(
+                            Bytes::ptr(),
+                            Cmd::Add(ir::cmd::PTR_BYTES, head.ptr, operand_ptr),
+                        );
                         Ok(Value { ptr: value_ptr, ty })
                     } else {
                         Err(ConvError::new(Severity::Error, span)
@@ -173,7 +177,7 @@ fn convert_back_arrow(
             let size = ty.size_or(span).map_err(&push_error_fn)?;
             if ty.test_eq(&rhs.ty) {
                 let body = ctx.body_mut();
-                body.push(Cmd::WriteHeap(size, Bytes::start(), rhs.ptr, lhs.ptr));
+                body.push_void(Cmd::WriteHeap(size, Bytes::start(), rhs.ptr, lhs.ptr));
                 Ok(Value::default())
             } else {
                 ctx.push_error(ConvError::new(Severity::Error, span).with_text(
@@ -203,8 +207,8 @@ impl Converter for BinExprConv {
 
 enum BinOpKind {
     Arithmetic(fn(NumBytes, Bytes, Ptr) -> Cmd, Bytes),
-    Compare(i8),
-    CompareNot(i8),
+    // First is the compare sign(-1, 0, 1), second is whether to filp compare results
+    Compare(i8, bool),
 }
 
 impl Convert<Value> for BinExprConv {
@@ -347,12 +351,12 @@ impl Convert<Value> for BinExprConv {
             BinOp::Or => BinOpKind::Arithmetic(Cmd::Or, opd_bytes),
             BinOp::And => BinOpKind::Arithmetic(Cmd::And, opd_bytes),
             BinOp::Xor => BinOpKind::Arithmetic(Cmd::Xor, opd_bytes),
-            BinOp::Eq => BinOpKind::Compare(0),
-            BinOp::Ne => BinOpKind::CompareNot(0),
-            BinOp::Lt => BinOpKind::Compare(-1),
-            BinOp::Gt => BinOpKind::Compare(1),
-            BinOp::Le => BinOpKind::CompareNot(1),
-            BinOp::Ge => BinOpKind::CompareNot(-1),
+            BinOp::Eq => BinOpKind::Compare(0, false),
+            BinOp::Ne => BinOpKind::Compare(0, true),
+            BinOp::Lt => BinOpKind::Compare(-1, false),
+            BinOp::Gt => BinOpKind::Compare(1, false),
+            BinOp::Le => BinOpKind::Compare(1, true),
+            BinOp::Ge => BinOpKind::Compare(-1, true),
             BinOp::Dot => unreachable!("Dot operator is filtered"),
             BinOp::Call => unreachable!("Call operator is filtered"),
             BinOp::Arrow => unreachable!("Arrow operator is filtered"),
@@ -362,40 +366,30 @@ impl Convert<Value> for BinExprConv {
         match kind {
             BinOpKind::Arithmetic(func, size) => {
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(size);
-                body.push(func(bytes, lhs.ptr, rhs.ptr));
+                let ptr = body.push_cmd(size, func(bytes, lhs.ptr, rhs.ptr));
                 Ok(Value {
                     ptr,
                     ty: lhs.ty.clone(),
                 })
             }
-            BinOpKind::Compare(target) => {
+            BinOpKind::Compare(target, flip) => {
                 let body = ctx.body_mut();
-                let compare_ptr = body.push_stack(Bytes::byte());
-                let ptr = body.push_stack(Bytes::byte());
-                if is_float {
-                    body.push(Cmd::Testf(bytes, lhs.ptr, rhs.ptr));
-                } else {
-                    body.push(Cmd::Test(bytes, lhs.ptr, rhs.ptr));
-                }
-                body.push(Cmd::EqI8(compare_ptr, target));
-                Ok(Value {
-                    ptr,
-                    ty: Ty::bool(),
-                })
-            }
-            BinOpKind::CompareNot(target) => {
-                let body = ctx.body_mut();
-                let compare_ptr = body.push_stack(Bytes::byte());
-                let inverse_ptr = body.push_stack(Bytes::byte());
-                let ptr = body.push_stack(Bytes::byte());
-                if is_float {
-                    body.push(Cmd::Testf(bytes, lhs.ptr, rhs.ptr));
-                } else {
-                    body.push(Cmd::Test(bytes, lhs.ptr, rhs.ptr));
-                }
-                body.push(Cmd::EqI8(compare_ptr, target));
-                body.push(Cmd::Not(NumBytes::I8, inverse_ptr));
+                let compare_ptr = body.push_cmd(
+                    Bytes::byte(),
+                    if is_float {
+                        Cmd::Testf(bytes, lhs.ptr, rhs.ptr)
+                    } else {
+                        Cmd::Test(bytes, lhs.ptr, rhs.ptr)
+                    },
+                );
+                let ptr = body.push_cmd(
+                    Bytes::byte(),
+                    if flip {
+                        Cmd::EqI8(compare_ptr, target)
+                    } else {
+                        Cmd::NeI8(compare_ptr, target)
+                    },
+                );
                 Ok(Value {
                     ptr,
                     ty: Ty::bool(),

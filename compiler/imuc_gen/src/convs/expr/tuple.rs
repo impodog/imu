@@ -50,7 +50,7 @@ impl Convert<Value> for TupleConv {
         let body = ctx.body_mut();
         let start_ptr = body.push_stack(size);
         for (bytes, pad, ptr) in src_ptrs.into_iter() {
-            body.push(Cmd::Overwrite(bytes, ptr, start_ptr + pad));
+            body.push_void(Cmd::Overwrite(bytes, ptr, start_ptr + pad));
         }
 
         // Type is temporary here, thus there is no need to insert it into ctx

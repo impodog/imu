@@ -86,11 +86,10 @@ impl Convert<Value> for CusExprConv {
             let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
             let body = ctx.body_mut();
 
-            let ptr = body.push_stack(size);
-            // Allocate dirty bytes then overwrite
-            body.push(Cmd::Skip(size));
+            // Allocate pending bytes then overwrite
+            let ptr = body.push_cmd(size, Cmd::Skip(size));
             for (_name, (pad, value)) in map.into_iter() {
-                body.push(Cmd::Overwrite(
+                body.push_void(Cmd::Overwrite(
                     value.ty.size_or(input.span).map_err(&push_error_fn)?,
                     value.ptr,
                     ptr + pad,

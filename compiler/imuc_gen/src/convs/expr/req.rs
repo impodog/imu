@@ -83,8 +83,9 @@ impl Convert<Value> for ReqConv {
                 .expect("Should contain the global after inserting")
         };
 
-        let ptr = ctx.body_mut().push_stack(Bytes::ptr());
-        ctx.body_mut().push(Cmd::StorePtr(glob.ptr()));
+        let ptr = ctx
+            .body_mut()
+            .push_cmd(Bytes::ptr(), Cmd::StorePtr(glob.ptr()));
         Ok(Value { ptr, ty: hint })
     }
 }

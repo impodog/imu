@@ -14,23 +14,19 @@ impl Converter for PrimConv {
 fn convert_integer(body: &mut ctx::Body, solver: ExprSolver, integer: Integer) -> Result<Value> {
     match integer {
         Integer::I8(_) => {
-            let ptr = body.push_stack(Bytes::byte());
-            body.push(Cmd::Store(Prim::Integer(integer)));
+            let ptr = body.push_cmd(Bytes::byte(), Cmd::Store(Prim::Integer(integer)));
             Ok(Value { ptr, ty: Ty::i8() })
         }
         Integer::I16(_) => {
-            let ptr = body.push_stack(Bytes::new(2));
-            body.push(Cmd::Store(Prim::Integer(integer)));
+            let ptr = body.push_cmd(Bytes::new(2), Cmd::Store(Prim::Integer(integer)));
             Ok(Value { ptr, ty: Ty::i16() })
         }
         Integer::I32(_) => {
-            let ptr = body.push_stack(Bytes::new(4));
-            body.push(Cmd::Store(Prim::Integer(integer)));
+            let ptr = body.push_cmd(Bytes::new(4), Cmd::Store(Prim::Integer(integer)));
             Ok(Value { ptr, ty: Ty::i32() })
         }
         Integer::I64(_) => {
-            let ptr = body.push_stack(Bytes::new(8));
-            body.push(Cmd::Store(Prim::Integer(integer)));
+            let ptr = body.push_cmd(Bytes::new(8), Cmd::Store(Prim::Integer(integer)));
             Ok(Value { ptr, ty: Ty::i64() })
         }
         Integer::Any(value) => {
@@ -55,13 +51,11 @@ fn convert_integer(body: &mut ctx::Body, solver: ExprSolver, integer: Integer) -
 fn convert_float(body: &mut ctx::Body, solver: ExprSolver, float: Float) -> Result<Value> {
     match float {
         Float::F32(_) => {
-            let ptr = body.push_stack(Bytes::new(4));
-            body.push(Cmd::Store(Prim::Float(float)));
+            let ptr = body.push_cmd(Bytes::new(4), Cmd::Store(Prim::Float(float)));
             Ok(Value { ptr, ty: Ty::f32() })
         }
         Float::F64(_) => {
-            let ptr = body.push_stack(Bytes::new(8));
-            body.push(Cmd::Store(Prim::Float(float)));
+            let ptr = body.push_cmd(Bytes::new(8), Cmd::Store(Prim::Float(float)));
             Ok(Value { ptr, ty: Ty::f64() })
         }
         Float::Any(value) => {
@@ -87,7 +81,9 @@ impl Convert<Value> for PrimConv {
         let body = ctx.body_mut();
         match input {
             Prim::Unit => {
-                body.push(Cmd::Store(input.clone()));
+                // NOTE: Not using `push_void` is intentional, to align the pointers even on a unit
+                // type
+                body.push_cmd(Bytes::null(), Cmd::Store(input.clone()));
                 Ok(Value {
                     ptr: Ptr::default(),
                     ty: Ty::unit(),
@@ -96,16 +92,14 @@ impl Convert<Value> for PrimConv {
             Prim::Integer(integer) => convert_integer(body, solver, integer.clone()),
             Prim::Float(float) => convert_float(body, solver, float.clone()),
             Prim::Bool(_) => {
-                body.push(Cmd::Store(input.clone()));
-                let ptr = body.push_stack(Bytes::byte());
+                let ptr = body.push_cmd(Bytes::byte(), Cmd::Store(input.clone()));
                 Ok(Value {
                     ptr,
                     ty: Ty::bool(),
                 })
             }
             Prim::String(_) => {
-                body.push(Cmd::Store(input.clone()));
-                let ptr = body.push_stack(Bytes::ptr());
+                let ptr = body.push_cmd(Bytes::ptr(), Cmd::Store(input.clone()));
                 Ok(Value { ptr, ty: Ty::str() })
             }
         }

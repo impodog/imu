@@ -44,9 +44,9 @@ impl Convert<()> for MitConv {
         let ty_size = value.ty.size_or(input.span())?;
         let body = ctx.body_mut();
         // Copy the return value, while stack change will be done by the loop
-        body.push(Cmd::Overwrite(ty_size, value.ptr, stack));
+        body.push_void(Cmd::Overwrite(ty_size, value.ptr, stack));
         // Jump to loop quit location
-        body.push(Cmd::Jump(ptr));
+        body.push_void(Cmd::Jump(ptr));
         Ok(())
     }
 }

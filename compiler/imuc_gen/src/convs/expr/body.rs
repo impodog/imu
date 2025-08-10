@@ -56,7 +56,7 @@ impl Convert<Value> for BodyConv {
             .stack_record()
             .expect("a stack record should exist after body conversion");
         ctx.body_mut()
-            .push(Cmd::Overwrite(size, stack_record, result.ptr));
+            .push_void(Cmd::Overwrite(size, stack_record, result.ptr));
 
         debug_assert!(ctx.body_mut().pop_stack_record(size));
 

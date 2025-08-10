@@ -1,7 +1,7 @@
 // use super::ExprSolver;
 use crate::prelude::*;
 use ast::expr::{BinExpr, Expr};
-use imuc_ir::sym::ty::TyItem;
+use imuc_ir::sym::ty::{Field, TyItem};
 use imuc_lexer::{
     token::{BinOp, ResTy},
     Span,
@@ -23,13 +23,22 @@ fn add_self_to_args(
     let self_value_size = self_value.ty.size_or(span)?;
     let args_size = args.ty.size_or(span)?;
 
-    let ptr = body.push_stack(self_value_size + args_size);
-    body.push(Cmd::Dupli(self_value.ptr, self_value_size));
-    body.push(Cmd::Dupli(args.ptr, args_size));
+    // The initial align used later to adjust the remaining fields
+    let init_align =
+        config::MEMORY_LAYOUT.update_align_by(config::MEMORY_LAYOUT.init_align(), self_value_size);
+    let init_pad = config::memory::align_ptr_to(self_value_size, init_align);
+    // The extra space needed for aligning tuples
+    let extra_space = init_pad - self_value_size;
+
+    // We do manual tuple alignment here
+    let ptr = body.push_stack(init_pad + args_size);
+    body.push_void(Cmd::Dupli(self_value.ptr, self_value_size));
+    body.push_void(Cmd::Skip(extra_space));
+    body.push_void(Cmd::Dupli(args.ptr, args_size));
 
     use std::iter::once;
     let ty = match &args.ty.kind {
-        TyKind::Tuple(tuple) => {
+        TyKind::Tuple(args_tuple) => {
             let name = once('(')
                 .chain(self_value.ty.name.chars())
                 .chain(once(','))
@@ -37,18 +46,32 @@ fn add_self_to_args(
                 .chain(args.ty.name.chars().skip(1))
                 .collect::<String>();
             let name = StrRef::from(name);
+            // FIXME: Have to pre-store all the field sizes because the colsure cannot return
+            // Result, fix?
+            let mut field_sizes = Vec::new();
+            for field in args_tuple.0.iter() {
+                let field_size = ctx.ty.resolve_or(&field.item, span)?.size_or(span)?;
+                field_sizes.push(field_size);
+            }
             ctx.ty
                 .or_insert_with(name.clone(), || {
-                    let rest_start_ptr = config::MEMORY_LAYOUT.align_ptr(self_value_size);
-                    let tuple = once(ir::sym::ty::Field {
+                    let mut align = init_align;
+                    let mut pad = init_pad;
+
+                    let mut tuple = vec![Field {
                         pad: Ptr::start(),
                         item: TyItem::Solid(self_value.ty.clone()),
-                    })
-                    .chain(tuple.0.iter().cloned().map(|mut field| {
-                        field.pad += rest_start_ptr;
-                        field
-                    }))
-                    .collect::<Vec<_>>();
+                    }];
+                    for (field, size) in args_tuple.0.iter().zip(field_sizes.into_iter()) {
+                        align = config::MEMORY_LAYOUT.update_align_by(align, size);
+                        pad = config::memory::align_ptr_to(pad, align);
+                        tuple.push(Field {
+                            pad,
+                            item: field.item.clone(),
+                        });
+                        pad += size;
+                    }
+
                     Ty::new(TyInner {
                         name,
                         kind: TyKind::Tuple(ir::sym::ty::Tuple(tuple)),
@@ -66,16 +89,18 @@ fn add_self_to_args(
                 .chain(once(')'))
                 .collect::<String>();
             let name = StrRef::from(name);
+            let args_size = args.ty.size_or(span)?;
             ctx.ty
                 .or_insert_with(name.clone(), || {
-                    let rest_start_ptr = config::MEMORY_LAYOUT.align_ptr(self_value_size);
+                    let align = config::MEMORY_LAYOUT.update_align_by(init_align, args_size);
+                    let pad = config::memory::align_ptr_to(init_pad, align);
                     let tuple = vec![
                         ir::sym::ty::Field {
                             pad: Ptr::start(),
                             item: self_value.ty.into(),
                         },
                         ir::sym::ty::Field {
-                            pad: rest_start_ptr,
+                            pad,
                             item: args.ty.into(),
                         },
                     ];
@@ -175,16 +200,14 @@ pub(crate) fn convert_call(ctx: &mut Ctx, args: &Expr, func: &Expr, span: Span) 
     // NOTE: This data copy is required regardless of whether the copy is needed, to make sure the
     // data stays in place of a function call, and will be optimized later
     let body = ctx.body_mut();
-    // For function pointer
-    body.push_stack(Bytes::ptr());
-    // For arguments
     let args_size = args.ty.size_or(span)?;
-    body.push_stack(args_size);
-    // For return value
-    let ret_ptr = body.push_stack(ret.size_or(span)?);
-    body.push(Cmd::Dupli(Bytes::ptr(), func.ptr));
-    body.push(Cmd::Dupli(args_size, args.ptr));
-    body.push(Cmd::Call(args_size));
+
+    // Function pointer
+    body.push_cmd(Bytes::ptr(), Cmd::Dupli(Bytes::ptr(), func.ptr));
+    // Arguments
+    body.push_cmd(args_size, Cmd::Dupli(args_size, args.ptr));
+    // Return value
+    let ret_ptr = body.push_cmd(ret.size_or(span)?, Cmd::Call(args_size));
     Ok(Value {
         ptr: ret_ptr,
         ty: ret,

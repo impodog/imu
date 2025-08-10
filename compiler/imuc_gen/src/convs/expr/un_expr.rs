@@ -32,9 +32,8 @@ impl Convert<Value> for UnExprConv {
                     SendError::default()
                 })?;
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(Bytes::ptr());
-                body.push(Cmd::Alloc(size));
-                body.push(Cmd::WriteHeap(size, Bytes::start(), value.ptr, ptr));
+                let ptr = body.push_cmd(Bytes::ptr(), Cmd::Alloc(size));
+                body.push_void(Cmd::WriteHeap(size, Bytes::start(), value.ptr, ptr));
 
                 let name: StrRef = ctx::mangle::mangle_ref(value.ty.name.as_str()).into();
                 let ty = ctx
@@ -53,9 +52,7 @@ impl Convert<Value> for UnExprConv {
             }
             UnOp::Ptr => {
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(Bytes::ptr());
-
-                body.push(Cmd::StorePtrAsGlobal(value.ptr));
+                let ptr = body.push_cmd(Bytes::ptr(), Cmd::StorePtrAsGlobal(value.ptr));
 
                 let name: StrRef = ctx::mangle::mangle_ptr(value.ty.name.as_str()).into();
                 let ty = ctx
@@ -86,8 +83,10 @@ impl Convert<Value> for UnExprConv {
                     })?
                     .try_into()?;
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(value.ty.size_or(input.span()).map_err(push_error_fn)?);
-                body.push(Cmd::Not(bytes, value.ptr));
+                let ptr = body.push_cmd(
+                    value.ty.size_or(input.span()).map_err(push_error_fn)?,
+                    Cmd::Not(bytes, value.ptr),
+                );
                 Ok(Value {
                     ty: value.ty.clone(),
                     ptr,
@@ -118,8 +117,10 @@ impl Convert<Value> for UnExprConv {
                     })?
                     .try_into()?;
                 let body = ctx.body_mut();
-                let ptr = body.push_stack(value.ty.size_or(input.span()).map_err(push_error_fn)?);
-                body.push(Cmd::Neg(bytes, value.ptr));
+                let ptr = body.push_cmd(
+                    value.ty.size_or(input.span()).map_err(push_error_fn)?,
+                    Cmd::Neg(bytes, value.ptr),
+                );
                 Ok(Value {
                     ty: value.ty.clone(),
                     ptr,
@@ -136,9 +137,9 @@ impl Convert<Value> for UnExprConv {
                             .clone();
                         let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
 
-                        let ptr = ctx.body_mut().push_stack(size);
-                        ctx.body_mut()
-                            .push(Cmd::ReadStack(size, Bytes::start(), value.ptr));
+                        let ptr = ctx
+                            .body_mut()
+                            .push_cmd(size, Cmd::ReadStack(size, Bytes::start(), value.ptr));
                         Ok(Value { ty, ptr })
                     }
                     TyKind::Ref(ty_item) => {
@@ -149,9 +150,9 @@ impl Convert<Value> for UnExprConv {
                             .clone();
                         let size = ty.size_or(input.span()).map_err(&push_error_fn)?;
 
-                        let ptr = ctx.body_mut().push_stack(size);
-                        ctx.body_mut()
-                            .push(Cmd::ReadHeap(size, Bytes::start(), value.ptr));
+                        let ptr = ctx
+                            .body_mut()
+                            .push_cmd(size, Cmd::ReadHeap(size, Bytes::start(), value.ptr));
                         Ok(Value { ty, ptr })
                     }
                     _ => {

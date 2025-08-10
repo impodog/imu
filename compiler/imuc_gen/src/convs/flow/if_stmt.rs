@@ -28,7 +28,8 @@ impl Convert<Value> for IfElseConv {
                 .body()
                 .stack_record()
                 .expect("A stack record should be present in ifelse conversion");
-            ctx.body_mut().push(Cmd::Overwrite(size, stack_record, ptr));
+            ctx.body_mut()
+                .push_void(Cmd::Overwrite(size, stack_record, ptr));
             ctx.body_mut().revert_stack_record(size);
             Ok(())
         };
@@ -61,16 +62,17 @@ impl Convert<Value> for IfElseConv {
             }
 
             // Add the guard and jump command to the end of this if block
-            let inverse_ptr = ctx.body_mut().push_stack(Bytes::byte());
-            ctx.body_mut().push(Cmd::Not(NumBytes::I8, cond.ptr));
+            let inverse_ptr = ctx
+                .body_mut()
+                .push_cmd(Bytes::byte(), Cmd::Not(NumBytes::I8, cond.ptr));
             // Placeholder for a jump command
             let jump_index = ctx.body().len();
-            ctx.body_mut().push(Cmd::End);
+            ctx.body_mut().push_void(Cmd::End);
 
             // Convert the if body, and add a placeholder that jumps to the end of everything
             let value = convs::BodyConv::default().convert(ctx, &if_stmt.body)?;
             let final_jump_index = ctx.body().len();
-            ctx.body_mut().push(Cmd::End);
+            ctx.body_mut().push_void(Cmd::End);
             final_placeholders.push(final_jump_index);
             // Test if type is all same for each if
             let prev_has_type = ty.get().is_some();
@@ -86,10 +88,10 @@ impl Convert<Value> for IfElseConv {
 
             // Replace the first placeholder to a proper jump command when if fails
             let current_index = ctx.body().len();
-            *ctx.body_mut()
-                .get_mut(jump_index)
-                .expect("Body should contains a jump command placeholder") =
-                Cmd::JumpIf(inverse_ptr, Bytes::new(current_index));
+            ctx.body_mut().replace(
+                jump_index,
+                Cmd::JumpIf(inverse_ptr, Bytes::new(current_index)),
+            );
 
             // Revert stack location before the next if/else branch
             revert_stack_and_dupli(ctx, value.ptr)?;
@@ -113,9 +115,7 @@ impl Convert<Value> for IfElseConv {
             revert_stack_and_dupli(ctx, value.ptr)?;
             let final_ptr = Bytes::new(ctx.body().len());
             for index in final_placeholders.into_iter() {
-                *ctx.body_mut()
-                    .get_mut(index)
-                    .expect("Cmd placeholder index should exist") = Cmd::Jump(final_ptr);
+                ctx.body_mut().replace(index, Cmd::Jump(final_ptr));
             }
         } else if !prev_type.test_eq(&Ty::unit()) {
             // If there is no else branch and there is an return value, an error is thrown

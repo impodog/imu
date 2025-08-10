@@ -123,7 +123,7 @@ impl Globs {
         gen_cmd: impl FnOnce(StrRef) -> Cmd,
     ) {
         let ptr = self.stack;
-        body.push(gen_cmd(name.clone()));
+        body.push_void(gen_cmd(name.clone()));
         self.stack += Bytes::ptr();
         self.insert(name, Glob::new(ptr, ty, GlobKind::External));
     }

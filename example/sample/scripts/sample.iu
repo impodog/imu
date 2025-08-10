@@ -1,4 +1,12 @@
+pub cus Cat {
+    name: Str,
+    age: I8,
+}
 fun main() {
     let x = 0;
     let y = 1;
+    let cat = Cat(
+        age: 3,
+        name: "Welcome!",
+    );
 }

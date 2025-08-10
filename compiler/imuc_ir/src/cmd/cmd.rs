@@ -93,6 +93,7 @@ pub enum Cmd {
     And(NumBytes, Ptr, Ptr),
     Xor(NumBytes, Ptr, Ptr),
     EqI8(Ptr, i8),
+    NeI8(Ptr, i8),
     Test(NumBytes, Ptr, Ptr),
     Addf(NumBytes, Ptr, Ptr),
     Subf(NumBytes, Ptr, Ptr),
@@ -208,6 +209,11 @@ impl Rw for Cmd {
                 let bytes = Bytes::read(&mut input)?;
                 let value = input.read_until(' ')?.parse::<i8>()?;
                 Ok(Self::EqI8(bytes, value))
+            }
+            "neq" => {
+                let bytes = Bytes::read(&mut input)?;
+                let value = input.read_until(' ')?.parse::<i8>()?;
+                Ok(Self::NeI8(bytes, value))
             }
             "adf" => arithmetic!(read Addf, bytes, input),
             "sbf" => arithmetic!(read Subf, bytes, input),
@@ -336,6 +342,11 @@ impl Rw for Cmd {
             Self::Xor(bytes, lhs, rhs) => arithmetic!(write "xor", bytes, lhs, rhs, output),
             Self::EqI8(opd, value) => {
                 write!(output, "eql ")?;
+                opd.write(&mut output)?;
+                write!(output, " {value}")?;
+            }
+            Self::NeI8(opd, value) => {
+                write!(output, "neq ")?;
                 opd.write(&mut output)?;
                 write!(output, " {value}")?;
             }

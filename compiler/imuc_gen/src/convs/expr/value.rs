@@ -16,8 +16,7 @@ pub(crate) fn get_glob(ctx: &mut Ctx, name: &str) -> Option<Value> {
     let globs = body.globs.clone();
     let globs_lock = globs.read().unwrap();
     if let Some(glob) = globs_lock.get(name) {
-        let ptr = body.push_stack(Bytes::ptr());
-        body.push(Cmd::StorePtr(glob.ptr()));
+        let ptr = body.push_cmd(Bytes::ptr(), Cmd::StorePtr(glob.ptr()));
         Some(Value {
             ptr,
             ty: glob.ty().clone(),
@@ -68,16 +67,15 @@ impl Convert<Option<Value>> for ValueConv {
             }
             ValueInner::Res(res) => match res {
                 ResVal::True => {
-                    let ptr = body.push_stack(Bytes::byte());
-                    body.push(Cmd::Store(ast::prim::Prim::Bool(true)));
+                    let ptr = body.push_cmd(Bytes::byte(), Cmd::Store(ast::prim::Prim::Bool(true)));
                     Ok(Some(Value {
                         ptr,
                         ty: ir::sym::Ty::bool(),
                     }))
                 }
                 ResVal::False => {
-                    let ptr = body.push_stack(Bytes::byte());
-                    body.push(Cmd::Store(ast::prim::Prim::Bool(false)));
+                    let ptr =
+                        body.push_cmd(Bytes::byte(), Cmd::Store(ast::prim::Prim::Bool(false)));
                     Ok(Some(Value {
                         ptr,
                         ty: ir::sym::Ty::bool(),

@@ -62,13 +62,11 @@ impl Convert<Value> for CastConv {
                             NumBytes::try_from(res_ty).expect("integer ResTy should be sized");
                         match dst {
                             CastDest::Integer(dst) => {
-                                let ptr = body.push_stack(dst_bytes);
-                                body.push(Cmd::IToI(src, dst, value.ptr));
+                                let ptr = body.push_cmd(dst_bytes, Cmd::IToI(src, dst, value.ptr));
                                 Ok(Value { ptr, ty })
                             }
                             CastDest::Float(dst) => {
-                                let ptr = body.push_stack(dst_bytes);
-                                body.push(Cmd::IToF(src, dst, value.ptr));
+                                let ptr = body.push_cmd(dst_bytes, Cmd::IToF(src, dst, value.ptr));
                                 Ok(Value { ptr, ty })
                             }
                         }
@@ -77,13 +75,11 @@ impl Convert<Value> for CastConv {
                         let src = NumBytes::try_from(res_ty).expect("float ResTy should be sized");
                         match dst {
                             CastDest::Integer(dst) => {
-                                let ptr = body.push_stack(dst_bytes);
-                                body.push(Cmd::FToI(src, dst, value.ptr));
+                                let ptr = body.push_cmd(dst_bytes, Cmd::FToI(src, dst, value.ptr));
                                 Ok(Value { ptr, ty })
                             }
                             CastDest::Float(dst) => {
-                                let ptr = body.push_stack(dst_bytes);
-                                body.push(Cmd::FToF(src, dst, value.ptr));
+                                let ptr = body.push_cmd(dst_bytes, Cmd::FToF(src, dst, value.ptr));
                                 Ok(Value { ptr, ty })
                             }
                         }

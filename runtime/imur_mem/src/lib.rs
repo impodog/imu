@@ -15,4 +15,5 @@ cfg_if! {
 }
 
 pub mod alloc;
+pub mod heap;
 pub mod stack;

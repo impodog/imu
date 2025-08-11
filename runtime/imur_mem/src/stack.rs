@@ -2,14 +2,14 @@ use crate::alloc::Memory;
 
 /// An IMU stack that manages its internal memory, supporting typical stack operations.
 /// Please note that the stack does not support variability after the element is inserted.
-pub struct Stack<T: Memory> {
-    mem: T,
+pub struct Stack<M: Memory> {
+    mem: M,
     top: usize,
 }
 
-impl<T: Memory> Stack<T> {
+impl<M: Memory> Stack<M> {
     /// Creates an empty stack holding a memory
-    pub fn new(mem: T) -> Self {
+    pub fn new(mem: M) -> Self {
         Self { mem, top: 0 }
     }
 

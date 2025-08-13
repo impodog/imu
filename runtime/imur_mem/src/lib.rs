@@ -7,10 +7,14 @@ cfg_if! {
         extern crate std;
         use std::vec::Vec;
         use std::ptr::NonNull;
-        use std::{ptr, mem, ops};
+        use std::{ptr, mem};
+        use std::clone::Clone;
+        use std::marker::Copy;
     } else {
         use core::ptr::NonNull;
-        use core::{ptr, mem, ops};
+        use core::{ptr, mem};
+        use core::clone::Clone;
+        use core::marker::Copy;
     }
 }
 const ALIGNMENT: usize = mem::align_of::<*const ()>();

@@ -2,8 +2,7 @@ use crate::*;
 use alloc::Memory;
 
 /// A linked list containing pointers to pre-allocated chunks of the heap.
-/// The actual heap allocation begins at the pointer to this node + sizeof(Node),
-/// and it starts with `Meta`.
+/// The actual heap allocation begins at the pointer to this node + sizeof(Node), and it starts with `Meta`.
 #[repr(C)]
 struct Node {
     /// Handles the linked list, may be `usize::MAX` of the last node
@@ -14,11 +13,12 @@ struct Node {
 /// `size`: Size of the chunk
 /// `magic`: The magic number, used for problems
 #[repr(C, align(8))]
+#[derive(Clone, Copy)]
 // FIXME: Do we change alignment on 32 bits?
 struct Meta {
-    magic: u32,
     freed: bool,
     block_size: u8,
+    magic: u32,
 }
 
 /// An IMU heap that operates on a linear adapter to `crate::alloc::Memory`,
@@ -51,7 +51,7 @@ impl<M: Memory> Heap<M> {
     /// Panics if free list allocation failed.
     pub fn init(&mut self) {
         let free_list_size = mem::size_of::<usize>() * self.max_block as usize;
-        if self.mem.grow_more(free_list_size) {
+        if !self.mem.grow_more(free_list_size) {
             panic!("not enough memory for heap free list");
         }
         for block_size in 0..self.max_block {
@@ -112,7 +112,7 @@ impl<M: Memory> Heap<M> {
 
     /// Frees the memory chunk by the index that `Self::alloc` returns.
     /// Returns whether freeing is successful. This only fails because the index does not point to
-    /// a node.
+    /// a chunk.
     ///
     /// Freeing the same node multiple times is considered successful and does nothing, but
     /// may cause unexpected behavior as the node may be used by other code.
@@ -122,6 +122,55 @@ impl<M: Memory> Heap<M> {
             self.push_node(node_index)
         } else {
             false
+        }
+    }
+
+    /// Reallocates a previously allocated chunk, to extend or shrink the chunk,
+    /// while preserving the most of the original chunk.
+    ///
+    /// This may change its index, so a new index is returned.
+    ///
+    /// After calling this, the old index must not be used anymore.
+    ///
+    /// Returns `None` if size is greater than 2 ^ (`Self::max_block` - 1) or is 0, if internal
+    /// memory allocation failed, or if the give index does not point to a valid chunk.
+    /// Otherwise return the new allocation index.
+    #[must_use]
+    pub fn realloc(&mut self, old_alloc_index: usize, new_size: usize) -> Option<usize> {
+        if let Some(old_node_index) = old_alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
+            let new_block_size = new_size.next_power_of_two().ilog2() as u8;
+            if new_block_size == 0 || new_block_size >= self.max_block {
+                return None;
+            }
+            let meta = self.copy_meta(old_node_index)?;
+            if meta.freed {
+                return None;
+            }
+            if meta.block_size == new_block_size {
+                Some(old_alloc_index)
+            } else {
+                let new_alloc_index = self.alloc(new_size)?;
+                let old_size = 1usize << meta.block_size;
+                unsafe {
+                    let old_alloc_ptr = self
+                        .mem
+                        .access_mut(old_alloc_index, old_size)
+                        .expect("old chunk should be valid");
+                    let new_alloc_ptr = self
+                        .mem
+                        .access_mut(new_alloc_index, new_size)
+                        .expect("old chunk should be valid");
+                    ptr::copy_nonoverlapping(
+                        old_alloc_ptr.cast::<u8>().as_ptr(),
+                        new_alloc_ptr.cast::<u8>().as_ptr(),
+                        old_size.min(new_size),
+                    );
+                }
+                assert!(self.free(old_alloc_index));
+                Some(new_alloc_index)
+            }
+        } else {
+            None
         }
     }
 
@@ -222,6 +271,22 @@ impl<M: Memory> Heap<M> {
         mem::size_of::<usize>() * block_size as usize
     }
 
+    /// Copies the meta data from the given node.
+    /// Returns `None` if the given index is out of bounds, or if it is not a node index.
+    fn copy_meta(&self, node_index: usize) -> Option<Meta> {
+        let meta_index = node_index + Node::SIZE;
+        if let Some(meta_ptr) = self.mem.access(meta_index, Meta::SIZE) {
+            let meta = unsafe { meta_ptr.cast::<Meta>().as_ref() };
+            if meta.magic != Meta::MAGIC_NUMBER {
+                None
+            } else {
+                Some(*meta)
+            }
+        } else {
+            None
+        }
+    }
+
     /// Attempts to pop an allocation node from free list.
     /// Returns the memory index to the node, or `None` if the list is empty.
     ///
@@ -311,7 +376,7 @@ impl<M: Memory> Heap<M> {
     ///
     /// This also sets its freed flag to `false`.
     ///
-    /// Returns `None` if there is no sufficient memory, or return the usable memory chunk index.
+    /// Returns `None` if there is no sufficient memory, or return the node index.
     ///
     /// # Panics
     ///
@@ -326,15 +391,15 @@ impl<M: Memory> Heap<M> {
         // Note: padding ensures the next node/meta/alloc
         let pad = ALIGNMENT - alloc_size % ALIGNMENT;
         let total = Node::SIZE + Meta::SIZE + alloc_size + pad;
-        if self.alloc_least(total) {
+        if !self.alloc_least(total) {
             return None;
         }
 
-        let _node_index = self.top;
+        let node_index = self.top;
         self.top += Node::SIZE;
         let meta_index = self.top;
         self.top += Meta::SIZE;
-        let alloc_index = self.top;
+        let _alloc_index = self.top;
         self.top += alloc_size + pad;
 
         let meta_ptr = self
@@ -348,6 +413,6 @@ impl<M: Memory> Heap<M> {
             meta.magic = Meta::MAGIC_NUMBER;
         }
 
-        Some(alloc_index)
+        Some(node_index)
     }
 }

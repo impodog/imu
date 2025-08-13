@@ -1,4 +1,5 @@
 use crate::alloc::Memory;
+use crate::*;
 
 /// An IMU stack that manages its internal memory, supporting typical stack operations.
 /// Please note that the stack does not support variability after the element is inserted.
@@ -35,7 +36,7 @@ impl<M: Memory> Stack<M> {
     where
         E: Sized,
     {
-        let size: usize = core::mem::size_of::<E>();
+        let size: usize = mem::size_of::<E>();
         if !self.extend_by(size) {
             return None;
         }
@@ -47,7 +48,7 @@ impl<M: Memory> Stack<M> {
             .access_mut(vptr, size)
             .expect("Should contain the stack element");
         unsafe {
-            core::ptr::write_unaligned(ptr.as_ptr() as *mut E, elem);
+            ptr::write_unaligned(ptr.as_ptr() as *mut E, elem);
         };
         self.top += size;
         Some(vptr)
@@ -74,7 +75,7 @@ impl<M: Memory> Stack<M> {
     where
         E: Sized,
     {
-        let size: usize = core::mem::size_of::<E>();
+        let size: usize = mem::size_of::<E>();
         let ptr = self.mem.access(ptr, size)?;
         Some(unsafe { &*(ptr.as_ptr() as *const E) })
     }
@@ -88,7 +89,7 @@ impl<M: Memory> Stack<M> {
     where
         E: Sized + Copy,
     {
-        let size: usize = core::mem::size_of::<E>();
+        let size: usize = mem::size_of::<E>();
         let ptr = self.mem.access(ptr, size)?;
         Some(unsafe { (ptr.as_ptr() as *const E).read_unaligned() })
     }
@@ -116,11 +117,7 @@ impl<M: Memory> Stack<M> {
             .expect("new allocation is made sure to accommodate size bytes");
         unsafe {
             // NOTE: `ptr` is ensured to be inside the old stack, thus there is no memory overlap.
-            core::ptr::copy_nonoverlapping(
-                src.as_ptr() as *const u8,
-                dst.as_ptr() as *mut u8,
-                size,
-            );
+            ptr::copy_nonoverlapping(src.as_ptr() as *const u8, dst.as_ptr() as *mut u8, size);
         }
         let result = self.top;
         self.top += size;

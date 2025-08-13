@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use cfg_if::cfg_if;
 
@@ -7,12 +7,13 @@ cfg_if! {
         extern crate std;
         use std::vec::Vec;
         use std::ptr::NonNull;
-        const ALIGNMENT: usize = std::mem::align_of::<*const ()>();
+        use std::{ptr, mem, ops};
     } else {
         use core::ptr::NonNull;
-        const ALIGNMENT: usize = core::mem::align_of::<*const ()>();
+        use core::{ptr, mem, ops};
     }
 }
+const ALIGNMENT: usize = mem::align_of::<*const ()>();
 
 pub mod alloc;
 pub mod heap;

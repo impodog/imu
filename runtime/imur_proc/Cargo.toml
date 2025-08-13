@@ -1,5 +1,5 @@
 [package]
-name = "imur_mem"
+name = "imur_proc"
 version = "0.0.0"
 edition = "2024"
 
@@ -7,6 +7,5 @@ edition = "2024"
 cfg-if = "1.0.1"
 
 [features]
-default = ["std", "vec_mem"]
+default = ["std"]
 std = []
-vec_mem = ["std"]

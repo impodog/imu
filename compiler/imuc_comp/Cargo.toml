@@ -14,4 +14,4 @@ imuc_ir = { path = "../imuc_ir" }
 imuc_error = { path = "../imuc_error" }
 log = "0.4.27"
 serde = { version = "1.0.219", features = ["derive"] }
-toml = "0.9.4"
+toml = "0.9.5"

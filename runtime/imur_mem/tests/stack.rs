@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "std")]
+    #[cfg(feature = "vec_mem")]
     #[test]
     fn test_stack() {
         let mem = imur_mem::alloc::VecMem::new();

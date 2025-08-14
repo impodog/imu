@@ -27,6 +27,9 @@ struct Meta {
 /// The heap is organized in this way using linear memory(ignore padding):
 /// free list | [node/meta/alloc] [node/meta/alloc] ...
 /// where free list contains the head node of each block size, which are all powers of 2.
+///
+/// Note that you MUST call `Self::init` after `Self::new`, before any other actions,
+/// otherwise it is UB.
 pub struct Heap<M: Memory> {
     mem: M,
     max_block: u8,
@@ -43,59 +46,8 @@ impl Meta {
     const MAGIC_NUMBER: u32 = 0xCAFCAC03;
 }
 
-impl<M: Memory> Heap<M> {
-    /// Initializes the free list which contains no nodes.
-    ///
-    /// # Panics
-    ///
-    /// Panics if free list allocation failed.
-    pub fn init(&mut self) {
-        let free_list_size = mem::size_of::<usize>() * self.max_block as usize;
-        if !self.mem.grow_more(free_list_size) {
-            panic!("not enough memory for heap free list");
-        }
-        for block_size in 0..self.max_block {
-            let head_index = self.head_index(block_size);
-            let head_ptr = self
-                .mem
-                .access_mut(head_index, Node::SIZE)
-                .expect("should exist because block_size is in bounds");
-            unsafe {
-                *head_ptr.cast::<usize>().as_ptr() = usize::MAX;
-            }
-        }
-        self.top += free_list_size;
-        self.init = true;
-    }
-
-    /// Creates a new heap allocator with given memory.
-    /// Note that this is uninitialized, and to use it, you must first call `Self::init`.
-    ///
-    /// `max_block` is exclusive, meaning only block sizes less than that is accepted.
-    ///
-    /// # Panics
-    ///
-    /// Panics if 2 ^ (`max_block` - 1) overflows `isize`.
-    pub fn new(mem: M, max_block: u8) -> Self {
-        // NOTE: `max_block` overflowing isize is the same as `max_block` - 1 overflowing usize
-        1usize
-            .checked_shl(max_block as _)
-            .expect("2 ^ max_block should not overflow usize");
-        Self {
-            mem,
-            max_block,
-            top: 0,
-            init: false,
-        }
-    }
-
-    /// Allocates memory of size, returning its unique index, which can be used to further operate on this
-    /// allocation chunk. Same as C alloc, memory will not free until `Self::free` is called.
-    ///
-    /// Returns `None` if size is greater than 2 ^ (`Self::max_block` - 1) or is 0, or if internal
-    /// memory allocation failed.
-    #[must_use]
-    pub fn alloc(&mut self, size: usize) -> Option<usize> {
+impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
+    fn alloc(&mut self, size: usize) -> Option<usize> {
         let block_size = size.next_power_of_two().ilog2() as u8;
         if block_size == 0 || block_size >= self.max_block {
             return None;
@@ -110,14 +62,7 @@ impl<M: Memory> Heap<M> {
         }
     }
 
-    /// Frees the memory chunk by the index that `Self::alloc` returns.
-    /// Returns whether freeing is successful. This only fails because the index does not point to
-    /// a chunk.
-    ///
-    /// Freeing the same node multiple times is considered successful and does nothing, but
-    /// may cause unexpected behavior as the node may be used by other code.
-    #[must_use]
-    pub fn free(&mut self, alloc_index: usize) -> bool {
+    fn free(&mut self, alloc_index: usize) -> bool {
         if let Some(node_index) = alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
             self.push_node(node_index)
         } else {
@@ -125,18 +70,7 @@ impl<M: Memory> Heap<M> {
         }
     }
 
-    /// Reallocates a previously allocated chunk, to extend or shrink the chunk,
-    /// while preserving the most of the original chunk.
-    ///
-    /// This may change its index, so a new index is returned.
-    ///
-    /// After calling this, the old index must not be used anymore.
-    ///
-    /// Returns `None` if size is greater than 2 ^ (`Self::max_block` - 1) or is 0, if internal
-    /// memory allocation failed, or if the give index does not point to a valid chunk.
-    /// Otherwise return the new allocation index.
-    #[must_use]
-    pub fn realloc(&mut self, old_alloc_index: usize, new_size: usize) -> Option<usize> {
+    fn realloc(&mut self, old_alloc_index: usize, new_size: usize) -> Option<usize> {
         if let Some(old_node_index) = old_alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
             let new_block_size = new_size.next_power_of_two().ilog2() as u8;
             if new_block_size == 0 || new_block_size >= self.max_block {
@@ -174,16 +108,7 @@ impl<M: Memory> Heap<M> {
         }
     }
 
-    /// Reads the heap with an action on the element.
-    ///
-    /// This function returns `None` if the index is out of bounds and does nothing,
-    /// or it returns the result of the function provided.
-    ///
-    /// # Safety
-    ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
-    #[must_use]
-    pub unsafe fn access<F, E, R>(&self, index: usize, f: F) -> Option<R>
+    unsafe fn access<F, E, R>(&self, index: usize, f: F) -> Option<R>
     where
         F: FnOnce(&E) -> R,
         E: Sized,
@@ -197,16 +122,7 @@ impl<M: Memory> Heap<M> {
         }
     }
 
-    /// Writes the heap with an action on the element.
-    ///
-    /// This function returns `None` if the index is out of bounds and does nothing,
-    /// or it returns the result of the function provided.
-    ///
-    /// # Safety
-    ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
-    #[must_use]
-    pub unsafe fn access_mut<F, E, R>(&mut self, index: usize, f: F) -> Option<R>
+    unsafe fn access_mut<F, E, R>(&mut self, index: usize, f: F) -> Option<R>
     where
         F: FnOnce(&mut E) -> R,
         E: Sized,
@@ -220,15 +136,7 @@ impl<M: Memory> Heap<M> {
         }
     }
 
-    /// Writes an element to a position on the heap.
-    ///
-    /// This function returns `None` if the index is out of bounds and does nothing.
-    ///
-    /// # Safety
-    ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
-    #[must_use]
-    pub unsafe fn copy<E>(&mut self, index: usize, value: &E) -> bool {
+    unsafe fn copy<E>(&mut self, index: usize, value: &E) -> bool {
         let size = mem::size_of::<E>();
         #[allow(clippy::manual_map)]
         if let Some(ptr) = self.mem.access_mut(index, size) {
@@ -242,6 +150,57 @@ impl<M: Memory> Heap<M> {
             true
         } else {
             false
+        }
+    }
+}
+
+impl<M: Memory> Heap<M> {
+    /// Initializes the free list which contains no nodes.
+    ///
+    /// # Panics
+    ///
+    /// Panics if free list allocation failed.
+    pub fn init(&mut self) {
+        let free_list_size = mem::size_of::<usize>() * self.max_block as usize;
+        if !self.mem.grow_more(free_list_size) {
+            panic!("not enough memory for heap free list");
+        }
+        for block_size in 0..self.max_block {
+            let head_index = self.head_index(block_size);
+            let head_ptr = self
+                .mem
+                .access_mut(head_index, Node::SIZE)
+                .expect("should exist because block_size is in bounds");
+            unsafe {
+                *head_ptr.cast::<usize>().as_ptr() = usize::MAX;
+            }
+        }
+        self.top += free_list_size;
+        self.init = true;
+    }
+
+    /// Creates a new heap allocator with given memory.
+    /// Note that this is uninitialized, and to use it, you must first call `Self::init`.
+    ///
+    /// `max_block` is exclusive, meaning only block sizes less than that is accepted.
+    ///
+    /// Note that you MUST call `Self::init` after `Self::new`, before any other actions,
+    /// otherwise it is UB.
+    ///
+    /// # Panics
+    ///
+    /// Panics if 2 ^ (`max_block` - 1) overflows `isize`.
+    ///
+    pub fn new(mem: M, max_block: u8) -> Self {
+        // NOTE: `max_block` overflowing isize is the same as `max_block` - 1 overflowing usize
+        1usize
+            .checked_shl(max_block as _)
+            .expect("2 ^ max_block should not overflow usize");
+        Self {
+            mem,
+            max_block,
+            top: 0,
+            init: false,
         }
     }
 

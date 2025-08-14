@@ -3,6 +3,8 @@ mod tests {
     #[cfg(feature = "vec_mem")]
     #[test]
     fn test_heap() {
+        use imur_mem::heap::HeapAlloc;
+
         let mem = imur_mem::alloc::VecMem::new();
         let mut heap = imur_mem::heap::Heap::new(mem, 10);
         heap.init();

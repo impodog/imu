@@ -10,3 +10,4 @@ cfg-if = "1.0.1"
 default = ["std", "vec_mem"]
 std = []
 vec_mem = ["std"]
+vec = []

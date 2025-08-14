@@ -24,5 +24,6 @@ cfg_if! {
 const ALIGNMENT: usize = mem::align_of::<*const ()>();
 
 pub mod alloc;
+pub mod ds;
 pub mod heap;
 pub mod stack;

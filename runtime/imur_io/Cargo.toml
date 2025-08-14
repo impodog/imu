@@ -5,8 +5,11 @@ edition = "2024"
 
 [dependencies]
 cfg-if = "1.0.1"
-critical-section = "1.2.0"
+spin = "0.10.0"
+imur_mem = { path = "../imur_mem", default-features = false, features = [
+    "vec",
+] }
 
 [features]
 default = ["std"]
-std = ["critical-section/std"]
+std = ["spin/std", "imur_mem/std"]

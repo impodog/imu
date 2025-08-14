@@ -1,3 +1,5 @@
+use crate::*;
+
 /// Trait that defines the heap interface. This makes it possible to implement custom heaps, add
 /// locks to the current heap, etc..
 pub trait HeapAlloc {
@@ -26,41 +28,38 @@ pub trait HeapAlloc {
     #[must_use]
     fn realloc(&mut self, old_alloc_index: usize, new_size: usize) -> Option<usize>;
 
-    /// Reads the heap with an action on the element.
+    /// Reads the heap with an action on the pointer.
     ///
     /// This function returns `None` if the index is out of bounds and does nothing,
     /// or it returns the result of the function provided.
     ///
     /// # Safety
     ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
+    /// The index must be inside a valid allocation.
+    /// Only READ to the pointer, and never write. To write, use `Self::access_mut`.
+    ///
+    /// # Notes
+    ///
+    /// Thread/interruption safety needs to be defined by implementation.
     #[must_use]
-    unsafe fn access<F, E, R>(&self, index: usize, f: F) -> Option<R>
+    unsafe fn access<F, R>(&self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&E) -> R,
-        E: Sized;
+        F: FnOnce(NonNull<()>) -> R;
 
-    /// Writes the heap with an action on the element.
+    /// Writes the heap with an action on the pointer.
     ///
     /// This function returns `None` if the index is out of bounds and does nothing,
     /// or it returns the result of the function provided.
     ///
     /// # Safety
     ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
+    /// The index must be inside a valid allocation.
+    ///
+    /// # Notes
+    ///
+    /// Thread/interruption safety needs to be defined by implementation.
     #[must_use]
-    unsafe fn access_mut<F, E, R>(&mut self, index: usize, f: F) -> Option<R>
+    unsafe fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&mut E) -> R,
-        E: Sized;
-
-    /// Writes an element to a position on the heap.
-    ///
-    /// This function returns `false` if the index is out of bounds and does nothing.
-    ///
-    /// # Safety
-    ///
-    /// The index must be inside a valid allocation, and you must guarantee type safety.
-    #[must_use]
-    unsafe fn copy<E>(&mut self, index: usize, value: &E) -> bool;
+        F: FnOnce(NonNull<()>) -> R;
 }

@@ -30,6 +30,8 @@ struct Meta {
 ///
 /// Note that you MUST call `Self::init` after `Self::new`, before any other actions,
 /// otherwise it is UB.
+///
+/// This does not support thread safety.
 pub struct Heap<M: Memory> {
     mem: M,
     max_block: u8,
@@ -108,49 +110,24 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
         }
     }
 
-    unsafe fn access<F, E, R>(&self, index: usize, f: F) -> Option<R>
+    unsafe fn access<F, R>(&self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&E) -> R,
-        E: Sized,
+        F: FnOnce(NonNull<()>) -> R,
     {
-        let size = mem::size_of::<E>();
         #[allow(clippy::manual_map)]
-        if let Some(ptr) = self.mem.access(index, size) {
-            Some(f(unsafe { ptr.cast::<E>().as_ref() }))
+        if let Some(ptr) = self.mem.access(index, 0) {
+            Some(f(ptr))
         } else {
             None
         }
     }
 
-    unsafe fn access_mut<F, E, R>(&mut self, index: usize, f: F) -> Option<R>
+    unsafe fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&mut E) -> R,
-        E: Sized,
+        F: FnOnce(NonNull<()>) -> R,
     {
-        let size = mem::size_of::<E>();
-        #[allow(clippy::manual_map)]
-        if let Some(ptr) = self.mem.access_mut(index, size) {
-            Some(f(unsafe { ptr.cast::<E>().as_mut() }))
-        } else {
-            None
-        }
-    }
-
-    unsafe fn copy<E>(&mut self, index: usize, value: &E) -> bool {
-        let size = mem::size_of::<E>();
-        #[allow(clippy::manual_map)]
-        if let Some(ptr) = self.mem.access_mut(index, size) {
-            unsafe {
-                ptr::copy_nonoverlapping(
-                    value as *const E as *const u8,
-                    ptr.as_ptr() as *mut u8,
-                    size,
-                );
-            }
-            true
-        } else {
-            false
-        }
+        // NOTE: Since no thread safety is supported, we can just use the same function
+        unsafe { self.access(index, f) }
     }
 }
 
@@ -201,6 +178,33 @@ impl<M: Memory> Heap<M> {
             max_block,
             top: 0,
             init: false,
+        }
+    }
+
+    /// Writes an element to a position on the heap.
+    ///
+    /// This function returns `false` if the index is out of bounds and does nothing.
+    ///
+    /// Implementation of this function must ensure that this node is kept locked for copy.
+    ///
+    /// # Safety
+    ///
+    /// The index must be inside a valid allocation, and you must guarantee type safety.
+    /// Thread safety is not guaranteed.
+    pub unsafe fn copy<E>(&self, index: usize, value: &E) -> bool {
+        let size = mem::size_of::<E>();
+        #[allow(clippy::manual_map)]
+        if let Some(ptr) = self.mem.access(index, size) {
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    value as *const E as *const u8,
+                    ptr.as_ptr() as *mut u8,
+                    size,
+                );
+            }
+            true
+        } else {
+            false
         }
     }
 

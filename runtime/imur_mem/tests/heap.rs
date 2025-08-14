@@ -12,7 +12,10 @@ mod tests {
         println!("index = {}", index1);
         unsafe {
             assert!(heap.copy(index1, &1234u64));
-            assert_eq!(Some(1234u64), heap.access(index1, |value: &u64| { *value }));
+            assert_eq!(
+                Some(1234u64),
+                heap.access(index1, |value| { *value.cast::<u64>().as_ptr() })
+            );
         }
 
         let index2 = heap.alloc(64).unwrap();
@@ -25,11 +28,11 @@ mod tests {
         unsafe {
             assert_eq!(
                 Some(2u64),
-                heap.access(index2 + 16, |value: &u64| { *value })
+                heap.access(index2 + 16, |value| { *value.cast::<u64>().as_ptr() })
             );
             assert_eq!(
                 Some(4u64),
-                heap.access(index2 + 32, |value: &u64| { *value })
+                heap.access(index2 + 32, |value| { *value.cast::<u64>().as_ptr() })
             );
         }
 
@@ -48,7 +51,10 @@ mod tests {
         assert_eq!(index4, index2);
         unsafe {
             // Test if the data is shipped too
-            assert_eq!(Some(0xabcdefu32), heap.access(index4, |value: &u32| *value));
+            assert_eq!(
+                Some(0xabcdefu32),
+                heap.access(index4, |value| *value.cast::<u32>().as_ptr())
+            );
         }
     }
 }

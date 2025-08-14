@@ -59,6 +59,12 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     pub fn push(&mut self, elem: E) -> bool {
         if (self.len + 1) * Self::ELEM_ALIGNED_SIZE > self.capa {
             if self.capa == 0 {
+                if let Some(alloc_index) = self.heap.alloc(Self::ELEM_ALIGNED_SIZE) {
+                    self.capa = 1;
+                    self.alloc_index = alloc_index;
+                } else {
+                    return false;
+                }
             } else {
                 let new_size = self.capa * 2;
                 if let Some(new_alloc_index) = self.heap.realloc(self.alloc_index, new_size) {
@@ -69,12 +75,18 @@ impl<E, H: HeapAlloc> Vec<E, H> {
             };
         }
         unsafe {
-            if !self
-                .heap
-                .copy(self.alloc_index + self.len * Self::ELEM_ALIGNED_SIZE, &elem)
-            {
-                return false;
-            }
+            self.heap
+                .access_mut(
+                    self.alloc_index + self.len * Self::ELEM_ALIGNED_SIZE,
+                    |ptr| {
+                        ptr::copy_nonoverlapping(
+                            &elem as *const E as *const u8,
+                            ptr.cast::<u8>().as_ptr(),
+                            Self::ELEM_SIZE,
+                        );
+                    },
+                )
+                .expect("should succeed to access previously allocated memory")
         }
         // Forget to prevent reusing `elem`
         mem::forget(elem);
@@ -100,10 +112,10 @@ impl<E, H: HeapAlloc> Vec<E, H> {
                 self.heap
                     .access(
                         self.alloc_index + (self.len - 1) * Self::ELEM_ALIGNED_SIZE,
-                        |elem: &E| {
+                        |ptr| {
                             let mut buffer = mem::MaybeUninit::<E>::uninit();
                             ptr::copy_nonoverlapping(
-                                elem as *const E as *const u8,
+                                ptr.cast::<u8>().as_ptr(),
                                 buffer.as_mut_ptr().cast::<u8>(),
                                 Self::ELEM_SIZE,
                             );
@@ -139,7 +151,9 @@ impl<E, H: HeapAlloc> Vec<E, H> {
         } else {
             let result = unsafe {
                 self.heap
-                    .access(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, f)
+                    .access(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, |ptr| {
+                        f(ptr.cast::<E>().as_ref())
+                    })
                     .expect("should succeed to access previously allocated memory")
             };
             Some(result)
@@ -168,7 +182,9 @@ impl<E, H: HeapAlloc> Vec<E, H> {
         } else {
             let result = unsafe {
                 self.heap
-                    .access_mut(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, f)
+                    .access_mut(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, |ptr| {
+                        f(ptr.cast::<E>().as_mut())
+                    })
                     .expect("should succeed to access previously allocated memory")
             };
             Some(result)

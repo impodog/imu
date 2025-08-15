@@ -122,12 +122,12 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
         }
     }
 
-    unsafe fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
+    unsafe fn access_mut<F, R>(&self, _index: usize, _f: F) -> Option<R>
     where
         F: FnOnce(NonNull<()>) -> R,
     {
-        // NOTE: Since no thread safety is supported, we can just use the same function
-        unsafe { self.access(index, f) }
+        // NOTE: Since no thread safety is supported, we panic
+        unimplemented!("Bare heap does not support access_mut");
     }
 }
 

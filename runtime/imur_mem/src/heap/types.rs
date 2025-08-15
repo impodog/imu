@@ -40,7 +40,7 @@ pub trait HeapAlloc {
     ///
     /// # Notes
     ///
-    /// Thread/interruption safety needs to be defined by implementation.
+    /// Thread safety needs to be defined by implementation.
     #[must_use]
     unsafe fn access<F, R>(&self, index: usize, f: F) -> Option<R>
     where
@@ -51,13 +51,16 @@ pub trait HeapAlloc {
     /// This function returns `None` if the index is out of bounds and does nothing,
     /// or it returns the result of the function provided.
     ///
+    /// This function locks the whole node when accessing a part of it.
+    /// Preventing other threads from accessing this node.
+    ///
     /// # Safety
     ///
     /// The index must be inside a valid allocation.
     ///
-    /// # Notes
+    /// # Panics
     ///
-    /// Thread/interruption safety needs to be defined by implementation.
+    /// The heap may choose to panic if it does not support locking.
     #[must_use]
     unsafe fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
     where

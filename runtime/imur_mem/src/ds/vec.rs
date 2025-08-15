@@ -42,11 +42,13 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     }
 
     /// Returns if the vector is empty.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
     /// Returns the length of the vector.
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
@@ -55,12 +57,12 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Time complexity is worst case O(n) (when reallocating), amortized O(1).
     ///
-    /// This only fails because of internal heap error. This does not panic.
+    /// This only fails because of internal heap error.
     pub fn push(&mut self, elem: E) -> bool {
         if (self.len + 1) * Self::ELEM_ALIGNED_SIZE > self.capa {
             if self.capa == 0 {
                 if let Some(alloc_index) = self.heap.alloc(Self::ELEM_ALIGNED_SIZE) {
-                    self.capa = 1;
+                    self.capa = Self::ELEM_ALIGNED_SIZE;
                     self.alloc_index = alloc_index;
                 } else {
                     return false;
@@ -99,11 +101,6 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     /// Time complexity is worst case O(1).
     ///
     /// This does not shrink the heap allocation.
-    ///
-    /// # Panics
-    ///
-    /// Panics if internal heap fails to access the previously allocated memory, which is against
-    /// heap properties.
     pub fn pop(&mut self) -> Option<E> {
         if self.is_empty() {
             None
@@ -137,11 +134,6 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    ///
-    /// # Panics
-    ///
-    /// Panics if internal heap fails to access the previously allocated memory, which is against
-    /// heap properties.
     pub fn access<F, R>(&self, index: usize, f: F) -> Option<R>
     where
         F: FnOnce(&E) -> R,
@@ -168,12 +160,7 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    ///
-    /// # Panics
-    ///
-    /// Panics if internal heap fails to access the previously allocated memory, which is against
-    /// heap properties.
-    pub fn access_mut<F, R>(&mut self, index: usize, f: F) -> Option<R>
+    pub fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
     where
         F: FnOnce(&mut E) -> R,
     {

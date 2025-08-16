@@ -318,6 +318,12 @@ impl<E, H: HeapAlloc> Deque<E, H> {
                         self.head = 0;
                         self.tail = 0;
                     }
+
+                    assert!(
+                        self.heap.free(self.alloc_index),
+                        "should succeed to free previously allocated memory"
+                    );
+
                     self.alloc_index = new_alloc_index;
                 } else {
                     return false;

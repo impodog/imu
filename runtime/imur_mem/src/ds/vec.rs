@@ -28,6 +28,17 @@ impl<E, H: HeapAlloc> Vec<E, H> {
         }
     };
 
+    /// Replaces internal heap. This only works when the vector is never used and therefore has
+    /// never allocated. Otherwise this will panic.
+    ///
+    /// This is useful for replacing placeholders.
+    pub fn replace_heap(&mut self, new_heap: H) {
+        if self.capa != 0 {
+            panic!("Vec must be unallocated when calling `replace_heap`");
+        }
+        self.heap = new_heap;
+    }
+
     /// Creates a new empty vector.
     pub fn new(heap: H) -> Self {
         Self {

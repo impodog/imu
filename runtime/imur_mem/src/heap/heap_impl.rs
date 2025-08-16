@@ -50,6 +50,8 @@ impl Meta {
 
 impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
     fn alloc(&mut self, size: usize) -> Option<usize> {
+        self.check_init();
+
         let block_size = size.next_power_of_two().ilog2() as u8;
         if block_size == 0 || block_size >= self.max_block {
             return None;
@@ -65,6 +67,8 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
     }
 
     fn free(&mut self, alloc_index: usize) -> bool {
+        self.check_init();
+
         if let Some(node_index) = alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
             self.push_node(node_index)
         } else {
@@ -73,6 +77,8 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
     }
 
     fn realloc(&mut self, old_alloc_index: usize, new_size: usize) -> Option<usize> {
+        self.check_init();
+
         if let Some(old_node_index) = old_alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
             let new_block_size = new_size.next_power_of_two().ilog2() as u8;
             if new_block_size == 0 || new_block_size >= self.max_block {
@@ -114,6 +120,8 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
     where
         F: FnOnce(NonNull<()>) -> R,
     {
+        self.check_init();
+
         #[allow(clippy::manual_map)]
         if let Some(ptr) = self.mem.access(index, 0) {
             Some(f(ptr))
@@ -126,6 +134,8 @@ impl<M: Memory> crate::heap::HeapAlloc for Heap<M> {
     where
         F: FnOnce(NonNull<()>) -> R,
     {
+        self.check_init();
+
         // NOTE: Since no thread safety is supported, we panic
         unimplemented!("Bare heap does not support access_mut");
     }
@@ -181,6 +191,17 @@ impl<M: Memory> Heap<M> {
         }
     }
 
+    /// Checks if self is initialized with `Self::init`, otherwise panic.
+    ///
+    ///
+    /// # Note
+    /// This must be added in all public interface functions other than `new` `init`.
+    pub fn check_init(&self) {
+        if !self.init {
+            panic!("heap is uninitialized, please call `Self::init` before any other actions")
+        }
+    }
+
     /// Writes an element to a position on the heap.
     ///
     /// This function returns `false` if the index is out of bounds and does nothing.
@@ -192,6 +213,8 @@ impl<M: Memory> Heap<M> {
     /// The index must be inside a valid allocation, and you must guarantee type safety.
     /// Thread safety is not guaranteed.
     pub unsafe fn copy<E>(&self, index: usize, value: &E) -> bool {
+        self.check_init();
+
         let size = mem::size_of::<E>();
         #[allow(clippy::manual_map)]
         if let Some(ptr) = self.mem.access(index, size) {

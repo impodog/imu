@@ -5,5 +5,5 @@ pub trait SysTh: Sized {
     /// this function should not block.
     fn execute<F>(f: F)
     where
-        F: FnOnce();
+        F: FnOnce() + Send + Sync;
 }

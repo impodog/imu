@@ -39,6 +39,29 @@ impl<E, H: HeapAlloc> Vec<E, H> {
         self.heap = new_heap;
     }
 
+    /// Initializes the capacity with given length. This is useful when the amount of elements is
+    /// predetermined and you can save time and space reallocating.
+    ///
+    /// This only returns `false` if internal allocation fails.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the vector already has capacity.
+    #[must_use]
+    pub fn reserve(&mut self, len: usize) -> bool {
+        assert!(
+            self.capa != 0,
+            "the vector already has capacity when calling `init_capa`"
+        );
+        self.capa = len * Self::ELEM_ALIGNED_SIZE;
+        if let Some(alloc_index) = self.heap.alloc(self.capa) {
+            self.alloc_index = alloc_index;
+            true
+        } else {
+            false
+        }
+    }
+
     /// Creates a new empty vector.
     pub fn new(heap: H) -> Self {
         Self {
@@ -68,7 +91,8 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Time complexity is worst case O(n) (when reallocating), amortized O(1).
     ///
-    /// This only fails because of internal heap error.
+    /// This only fails because of internal heap error and does nothing.
+    #[must_use]
     pub fn push(&mut self, elem: E) -> bool {
         if (self.len + 1) * Self::ELEM_ALIGNED_SIZE > self.capa {
             if self.capa == 0 {
@@ -145,9 +169,9 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    pub fn access<F, R>(&self, index: usize, f: F) -> Option<R>
+    pub fn access<'s, F, R>(&'s self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&E) -> R,
+        F: FnOnce(&'s E) -> R,
     {
         if index >= self.len {
             None
@@ -171,9 +195,9 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    pub fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
+    pub fn access_mut<'s, F, R>(&'s self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&mut E) -> R,
+        F: FnOnce(&'s mut E) -> R,
     {
         if index >= self.len {
             None
@@ -196,6 +220,7 @@ impl<E, H: HeapAlloc> Vec<E, H> {
     ///
     /// You should only call this when you don't push elements anymore and want to keep the vector
     /// for a long time.
+    #[must_use]
     pub fn shrink_to_fit(&mut self) -> bool {
         if self.len == 0 && self.capa != 0 {
             // When there are no elements, free the whole memory.
@@ -216,5 +241,13 @@ impl<E, H: HeapAlloc> Vec<E, H> {
                 false
             }
         }
+    }
+
+    /// Acquires the vector's alloc index by the internal heap.
+    /// This may change after any modifications to the vector.
+    ///
+    /// You must not perform any write actions on the node, as they will break vector structure.
+    pub fn alloc_index(&self) -> usize {
+        self.alloc_index
     }
 }

@@ -194,9 +194,9 @@ impl<E, H: HeapAlloc> Deque<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    pub fn access<F, R>(&self, index: usize, f: F) -> Option<R>
+    pub fn access<'s, F, R>(&'s self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&E) -> R,
+        F: FnOnce(&'s E) -> R,
     {
         if index >= self.len() {
             None
@@ -226,9 +226,9 @@ impl<E, H: HeapAlloc> Deque<E, H> {
     ///
     /// Returning the reference is not possible, because heap borrows can be implemented under locks,
     /// and the vector does not uniquely own the heap.
-    pub fn access_mut<F, R>(&self, index: usize, f: F) -> Option<R>
+    pub fn access_mut<'s, F, R>(&'s self, index: usize, f: F) -> Option<R>
     where
-        F: FnOnce(&mut E) -> R,
+        F: FnOnce(&'s mut E) -> R,
     {
         if index >= self.len() {
             None

@@ -4,9 +4,7 @@ use crate::*;
 /// Holds its threads, imports, and other configs.
 ///
 /// This relies on one heap, which requires user-provided linear memory.
-pub struct Proc<S: Memory, H: Memory, T: SysTh> {
-    th: Vec<Th<S, H, T>, SyncHeap<H>>,
-    sys: Vec<T, SyncHeap<H>>,
+pub struct Proc<S: Memory, H: HeapAlloc + Sync, T: SysTh> {
+    th: Vec<Th<S, H, T>, H>,
+    sys: Vec<T, H>,
 }
-
-impl<S: Memory, H: Memory, T: SysTh> Proc<S, H, T> {}

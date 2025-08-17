@@ -1,5 +1,8 @@
-mod heap_impl;
 mod types;
-
-pub use heap_impl::Heap;
 pub use types::HeapAlloc;
+
+#[cfg(feature = "bare_heap")]
+pub mod bare_heap;
+
+#[cfg(feature = "sync_heap")]
+pub mod sync_heap;

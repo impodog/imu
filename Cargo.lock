@@ -286,6 +286,7 @@ name = "imur_mem"
 version = "0.0.0"
 dependencies = [
  "cfg-if",
+ "spin",
 ]
 
 [[package]]

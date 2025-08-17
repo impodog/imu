@@ -31,7 +31,7 @@ struct Meta {
 /// Note that you MUST call `Self::init` after `Self::new`, before any other actions,
 /// otherwise it is UB.
 ///
-/// This does not support thread safety.
+/// This does not support thread safety and therefore `Self::access_mut` panics.
 pub struct Heap<M: Memory> {
     mem: M,
     max_block: u8,
@@ -228,6 +228,20 @@ impl<M: Memory> Heap<M> {
             true
         } else {
             false
+        }
+    }
+
+    /// Returns the allocated size of the chunk. This may be equal to or greater than the size
+    /// provided in `Self::alloc`.
+    ///
+    /// Returns false if the index is not an alloc index, or if the node is freed.
+    pub fn size_of(&self, alloc_index: usize) -> Option<usize> {
+        if let Some(node_index) = alloc_index.checked_sub(Node::SIZE + Meta::SIZE) {
+            self.copy_meta(node_index)
+                .filter(|meta| !meta.freed)
+                .map(|meta| 1usize << meta.block_size)
+        } else {
+            None
         }
     }
 

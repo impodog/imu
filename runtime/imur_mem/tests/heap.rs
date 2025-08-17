@@ -6,7 +6,7 @@ mod tests {
         use imur_mem::heap::HeapAlloc;
 
         let mem = imur_mem::alloc::VecMem::new();
-        let mut heap = imur_mem::heap::Heap::new(mem, 10);
+        let mut heap = imur_mem::heap::bare_heap::Heap::new(mem, 10);
         heap.init();
         let index1 = heap.alloc(8).unwrap();
         println!("index = {}", index1);

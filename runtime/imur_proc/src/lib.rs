@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use cfg_if::cfg_if;
-use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use spin::RwLock;
 
 cfg_if! {
     if #[cfg(feature = "std")] {
@@ -21,14 +21,13 @@ use ptr::NonNull;
 use imur_mem::alloc::Memory;
 use imur_mem::ds::vec::Vec;
 use imur_mem::heap::HeapAlloc;
+use imur_mem::heap::sync_heap::SyncHeap;
 
 pub mod proc;
-pub mod sync_heap;
 pub mod th;
 pub mod types;
 
 pub use types::SysTh;
 
 use proc::Proc;
-use sync_heap::SyncHeap;
 use th::Th;

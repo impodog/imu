@@ -5,10 +5,13 @@ edition = "2024"
 
 [dependencies]
 cfg-if = "1.0.1"
+spin = { version = "0.10.0", optional = true }
 
 [features]
-default = ["std", "vec_mem"]
-std = []
+default = ["std", "vec_mem", "bare_heap", "sync_heap"]
+std = ["spin/std"]
 vec_mem = ["std"]
 vec = []
 deque = []
+bare_heap = []
+sync_heap = ["vec", "spin"]

@@ -5,7 +5,7 @@ edition = "2024"
 
 [workspace]
 resolver = "2"
-members = ["compiler/*", "example/*", "runtime/imur_error", "runtime/imur_io", "runtime/imur_mem", "runtime/imur_proc"]
+members = ["compiler/*", "example/*", "runtime/*"]
 
 [dependencies]
 imuc_lexer = { path = "compiler/imuc_lexer", optional = true }
@@ -19,6 +19,10 @@ imuc_path = { path = "compiler/imuc_path", optional = true }
 imuc_rules = { path = "compiler/imuc_rules", optional = true }
 imuc_derive = { path = "compiler/imuc_derive", optional = true }
 imuc_comp = { path = "compiler/imuc_comp", optional = true }
+imur_mem = { path = "runtime/imur_mem", optional = true }
+imur_io = { path = "runtime/imur_io", optional = true }
+imur_error = { path = "runtime/imur_error", optional = true }
+imur_proc = { path = "runtime/imur_proc", optional = true }
 
 [features]
 compiler = [
@@ -34,3 +38,4 @@ compiler = [
     "imuc_derive",
     "imuc_comp",
 ]
+runtime = ["imur_mem", "imur_io", "imur_error", "imur_proc"]

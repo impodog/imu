@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.99"
-thiserror = "2.0.14"
+thiserror = "2.0.15"
 imuc_lexer = { path = "../imuc_lexer" }
 
 [features]

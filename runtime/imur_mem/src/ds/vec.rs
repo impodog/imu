@@ -161,6 +161,49 @@ impl<E, H: HeapAlloc> Vec<E, H> {
         }
     }
 
+    /// Removes an element from index, returning it back. Returns `None` if the index is out of
+    /// bounds.
+    ///
+    /// Time complexity depends on how many elements are after the index.
+    ///
+    /// This does not shrink heap allocation.
+    pub fn remove(&mut self, index: usize) -> Option<E> {
+        if index >= self.len {
+            None
+        } else if index == self.len - 1 {
+            self.pop()
+        } else {
+            let elem = unsafe {
+                self.heap
+                    .access(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, |ptr| {
+                        let mut buffer = mem::MaybeUninit::<E>::uninit();
+                        ptr::copy_nonoverlapping(
+                            ptr.cast::<u8>().as_ptr(),
+                            buffer.as_mut_ptr().cast::<u8>(),
+                            Self::ELEM_SIZE,
+                        );
+                        buffer.assume_init()
+                    })
+                    .expect("should succeed to access previously allocated memory")
+            };
+            let rest_size = self.capa - (index + 1) * Self::ELEM_ALIGNED_SIZE;
+            if rest_size > 0 {
+                unsafe {
+                    self.heap
+                        .access_mut(self.alloc_index + index * Self::ELEM_ALIGNED_SIZE, |ptr| {
+                            ptr::copy(
+                                ptr.byte_add(Self::ELEM_ALIGNED_SIZE).as_ptr(),
+                                ptr.as_ptr(),
+                                rest_size,
+                            );
+                        })
+                        .expect("should succeed to access previously allocated memory");
+                }
+            }
+            Some(elem)
+        }
+    }
+
     /// Uses the provided function to access the element at index, immutably.
     /// To access mutably use `Self::access_mut`.
     ///

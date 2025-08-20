@@ -206,8 +206,6 @@ impl<M: Memory> Heap<M> {
     ///
     /// This function returns `false` if the index is out of bounds and does nothing.
     ///
-    /// Implementation of this function must ensure that this node is kept locked for copy.
-    ///
     /// # Safety
     ///
     /// The index must be inside a valid allocation, and you must guarantee type safety.

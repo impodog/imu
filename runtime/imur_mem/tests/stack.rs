@@ -3,7 +3,7 @@ mod tests {
     #[cfg(feature = "vec_mem")]
     #[test]
     fn test_stack() {
-        let mem = imur_mem::alloc::VecMem::new();
+        let mem = imur_mem::alloc::vec_mem::VecMem::new();
         let mut stack = imur_mem::stack::Stack::new(mem);
         let int_ptr = stack.push(8i32).unwrap();
         let float_ptr = stack.push(std::f64::consts::PI).unwrap();

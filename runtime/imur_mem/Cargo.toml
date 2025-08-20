@@ -8,10 +8,12 @@ cfg-if = "1.0.1"
 spin = { version = "0.10.0", optional = true }
 
 [features]
-default = ["std", "vec_mem", "bare_heap", "sync_heap"]
+default = ["std", "vec_mem", "bare_heap", "sync_heap", "locked_heap"]
 std = ["spin/std"]
 vec_mem = ["std"]
 vec = []
+arc = []
 deque = []
 bare_heap = []
 sync_heap = ["vec", "spin"]
+locked_heap = ["spin", "arc"]

@@ -94,7 +94,8 @@ impl<'h, H: Memory + 'h> HeapAlloc for SyncHeap<'h, H> {
 
 impl<'h, H: Memory + 'h> SyncHeap<'h, H> {
     /// Creates a new sync heap with an external heap.
-    pub fn new(heap: HeapPtr<'h, H>) -> Self {
+    pub fn new(heap: &'h crate::heap::bare_heap::Heap<H>) -> Self {
+        let heap = HeapPtr::new(NonNull::from_ref(heap));
         Self {
             heap,
             node_locks: Vec::new(heap),
@@ -125,6 +126,28 @@ impl<'h, H: Memory + 'h> SyncHeap<'h, H> {
             "vector reserved space should be able to push one element"
         );
         true
+    }
+
+    /// Writes an element to a position on the heap.
+    ///
+    /// This function returns `None` if the index is not in any of the nodes,
+    /// returns `false` if the index is out of bounds and does nothing,
+    /// or returns `true`.
+    ///
+    /// # Safety
+    ///
+    /// You must guarantee type safety.
+    /// `SyncHeap` now guarantees thread safety.
+    pub unsafe fn copy<E>(&self, index: usize, value: &E) -> Option<bool> {
+        let lock_index = self.bsearch_lock(index)?;
+        let lock_guard = self
+            .node_locks
+            .access(lock_index, |node_lock| node_lock.lock.write())
+            .expect("lock index should be in bounds");
+        let mut ptr = self.heap.ptr;
+        let result = unsafe { ptr.as_mut().copy(index, value) };
+        core::mem::drop(lock_guard);
+        Some(result)
     }
 
     /// Pushes a new lock to the back of the vector.

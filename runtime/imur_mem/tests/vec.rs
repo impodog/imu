@@ -3,8 +3,9 @@ mod tests {
     #[cfg(feature = "vec")]
     #[test]
     fn test_vec() {
-        let mem = imur_mem::alloc::VecMem::new();
-        let mut heap = imur_mem::heap::bare_heap::Heap::new(mem, 10);
+        let mem = imur_mem::alloc::vec_mem::VecMem::new();
+        let heap = imur_mem::heap::bare_heap::Heap::new(mem, 10);
+        let mut heap = imur_mem::heap::sync_heap::SyncHeap::new(&heap);
         heap.init();
 
         let mut vec = imur_mem::ds::vec::Vec::new(heap);

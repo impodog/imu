@@ -2,9 +2,10 @@ mod mem;
 pub use mem::Memory;
 
 #[cfg(feature = "vec_mem")]
-mod vec_mem;
-#[cfg(feature = "vec_mem")]
-pub use vec_mem::VecMem;
+pub mod vec_mem;
+
+#[cfg(feature = "arc")]
+pub mod arc;
 
 /// Returns whether the pointer is properly aligned on the target.
 /// I.e. The pointer is divisible by `crate::ALIGNMENT`

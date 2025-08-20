@@ -19,6 +19,7 @@ cfg_if! {
 use ptr::NonNull;
 
 use imur_mem::alloc::Memory;
+use imur_mem::ds::deque::Deque;
 use imur_mem::ds::vec::Vec;
 use imur_mem::heap::HeapAlloc;
 use imur_mem::heap::sync_heap::SyncHeap;
